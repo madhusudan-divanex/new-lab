@@ -33,13 +33,14 @@ export const fetchUserDetail = createAsyncThunk(
 const userSlice = createSlice({
     name: "userProfile",
     initialState: {
-        profiles: [],
+        profiles: null,
         labPerson: null,
         labAddress: null,
         labImg: null,
         rating: null,
         avgRating: null,
         labLicense: null,
+        isRequest:null,
         loading: false,
         error: null,
     },
@@ -71,11 +72,13 @@ const userSlice = createSlice({
             .addCase(fetchUserDetail.fulfilled, (state, action) => {
                 state.loading = false;
                 console.log(action)
+                state.profiles=action.payload.user
                 state.labAddress = action.payload.labAddress;
                 state.labImg = action.payload.labImg;
                 state.rating = action.payload.rating;
                 state.avgRating = action.payload.avgRating;
                 state.labPerson = action.payload.labPerson;
+                state.isRequest=action.payload.isRequest
                 state.labLicense = action.payload.labLicense;
             })
             .addCase(fetchUserDetail.rejected, (state, action) => {

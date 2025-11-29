@@ -8,8 +8,89 @@ import {
 
 } from "@fortawesome/free-solid-svg-icons";
 import { NavLink } from "react-router-dom";
+import { deleteApiData, getSecureApiData, securePostData, updateApiData } from "../../services/api";
+import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
 
 function Permission() {
+  const userId = localStorage.getItem('userId')
+  const [name, setName] = useState('')
+  const [editId, setEditId] = useState(null)
+  const [search,setSearch] =useState(null)
+  const [totalPage,setTotalPage]=useState()
+  const [currentPage,setCurrentPage]=useState(1)
+
+  const [permissions, setPermissions] = useState([])
+  const fetchLabPermission = async () => {
+    try {
+      const response = await getSecureApiData(`lab/permission/${userId}?page=${currentPage}&name=${search}`);
+      if (response.success) {
+        setCurrentPage(response.pagination.page)
+        setTotalPage(response.pagination.totalPages)
+        setPermissions(response.data)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
+  const addLabPermission = async (e) => {
+    e.preventDefault()
+    if (editId) {
+      const data = { labId: userId, name, permissionId: editId }
+      try {
+        const response = await updateApiData(`lab/permission`, data);
+        if (response.success) {
+          setName('')
+          setEditId(null)
+          fetchLabPermission()
+          toast.success("Permission updated")
+        } else {
+          toast.error(response.message)
+        }
+      } catch (err) {
+        console.error("Error creating lab:", err);
+      }
+    } else {
+
+      const data = { labId: userId, name }
+      try {
+        const response = await securePostData(`lab/permission`, data);
+        if (response.success) {
+          setName('')
+          toast.success("Permission created")
+        } else {
+          toast.error(response.message)
+        }
+      } catch (err) {
+        console.error("Error creating lab:", err);
+      }
+    }
+  }
+  const deletePermission = async (id) => {
+    // e.preventDefault()
+    const data = { labId: userId, permissionId: id }
+    try {
+      const response = await deleteApiData(`lab/permission`, data);
+      if (response.success) {
+        fetchLabPermission()
+        toast.success("Permission deleted")
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
+  useEffect(() => {
+    fetchLabPermission()
+  }, [currentPage,userId])
+  useEffect(() => {
+    setTimeout(()=>{
+      fetchLabPermission()
+    },800)
+  }, [search])
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -50,7 +131,7 @@ function Permission() {
         <div className="row ">
           <div className="d-flex align-items-center justify-content-between">
             <div className="custom-frm-bx">
-              <input type="text" className="form-control pe-5" placeholder="Search " />
+              <input type="text" value={search} onChange={(e)=>setSearch(e.target.value)} className="form-control pe-5" placeholder="Search " />
 
               <div className="search-item-bx">
                 <button className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
@@ -63,8 +144,10 @@ function Permission() {
 
                 <div className="custom-frm-bx">
                   <select className="form-select custom-page-dropdown nw-custom-page ">
-                    <option value="1" selected>1</option>
-                    <option value="2">2</option>
+                    {totalPage>1?
+                    Array(totalPage)?.map(_,i=><option value={i}>{i}</option>)
+                    :<option value="1" selected>1</option>}
+                    
                   </select>
                 </div>
 
@@ -92,85 +175,28 @@ function Permission() {
                   </thead>
                   <tbody>
 
-                    <tr>
-                      <td>01.</td>
-                      <td>
-                        Full  access
-                      </td>
-                      <td>
-                        <span><NavLink to="/permission-check" className="admin-sub-dropdown"> <FontAwesomeIcon icon={faKey} /> Permission</NavLink></span>
-                      </td>
-                      <td>
-                        <ul className="d-flex gap-2">
-                          <li><a href="javascript:void(0)" className="text-black" data-bs-toggle="modal" data-bs-target="#permission-Name"><FontAwesomeIcon icon={faPen} /></a></li>
-                          <li><a href="javascript:void(0)" className="text-black"><FontAwesomeIcon icon={faTrash} /></a></li>
-                        </ul>
-                      </td>
-                    </tr>
+                    {permissions?.length > 0 &&
+                      permissions?.map((item, key) =>
+                        <tr key={key}>
+                          <td>01.</td>
+                          <td>
+                            {item?.name}
+                          </td>
+                          <td>
+                            <span><NavLink onClick={()=>sessionStorage.setItem('permission',JSON.stringify(item))} to={`/permission-check/${item?.name}/${item?._id}`} className="admin-sub-dropdown"> <FontAwesomeIcon icon={faKey} /> Permission</NavLink></span>
+                          </td>
+                          <td>
+                            <ul className="d-flex gap-2">
+                              <li><button type="button" onClick={() => {
+                                setName(item?.name)
+                                setEditId(item?._id)
+                              }} className="text-black" data-bs-toggle="modal" data-bs-target="#permission-Name"><FontAwesomeIcon icon={faPen} /></button></li>
+                              <li><button onClick={() => deletePermission(item._id)} className="text-black"><FontAwesomeIcon icon={faTrash} /></button></li>
+                            </ul>
+                          </td>
+                        </tr>)}
 
-                    <tr>
-                      <td>02.</td>
-                      <td>
-                        Full  access
-                      </td>
-                      <td>
-                        <span><NavLink to="/permission-check" className="admin-sub-dropdown"> <FontAwesomeIcon icon={faKey} /> Permission</NavLink></span>
-                      </td>
-                      <td>
-                        <ul className="d-flex gap-2">
-                          <li><a href="javascript:void(0)" className="text-black" data-bs-toggle="modal" data-bs-target="#permission-Name"><FontAwesomeIcon icon={faPen} /></a></li>
-                          <li><a href="javascript:void(0)" className="text-black"><FontAwesomeIcon icon={faTrash} /></a></li>
-                        </ul>
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td>03.</td>
-                      <td>
-                        Full  access
-                      </td>
-                      <td>
-                        <span><NavLink to="/permission-check" className="admin-sub-dropdown"> <FontAwesomeIcon icon={faKey} /> Permission</NavLink></span>
-                      </td>
-                      <td>
-                        <ul className="d-flex gap-2">
-                          <li><a href="javascript:void(0)" className="text-black" data-bs-toggle="modal" data-bs-target="#permission-Name"><FontAwesomeIcon icon={faPen} /></a></li>
-                          <li><a href="javascript:void(0)" className="text-black"><FontAwesomeIcon icon={faTrash} /></a></li>
-                        </ul>
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td>04.</td>
-                      <td>
-                        Full  access
-                      </td>
-                      <td>
-                        <span><NavLink to="/permission-check" className="admin-sub-dropdown"> <FontAwesomeIcon icon={faKey} /> Permission</NavLink></span>
-                      </td>
-                      <td>
-                        <ul className="d-flex gap-2">
-                          <li><a href="javascript:void(0)" className="text-black" data-bs-toggle="modal" data-bs-target="#permission-Name"><FontAwesomeIcon icon={faPen} /></a></li>
-                          <li><a href="javascript:void(0)" className="text-black"><FontAwesomeIcon icon={faTrash} /></a></li>
-                        </ul>
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td>05.</td>
-                      <td>
-                        Full  access
-                      </td>
-                      <td>
-                        <span><NavLink to="/permission-check" className="admin-sub-dropdown"> <FontAwesomeIcon icon={faKey} /> Permission</NavLink></span>
-                      </td>
-                      <td>
-                        <ul className="d-flex gap-2">
-                          <li><a href="javascript:void(0)" className="text-black" data-bs-toggle="modal" data-bs-target="#permission-Name"><FontAwesomeIcon icon={faPen} /></a></li>
-                          <li><a href="javascript:void(0)" className="text-black"><FontAwesomeIcon icon={faTrash} /></a></li>
-                        </ul>
-                      </td>
-                    </tr>
+                    
 
                   </tbody>
                 </table>
@@ -200,7 +226,7 @@ function Permission() {
             </div>
             <div className="modal-body px-4">
               <div className="row ">
-                <div className="col-lg-12">
+                <form onSubmit={addLabPermission} className="col-lg-12">
                   <div className="text-center ">
                     <div className="model-permission-bx">
                       <img src="/model-permission-icon.png" alt="" />
@@ -209,14 +235,14 @@ function Permission() {
 
                   <div className="custom-frm-bx">
                     <label htmlFor="">Role Name</label>
-                    <input type="text" className="form-control" placeholder="Enter Role Name" />
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="form-control" placeholder="Enter Role Name" />
                   </div>
 
                   <div>
-                    <button type="submit" className="nw-thm-btn w-100"> Submit</button>
+                    <button type="submit" className="nw-thm-btn w-100" data-bs-dismiss="modal"> Submit</button>
                   </div>
 
-                </div>
+                </form>
               </div>
             </div>
           </div>

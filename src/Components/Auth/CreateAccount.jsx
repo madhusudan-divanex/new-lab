@@ -6,7 +6,7 @@ import { FaCloudUploadAlt } from "react-icons/fa";
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { IoCloudUploadOutline } from "react-icons/io5";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { getApiData, postApiData } from "../../services/api";
@@ -88,8 +88,9 @@ function CreateAccount() {
         }
     }
     useEffect(()=>{
+        console.log(profiles)
         if(profiles){
-            navigate('/')
+            navigate('/create-account-image')
         }
     },[profiles])
 
@@ -315,9 +316,9 @@ function CreateAccount() {
                                             <div className="text-center mt-5">
                                                 <span className="do-account-title">
                                                     Already have an account?{" "}
-                                                    <NavLink to="/login" className="lab-login-forgot-btn">
+                                                    <Link to="/login" className="lab-login-forgot-btn">
                                                         Login here
-                                                    </NavLink>
+                                                    </Link>
                                                 </span>
                                             </div>
                                         </form>

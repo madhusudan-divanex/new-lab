@@ -7,13 +7,15 @@ import Scanner from "../Pages/Scanner";
 import { Link, NavLink } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserDetail } from "../../redux/features/userSlice";
+import base_url from "../../../baseUrl";
 
 function TopHeader() {
-  const dispatch=useDispatch()
-  const {profiles}=useSelector(state=>state.user)
-  useDispatch(()=>{
+  const dispatch = useDispatch()
+  const { profiles, labPerson, labAddress, labImg,
+    rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
+  useEffect(() => {
     dispatch(fetchUserDetail())
-  },[dispatch])
+  }, [dispatch])
 
   useEffect(() => {
     let overlay = document.querySelector('.mobile-overlay');
@@ -120,7 +122,7 @@ function TopHeader() {
                 aria-expanded="false"
               >
                 <div className="admn-icon me-2">
-                  <img src="/user-avatar.png" alt="" />
+                  <img src={profiles?.logo?`${base_url}/${profiles.logo}` :"/user-avatar.png"} alt="" />
                 </div>
               </a>
 
@@ -131,18 +133,18 @@ function TopHeader() {
                 <div className="profile-card-box">
                   <div className="profile-top-section">
                     <img
-                      src="/user-avatar.png"
+                      src={profiles?.logo?`${base_url}/${profiles.logo}` :"/user-avatar.png"}
                       alt="Profile"
                       className="profile-image"
                     />
                     <div className="profile-info">
-                      <span className="profile-role">Admin</span>
-                      <h4 className="profile-name">{profiles?.name}</h4>
-                      <p className="profile-id">ID : 9987878</p>
+                      {/* <span className="profile-role">Admin</span> */}
+                      <h4 className="profile-name">{labPerson?.name}</h4>
+                      <p className="profile-id">ID : {profiles?._id?.slice(-10)}</p>
                     </div>
                   </div>
                   <div className="profile-logout-box">
-                    <Link to="/login" onClick={()=>localStorage.clear()} className="logout-btn">
+                    <Link to="/login" onClick={() => localStorage.clear()} className="logout-btn">
                       <i className="fas fa-sign-out-alt"></i> Logout
                     </Link>
                   </div>

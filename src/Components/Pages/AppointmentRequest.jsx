@@ -1,7 +1,45 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faClose, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { getSecureApiData, updateApiData } from "../../services/api";
+import base_url from "../../../baseUrl";
 
 function AppointmentRequest() {
+    const userId = localStorage.getItem('userId')
+    const [appointments, setAppointments] = useState([])
+    const fetchLabAppointment = async () => {
+        try {
+            const response = await getSecureApiData(`lab/appointment/${userId}`);
+            if (response.success) {
+                // setCurrentPage(response.pagination.page)
+                // setTotalPage(response.pagination.totalPages)
+                setAppointments(response.data)
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+     const appointmentAction = async (id,status) => {
+        const data={labId:userId,appointmentId:id,status}
+        try {
+            const response = await updateApiData(`appointment/lab-action`,data);
+            if (response.success) {
+                // setCurrentPage(response.pagination.page)
+                // setTotalPage(response.pagination.totalPages)
+                fetchLabAppointment()
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+    useEffect(() => {
+        fetchLabAppointment()
+    }, [])
     return (
         <>
             <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -59,42 +97,42 @@ function AppointmentRequest() {
                                     </div>
                                 </div> */}
 
-                                <div className="filters">
-                                     <div className="field custom-frm-bx mb-0">
-                                    <label className="label">Status:</label>
-                                    <select>
-                                        <option>All</option>
-                                        <option>Active</option>
-                                        <option>Inactive</option>
-                                    </select>
-                                </div>
+                        <div className="filters">
+                            <div className="field custom-frm-bx mb-0">
+                                <label className="label">Status:</label>
+                                <select>
+                                    <option>All</option>
+                                    <option>Active</option>
+                                    <option>Inactive</option>
+                                </select>
+                            </div>
 
-                                 <div className="field custom-frm-bx mb-0">
-                                    <label className="label">Test:</label>
-                                    <select>
-                                        <option>All</option>
-                                        <option>Test 1</option>
-                                        <option>Test 2</option>
-                                    </select>
-                                </div>
+                            <div className="field custom-frm-bx mb-0">
+                                <label className="label">Test:</label>
+                                <select>
+                                    <option>All</option>
+                                    <option>Test 1</option>
+                                    <option>Test 2</option>
+                                </select>
+                            </div>
 
-                                <div className="field custom-frm-bx mb-0">
-                                    <label className="label">Date from:</label>
-                                    <input type="date" className="" />
-                                </div>
+                            <div className="field custom-frm-bx mb-0">
+                                <label className="label">Date from:</label>
+                                <input type="date" className="" />
+                            </div>
 
-                                <div className="field custom-frm-bx mb-0">
-                                    <label className="label">Date to:</label>
-                                    <input type="date" />
-                                </div>
+                            <div className="field custom-frm-bx mb-0">
+                                <label className="label">Date to:</label>
+                                <input type="date" />
+                            </div>
 
-                                <div>
-                                    <a href="javascript:void(0)" className="nw-thm-btn" >Filter</a>
-                                </div>
+                            <div>
+                                <a href="javascript:void(0)" className="nw-thm-btn" >Filter</a>
+                            </div>
 
-                                </div>
+                        </div>
 
-                        
+
                     </div>
                 </form>
 
@@ -142,173 +180,55 @@ function AppointmentRequest() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td>01.</td>
-                                            <td>
-                                                <div className="admin-table-bx">
-                                                    <div className="admin-table-sub-bx">
-                                                        <img src="/table-avatar.jpg" alt="" />
-                                                        <div className="admin-table-sub-details">
-                                                            <h6>Sunil </h6>
-                                                            <p>ID: SUNIL3320</p>
+                                        {appointments?.length > 0 &&
+                                            appointments?.map((item, key) =>
+                                                <tr key={key}>
+                                                    <td>{key + 1}</td>
+                                                    <td>
+                                                        <div className="admin-table-bx">
+                                                            <div className="admin-table-sub-bx">
+                                                                <img src={item?.patientId?.profileImage? `${base_url}/${item?.patientId?.profileImage}`:"/table-avatar.jpg"} alt="" />
+                                                                <div className="admin-table-sub-details">
+                                                                    <h6>{item?.patientId?.name} </h6>
+                                                                    <p>ID: {item?.patientId?._id?.slice(-10)}</p>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>20 Jun 2025</td>
-                                            <td>CBC</td>
-                                            <td>
-                                                <ul className="test-action-list">
-                                                    <li className="test-action-item">
-                                                        <a
-                                                            href="javascript:void(0)"
-                                                            className="test-right-btn"
-                                                        >
-                                                            <FontAwesomeIcon icon={faCheck} />
-                                                        </a>
-                                                    </li>
-                                                    <li className="test-action-item">
-                                                        <a
-                                                            href="javascript:void(0)"
-                                                            className="test-right-btn test-close-btn"
-                                                        >
-                                                            <FontAwesomeIcon icon={faClose} />
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </td>
-                                        </tr>
+                                                    </td>
+                                                    <td>{new Date(item?.date).toLocaleDateString("en-GB", {
+                                                        day: "2-digit",
+                                                        month: "short",
+                                                        year: "numeric"
+                                                    })}
+                                                    </td>
+                                                    <td>CBC</td>
+                                                    <td>
+                                                        {item?.status=='rejected'&& <span className="approved reject">Reject</span>}
+                                                        {(item?.status!=='rejected' && item?.status!=='pending')&& 
+                                                        <span className="text-capitalize">{item?.status}</span>}
 
-                                        <tr>
-                                            <td>02.</td>
-                                            <td>
-                                                <div className="admin-table-bx">
-                                                    <div className="admin-table-sub-bx">
-                                                        <img src="/table-avatar.jpg" alt="" />
-                                                        <div className="admin-table-sub-details">
-                                                            <h6>Sunil </h6>
-                                                            <p>ID: SUNIL3320</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>20 Jun 2025</td>
-                                            <td>CBC</td>
-                                            <td>
-                                                <ul className="test-action-list">
-                                                    <li className="test-action-item">
-                                                        <a
-                                                            href="javascript:void(0)"
-                                                            className="test-right-btn"
-                                                        >
-                                                            <FontAwesomeIcon icon={faCheck} />
-                                                        </a>
-                                                    </li>
-                                                    <li className="test-action-item">
-                                                        <a
-                                                            href="javascript:void(0)"
-                                                            className="test-right-btn test-close-btn"
-                                                        >
-                                                            <FontAwesomeIcon icon={faClose} />
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </td>
-                                        </tr>
+                                                        {item?.status=='pending' &&<ul className="test-action-list">
+                                                            <li className="test-action-item">
+                                                                <button
+                                                                    onClick={()=>appointmentAction(item._id,'approved')}
+                                                                    className="test-right-btn"
+                                                                >
+                                                                    <FontAwesomeIcon icon={faCheck} />
+                                                                </button>
+                                                            </li>
+                                                            <li className="test-action-item">
+                                                                <button
+                                                                    onClick={()=>appointmentAction(item._id,'rejected')}
+                                                                    className="test-right-btn test-close-btn"
+                                                                >
+                                                                    <FontAwesomeIcon icon={faClose} />
+                                                                </button>
+                                                            </li>
+                                                        </ul>}
+                                                    </td>
+                                                </tr>)}
 
-                                        <tr>
-                                            <td>03.</td>
-                                            <td>
-                                                <div className="admin-table-bx">
-                                                    <div className="admin-table-sub-bx">
-                                                        <img src="/table-avatar.jpg" alt="" />
-                                                        <div className="admin-table-sub-details">
-                                                            <h6>Sunil </h6>
-                                                            <p>ID: SUNIL3320</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>20 Jun 2025</td>
-                                            <td>CBC</td>
-                                            <td>
-                                                <ul className="test-action-list">
-                                                    <li className="test-action-item">
-                                                        <a
-                                                            href="javascript:void(0)"
-                                                            className="test-right-btn"
-                                                        >
-                                                            <FontAwesomeIcon icon={faCheck} />
-                                                        </a>
-                                                    </li>
-                                                    <li className="test-action-item">
-                                                        <a
-                                                            href="javascript:void(0)"
-                                                            className="test-right-btn test-close-btn"
-                                                        >
-                                                            <FontAwesomeIcon icon={faClose} />
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </td>
-                                        </tr>
 
-                                        <tr>
-                                            <td>04.</td>
-                                            <td>
-                                                <div className="admin-table-bx">
-                                                    <div className="admin-table-sub-bx">
-                                                        <img src="/table-avatar.jpg" alt="" />
-                                                        <div className="admin-table-sub-details">
-                                                            <h6>Sunil </h6>
-                                                            <p>ID: SUNIL3320</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>20 Jun 2025</td>
-                                            <td>CBC</td>
-                                            <td>
-                                                <span className="approved reject">Reject</span>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <td>05.</td>
-                                            <td>
-                                                <div className="admin-table-bx">
-                                                    <div className="admin-table-sub-bx">
-                                                        <img src="/table-avatar.jpg" alt="" />
-                                                        <div className="admin-table-sub-details">
-                                                            <h6>Sunil </h6>
-                                                            <p>ID: SUNIL3320</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>20 Jun 2025</td>
-                                            <td>CBC</td>
-                                            <td>
-                                                <ul className="test-action-list">
-                                                    <li className="test-action-item">
-                                                        <a
-                                                            href="javascript:void(0)"
-                                                            className="test-right-btn"
-                                                        >
-                                                            <FontAwesomeIcon icon={faCheck} />
-                                                        </a>
-                                                    </li>
-                                                    <li className="test-action-item">
-                                                        <a
-                                                            href="javascript:void(0)"
-                                                            className="test-right-btn test-close-btn"
-                                                        >
-                                                            <FontAwesomeIcon icon={faClose} />
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </td>
-                                        </tr>
                                     </tbody>
                                 </table>
                             </div>

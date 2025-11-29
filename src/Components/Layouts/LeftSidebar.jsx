@@ -1,8 +1,18 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClose } from "@fortawesome/free-solid-svg-icons";
+import { faBorderAll, faChartColumn, faCheckCircle, faClose, faFlask, faFlaskVial, faKey, faLock, faMessage, faRightFromBracket, faUserCircle, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { NavLink } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import base_url from "../../../baseUrl";
+import { useEffect } from "react";
+import { fetchUserDetail } from "../../redux/features/userSlice";
 
 function LeftSidebar() {
+  const dispatch = useDispatch()
+  const { profiles, labPerson, labAddress, labImg,
+    rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
+  useEffect(()=>{
+    dispatch(fetchUserDetail())
+  },[dispatch])
   return (
     <>
       <div className="dashboard-left-side  min-vh-100 flex-shrink-0">
@@ -28,12 +38,12 @@ function LeftSidebar() {
           <div className="task-vendor-profile-crd">
             <NavLink to="#">
               <div className="task-vendor-profile-bx">
-              <img src="/user-avatar.png" alt="" />
-              <div>
-                <h6 className="new_title fw-500 mb-0">Jonh Smith</h6>
-                <p>#94969548</p>
+                <img src={profiles?.logo ? `${base_url}/${profiles?.logo}` : "/user-avatar.png"} alt="" />
+                <div>
+                  <h6 className="new_title fw-500 mb-0">{labPerson?.name}</h6>
+                  <p>#{profiles?._id?.slice(-10)}</p>
+                </div>
               </div>
-            </div>
             </NavLink>
           </div>
 
@@ -42,25 +52,25 @@ function LeftSidebar() {
               <h6>Navigation</h6>
               <li className="nav-item">
                 <NavLink to="/" className="nav-link ">
-                  <img src="/dashboard.png" alt="" /> Dashboard
+                  <FontAwesomeIcon icon={faBorderAll} /> Dashboard
                 </NavLink>
               </li>
 
               <li className="nav-item">
                 <NavLink to="/appointment-request" className="nav-link  nav-active">
-                  <img src="/check-two.png" alt="" /> Appointment Request
+                  <FontAwesomeIcon icon={faCheckCircle} /> Appointment Request
                 </NavLink>
               </li>
 
               <li className="nav-item">
                 <NavLink to="/tests" className="nav-link ">
-                  <img src="/lab.png" alt="" /> Tests
+                  <FontAwesomeIcon icon={faFlask} /> Tests
                 </NavLink>
               </li>
 
               <li className="nav-item">
                 <NavLink to="/test-reports-appointment" className="nav-link ">
-                  <img src="/tests.png" alt="" /> Lab Reports
+                  <FontAwesomeIcon icon={faFlaskVial} /> Lab Reports
                 </NavLink>
               </li>
 
@@ -72,37 +82,37 @@ function LeftSidebar() {
 
               <li className="nav-item">
                 <NavLink to="/chat" className="nav-link ">
-                  <img src="/chat.png" alt="" /> Chat
+                  <FontAwesomeIcon icon={faMessage} /> Chat
                 </NavLink>
               </li>
 
               <li className="nav-item">
                 <NavLink to="/report-tabs" className="nav-link ">
-                  <img src="/report.png" alt="" /> Report
+                  <FontAwesomeIcon icon={faChartColumn} /> Report
                 </NavLink>
               </li>
 
               <li className="nav-item">
                 <NavLink to="/employee-list" className="nav-link ">
-                  <img src="/employe.png" alt="" /> Employees/Doctor
+                  <FontAwesomeIcon icon={faUsers} /> Employees/Doctor
                 </NavLink>
               </li>
 
               <li className="nav-item">
                 <NavLink to="/permission" className="nav-link ">
-                  <img src="/permission.png" alt="" /> Permission
+                  <FontAwesomeIcon icon={faKey} /> Permission
                 </NavLink>
               </li>
 
               <li className="nav-item">
-                <NavLink to="/profile" className="nav-link ">
-                  <img src="/profile.png" alt="" /> Profile
+                <NavLink to={profiles?.status == 'pending' ? "/profile" : '/approve-profile'} className="nav-link ">
+                  <FontAwesomeIcon icon={faUserCircle} /> Profile
                 </NavLink>
               </li>
 
               <li className="nav-item">
                 <NavLink to="/change-password" className="nav-link ">
-                  <img src="/password.png" alt="" /> Change Password
+                  <FontAwesomeIcon icon={faLock} /> Change Password
                 </NavLink>
               </li>
 
@@ -110,7 +120,7 @@ function LeftSidebar() {
 
               <li className="nav-item">
                 <NavLink to="/login" className="nav-link ">
-                  <img src="/logout.png" alt="" /> Logout
+                  <FontAwesomeIcon icon={faRightFromBracket} /> Logout
                 </NavLink>
               </li>
             </ul>

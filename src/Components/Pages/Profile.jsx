@@ -7,41 +7,128 @@ import {
   faShareNodes
 } from "@fortawesome/free-solid-svg-icons";
 import { NavLink, useNavigate } from "react-router-dom";
+import { getSecureApiData, securePostData } from "../../services/api";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUserDetail, fetchUserProfile } from "../../redux/features/userSlice";
+import base_url from "../../../baseUrl";
+import html2canvas from "html2canvas";
 function Profile() {
-
   const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const userId = localStorage.getItem("userId")
+  const { profiles, labPerson, labAddress, labImg,
+    rating, avgRating, labLicense, isRequest} = useSelector(state => state.user)
+  const [message,setMessage]=useState('')
+
+  const fetchLabDetail = async (e) => {
+    try {
+      const response = await getSecureApiData(`lab/detail/${userId}`);
+      if (response.success) {
+        setLabAddressData(response.labAddress)
+        setLabImgData(response.labImg)
+        setLabPersonData(response.labPerson)
+        setLabLicenseData(response.labLicense)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
+  // useEffect(()=>{
+  //   fetchLabDetail()
+  // },[])
+  useEffect(() => {
+    dispatch(fetchUserProfile())
+    dispatch(fetchUserDetail())
+  }, [dispatch])
+  const handleDownload = async (filePath) => {
+    if (!filePath) return;
+
+    const fileUrl = `${base_url}/${filePath}`;
+    const fileName = filePath.split("\\").pop().split("-").pop();
+
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName; // forces download
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
+  const sendEditRequest = async (e) => {
+    e.preventDefault()
+    const data={labId:userId,message}
+    try {
+      const response = await securePostData(`lab/edit-request`,data);
+      if (response.success) {
+        setMessage('')
+        toast.success("You request was sent!")
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
+  const cardRef = useRef(null);
+
+  const handleCardDownload = (e) => {
+    e.preventDefault()
+    if (cardRef.current) {
+      html2canvas(cardRef.current).then((canvas) => {
+        const link = document.createElement("a");
+        link.download = `${labPerson?.name || "lab-card"}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+  };
+
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
         <div className="row mb-3">
-            <div className="d-flex align-items-center justify-content-between sub-header-bx">
-              <div>
-                <h3 className="innr-title">Profile</h3>
-                <div className="admin-breadcrumb">
-                  <nav aria-label="breadcrumb">
-                    <ol className="breadcrumb custom-breadcrumb">
-                      <li className="breadcrumb-item">
-                        <a href="#" className="breadcrumb-link">
-                          Dashboard
-                        </a>
-                      </li>
-                      <li
-                        className="breadcrumb-item active"
-                        aria-current="page"
-                      >
-                        Profile
-                      </li>
-                    </ol>
-                  </nav>
-                </div>
-              </div>
-              <div className="add-nw-bx">
-                <a href="javascript:void(0)" className="add-nw-btn nw-thm-btn sub-nw-brd-tbn" data-bs-toggle="modal" data-bs-target="#edit-Request" >
-                  Send Profile Edit Request
-                </a>
+          <div className="d-flex align-items-center justify-content-between sub-header-bx">
+            <div>
+              <h3 className="innr-title">Profile</h3>
+              <div className="admin-breadcrumb">
+                <nav aria-label="breadcrumb">
+                  <ol className="breadcrumb custom-breadcrumb">
+                    <li className="breadcrumb-item">
+                      <a href="#" className="breadcrumb-link">
+                        Dashboard
+                      </a>
+                    </li>
+                    <li
+                      className="breadcrumb-item active"
+                      aria-current="page"
+                    >
+                      Profile
+                    </li>
+                  </ol>
+                </nav>
               </div>
             </div>
+            {!isRequest &&<div className="add-nw-bx">
+              <a href="javascript:void(0)" className="add-nw-btn nw-thm-btn sub-nw-brd-tbn" data-bs-toggle="modal" data-bs-target="#edit-Request" >
+                Send Profile Edit Request
+              </a>
+            </div>}
           </div>
+        </div>
 
         <div className="lab-chart-crd">
           <div className="row">
@@ -123,54 +210,54 @@ function Profile() {
                       <form action="">
                         <div className="row">
                           <div className="col-lg-12">
-                           <div className="d-flex align-items-center justify-content-between laboratory-card">
-                             <div className="lab-profile-mega-bx">
-                              
-                              <div className="lab-profile-avatr-bx">
-                                <img src="/profile-tab-avatar.png" alt="" />
-                                <div className="lab-profile-edit-avatr">
-                                  <a href="javascript:void(0)" className="edit-btn cursor-pointer">
-                                    <FontAwesomeIcon icon={faPen} />
-                                  </a>
+                            <div className="d-flex align-items-center justify-content-between laboratory-card">
+                              <div className="lab-profile-mega-bx">
+
+                                <div className="lab-profile-avatr-bx">
+                                  <img src={profiles?.logo ? `${base_url}/${profiles?.logo}` : "/profile-tab-avatar.png"} alt="" />
+                                  <div className="lab-profile-edit-avatr">
+                                    <a href="javascript:void(0)" className="edit-btn cursor-pointer">
+                                      <FontAwesomeIcon icon={faPen} />
+                                    </a>
+                                  </div>
+                                  <input
+                                    type="file"
+                                    accept=""
+                                    className="lab-profile-file-input"
+                                  />
                                 </div>
-                                <input
-                                  type="file"
-                                  accept=""
-                                  className="lab-profile-file-input"
-                                />
+
+                                <div>
+                                  <h4 className="lg_title ">{profiles?.name}</h4>
+                                  <p className="first_para">ID : #{profiles?._id}</p>
+                                </div>
+
+
+
                               </div>
 
-                              <div>
-                                <h4 className="lg_title ">Advance Lab Tech</h4>
-                                <p className="first_para">ID : #94969548</p>
+
+                              <div className="d-flex align-items-center justify-content-center gap-2 carding-bx">
+                                <div className="add-patients-clients" ref={cardRef}>
+
+                                  <div className="chip-card"></div>
+                                  <img src="/lab-card.png" alt="" />
+                                  <div className="patient-card-details">
+                                    <h4>{labPerson?.name}</h4>
+                                    <p>Laboratory ID</p>
+                                    <h6>Lab{profiles?._id?.slice(-10)}</h6>
+                                  </div>
+                                  <div className="qr-code-generate"></div>
+
+                                </div>
+
+                                <div className="d-flex flex-column gap-2 card-down-bx">
+                                  <button className="patient-crd-down-btn" onClick={handleCardDownload}><FontAwesomeIcon icon={faDownload} /></button>
+
+                                  <button className="patient-crd-down-btn crd-share-btn"><FontAwesomeIcon icon={faShareNodes} /></button>
+                                </div>
                               </div>
-
-
-
                             </div>
-
-
-                                <div className="d-flex align-items-center justify-content-center gap-2 carding-bx">
-                                                    <div className="add-patients-clients">
-
-                                                        <div className="chip-card"></div>
-                                                        <img src="/lab-card.png" alt="" />
-                                                        <div className="patient-card-details">
-                                                            <h4>RAVI Kumar</h4>
-                                                            <p>Laboratory ID</p>
-                                                            <h6>Lab202425</h6>
-                                                        </div>
-                                                        <div className="qr-code-generate"></div>
-
-                                                    </div>
-
-                                                    <div className="d-flex flex-column gap-2 card-down-bx">
-                                                        <button className="patient-crd-down-btn"><FontAwesomeIcon icon={faDownload} /></button>
-
-                                                        <button className="patient-crd-down-btn crd-share-btn"><FontAwesomeIcon icon={faShareNodes} /></button>
-                                                    </div>
-                                                </div>
-                           </div>
 
 
                           </div>
@@ -182,7 +269,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="Advance Lab Tech"
+                                value={profiles?.name}
                               />
                             </div>
                           </div>
@@ -194,7 +281,7 @@ function Profile() {
                                 type="number"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="9665190183"
+                                value={profiles?.contactNumber}
                               />
                             </div>
                           </div>
@@ -206,7 +293,7 @@ function Profile() {
                                 type="email"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="advancelab68gmail.com "
+                                value={profiles?.email}
                               />
                             </div>
                           </div>
@@ -215,10 +302,10 @@ function Profile() {
                             <div className="custom-frm-bx">
                               <label htmlFor="">Gst Number</label>
                               <input
-                                type="number"
+                                type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="9704789479247"
+                                value={profiles?.gstNumber}
                               />
                             </div>
                           </div>
@@ -226,7 +313,7 @@ function Profile() {
                           <div className="col-lg-12">
                             <div className="custom-frm-bx">
                               <label htmlFor="">About</label>
-                              <textarea name="" id="" className="form-control patient-frm-control" placeholder="Advance Lab Tech, a dedicated cardiologist, brings a wealth of experience to Golden Gate Cardiology Center in Golden Gate, "></textarea>
+                              <textarea name="" id="" className="form-control patient-frm-control" value={profiles?.about}></textarea>
                             </div>
                           </div>
                         </div>
@@ -236,33 +323,35 @@ function Profile() {
 
                   <div className="tab-pane fade" id="profile" role="tabpanel">
                     <div className="sub-tab-brd lab-thumb-bx">
-                     <div className="row mb-3">
-                      <h5>Thumbnail image</h5>
-                      <div className="col-lg-4">
-                       <div className="lab-images-bx">
-                          <img src="/thumb.png" alt="" />
+                      <div className="row mb-3">
+                        <h5>Thumbnail image</h5>
+                        <div className="col-lg-4">
+                          <div className="lab-images-bx">
+                            <img src={labImg?.thumbnail ? `${base_url}/${labImg?.thumbnail}` : "/thumb.png"} alt="" />
+                          </div>
                         </div>
                       </div>
-                     </div>
 
-                     <div className="row">
-                            <h5>Image</h5>
-                      <div className="col-lg-4 mb-3">
-                         <div className="lab-multi-image-bx">
-                          <img src="/pic-first.png" alt="" />
+                      <div className="row">
+                        <h5>Image</h5>
+                        {labImg?.labImg?.length > 0 &&
+                          labImg?.labImg?.map((item, key) =>
+                            <div className="col-lg-4 mb-3" key={key}>
+                              <div className="lab-multi-image-bx">
+                                <img src={item ? `${base_url}/${item}` : "/pic-first.png"} alt="" />
+                              </div>
+                            </div>)}
+                        {/* <div className="col-lg-4 mb-3">
+                          <div className="lab-multi-image-bx">
+                            <img src="/pic-two.png" alt="" />
+                          </div>
                         </div>
+                        <div className="col-lg-4 mb-3">
+                          <div className="lab-multi-image-bx">
+                            <img src="/pic-three.png" alt="" />
+                          </div>
+                        </div> */}
                       </div>
-                      <div className="col-lg-4 mb-3">
-                         <div className="lab-multi-image-bx">
-                          <img src="/pic-two.png" alt="" />
-                        </div>
-                      </div>
-                      <div className="col-lg-4 mb-3">
-                         <div className="lab-multi-image-bx">
-                          <img src="/pic-three.png" alt="" />
-                        </div>
-                      </div>
-                     </div>
                     </div>
                   </div>
 
@@ -277,7 +366,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="123 Oak Street, Jaipur"
+                                value={labAddress?.fullAddress}
                               />
                             </div>
                           </div>
@@ -289,7 +378,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="India "
+                                value={labAddress?.country}
                               />
                             </div>
                           </div>
@@ -301,7 +390,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="Rajasthan "
+                                value={labAddress?.state}
                               />
                             </div>
                           </div>
@@ -313,7 +402,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="Jaipur"
+                                value={labAddress?.city}
                               />
                             </div>
                           </div>
@@ -325,7 +414,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="302028"
+                                value={labAddress?.pinCode}
                               />
                             </div>
                           </div>
@@ -346,7 +435,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="LIC98r37894789"
+                                value={labLicense?.labLicenseNumber}
                               />
                             </div>
                           </div>
@@ -354,16 +443,16 @@ function Profile() {
                           <div className="col-lg-6">
                             <div className="custom-frm-bx">
                               <label htmlFor="">Lab License  Documents</label>
-                            <div className="form-control lablcense-frm-control">
-                             <div className="lablcense-bx">
-                               <div>
-                                <h6 ><FontAwesomeIcon icon={faFilePdf} style={{color : "#EF5350"}}/> Lablcense.pdf</h6>
+                              <div className="form-control lablcense-frm-control">
+                                <div className="lablcense-bx">
+                                  <div>
+                                    <h6 ><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} />  {labLicense?.licenseFile?.split("\\").pop()?.split("-").pop()}</h6>
+                                  </div>
+                                  <div className="">
+                                    <button type="button" className="pdf-download-tbn" onClick={() => handleDownload(labLicense?.licenseFile)}>Download</button>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="">
-                                <button type="" className="pdf-download-tbn">Download</button>
-                              </div>
-                             </div>
-                            </div>
                             </div>
                           </div>
 
@@ -372,33 +461,35 @@ function Profile() {
                           </div>
 
 
-                          <div className="col-lg-6">
-                            <div className="custom-frm-bx">
-                              <label htmlFor="">Certified Name</label>
-                              <input
-                                type="email"
-                                className="form-control patient-frm-control"
-                                placeholder=""
-                                value="ISO Certified "
-                              />
-                            </div>
-                          </div>
-
-                          <div className="col-lg-6">
-                            <div className="custom-frm-bx">
-                              <label htmlFor="">Certified Documents</label>
-                              <div className="form-control lablcense-frm-control">
-                             <div className="lablcense-bx">
-                               <div>
-                                <h6 ><FontAwesomeIcon icon={faFilePdf} style={{color : "#EF5350"}}/> Lablcense.pdf</h6>
+                          {labLicense?.labCert?.map((item, key) =>
+                            <>
+                              <div className="col-lg-6">
+                                <div className="custom-frm-bx">
+                                  <label htmlFor="">Certified Name</label>
+                                  <input
+                                    type="email"
+                                    className="form-control patient-frm-control"
+                                    placeholder=""
+                                    value={item?.certName}
+                                  />
+                                </div>
                               </div>
-                              <div className="">
-                                <button type="" className="pdf-download-tbn">Download</button>
+                              <div className="col-lg-6">
+                                <div className="custom-frm-bx">
+                                  <label htmlFor="">Certified Documents</label>
+                                  <div className="form-control lablcense-frm-control">
+                                    <div className="lablcense-bx">
+                                      <div>
+                                        <h6 ><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} />  {item?.certFile?.split("\\").pop()?.split("-").pop()}</h6>
+                                      </div>
+                                      <div className="">
+                                        <button type="button" className="pdf-download-tbn" onClick={() => handleDownload(item?.certFile)}>Download</button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                             </div>
-                            </div>
-                            </div>
-                          </div>
+                            </>)}
                         </div>
                       </form>
                     </div>
@@ -410,7 +501,7 @@ function Profile() {
                           <div className="col-lg-12">
                             <div className="lab-profile-mega-bx">
                               <div className="lab-profile-avatr-bx lab-contact-prson">
-                                <img src="/user-avatar.png" alt="" />
+                                <img src={labPerson?.photo ? `${base_url}/${labPerson?.photo}` : "/user-avatar.png"} alt="" />
                                 <div className="lab-profile-edit-avatr">
                                   <a href="javascript:void(0)" className="edit-btn cursor-pointer">
                                     <FontAwesomeIcon icon={faPen} />
@@ -424,7 +515,7 @@ function Profile() {
                               </div>
 
                               <div>
-                                <h4 className="lg_title ">Jonh Smith</h4>
+                                <h4 className="lg_title ">{labPerson?.name}</h4>
                               </div>
 
 
@@ -439,7 +530,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="Jonh Smith"
+                                value={labPerson?.name}
                               />
                             </div>
                           </div>
@@ -451,7 +542,7 @@ function Profile() {
                                 type="number"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="9665190183"
+                                value={labPerson?.contactNumber}
                               />
                             </div>
                           </div>
@@ -463,7 +554,7 @@ function Profile() {
                                 type="email"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="advancelab68gmail.com "
+                                value={labPerson?.email}
                               />
                             </div>
                           </div>
@@ -475,7 +566,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="Male"
+                                value={labPerson?.gender}
                               />
                             </div>
                           </div>
@@ -491,51 +582,51 @@ function Profile() {
       </div>
 
       {/*Payment Status Popup Start  */}
-            {/* data-bs-toggle="modal" data-bs-target="#edit-Request" */}
-            <div className="modal step-modal" id="edit-Request" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-              aria-labelledby="staticBackdropLabel" aria-hidden="true">
-              <div className="modal-dialog modal-dialog-centered modal-md">
-                <div className="modal-content rounded-5">
-                  <div className="d-flex align-items-center justify-content-between popup-nw-brd px-4 py-3">
-                    <div>
-                      <h6 className="lg_title mb-0">Edit Request from Admin</h6>
-                    </div>
-                    <div>
-                       <button type="button" className="" data-bs-dismiss="modal" aria-label="Close" style={{color: "#00000040"}}>
-                                    <FontAwesomeIcon icon={faCircleXmark} />
-                                </button>
-                    </div>
-                  </div>
-                  <div className="modal-body px-4">
-                    <div className="row ">
-                      <div className="col-lg-12">
-                        <div className="edit-request-bx">
-                          <div className="float-left">
-                            <img src="/edit-reqest.png" alt="" />
-                          </div>
-                          <div className="float-right">
-                              <p>You can edit your profile when you click on the request button. The edit option will appear after your request is approved. After making changes, click on save and you will have to wait for approval
-</p>
-                          </div>
-                        </div>
-
-                        <div className="custom-frm-bx">
-                          <label htmlFor="">Note</label>
-                          <textarea name="" id="" className="form-control"></textarea>
-                          
-                        </div>
-      
-                        <div>
-                          <button type="button" onClick={()=> navigate("/approve-profile")} data-bs-dismiss="modal" aria-label="Close" className="nw-thm-btn w-100" > Send Edit Request </button>
-                        </div>
-      
-                      </div>
-                    </div>
-                  </div>
-                </div>
+      {/* data-bs-toggle="modal" data-bs-target="#edit-Request" */}
+      <div className="modal step-modal" id="edit-Request" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-centered modal-md">
+          <div className="modal-content rounded-5">
+            <div className="d-flex align-items-center justify-content-between popup-nw-brd px-4 py-3">
+              <div>
+                <h6 className="lg_title mb-0">Edit Request from Admin</h6>
+              </div>
+              <div>
+                <button type="button" className="" data-bs-dismiss="modal" aria-label="Close" style={{ color: "#00000040" }}>
+                  <FontAwesomeIcon icon={faCircleXmark} />
+                </button>
               </div>
             </div>
-            {/*  Payment Status Popup End */}
+            <div className="modal-body px-4">
+              <div className="row ">
+                <form onSubmit={sendEditRequest} className="col-lg-12">
+                  <div className="edit-request-bx">
+                    <div className="float-left">
+                      <img src="/edit-reqest.png" alt="" />
+                    </div>
+                    <div className="float-right">
+                      <p>You can edit your profile when you click on the request button. The edit option will appear after your request is approved. After making changes, click on save and you will have to wait for approval
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="custom-frm-bx">
+                    <label htmlFor="">Note</label>
+                    <textarea name="" value={message} required onChange={(e)=>setMessage(e.target.value)} id="" className="form-control"></textarea>
+
+                  </div>
+
+                  <div>
+                    <button type="submit" data-bs-dismiss="modal" aria-label="Close" className="nw-thm-btn w-100" > Send Edit Request </button>
+                  </div>
+
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/*  Payment Status Popup End */}
 
     </>
   );

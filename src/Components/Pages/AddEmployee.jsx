@@ -2,8 +2,115 @@ import { IoCloudUploadOutline } from "react-icons/io5";
 import { FaPlusSquare } from "react-icons/fa";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { getSecureApiData } from "../../services/api";
+import { Tab } from "bootstrap";
 
 function AddEmployee() {
+    const userId = localStorage.getItem('userId')
+    const [permisions, setPermissions] = useState([])
+    const [userInfo, setUserInfo] = useState({
+        name: '',
+        address: '',
+        dob: '',
+        contactNumber: '',
+        state: '',
+        city: '',
+        phoneCode: '',
+        contactInformation: {}, // can initialize contact schema here if needed
+        profileImage: '',
+        status: 'active',
+        labId: '',
+    });
+
+    // 2. Professional Info state
+    const [professionalInfo, setProfessionalInfo] = useState({
+        labCert: [], // array of certificates
+        profession: '',
+        specialization: '',
+        totalExperience: '',
+        professionalBio: '',
+        education: [], // array of education objects
+        empId: '', // link to lab-staff
+    });
+
+    // 3. Employment Info state
+    const [employmentInfo, setEmploymentInfo] = useState({
+        position: '',
+        joinDate: '',
+        onLeaveDate: '',
+        contractStart: '',
+        contractEnd: '',
+        salary: '',
+        note: '',
+        empId: '', // link to lab-staff
+    });
+
+    // 4. Access Info state
+    const [accessInfo, setAccessInfo] = useState({
+        userName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        permissionId: '', // ref to lab-permission
+        empId: '', // link to lab-staff
+    });
+    const handleUserChange = (e) => {
+        const { name, value } = e.target;
+        setUserInfo((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    // 2. Professional Info
+    const handleProfessionalChange = (e) => {
+        const { name, value } = e.target;
+        setProfessionalInfo((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    // 3. Employment Info
+    const handleEmploymentChange = (e) => {
+        const { name, value } = e.target;
+        setEmploymentInfo((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    // 4. Access Info
+    const handleAccessChange = (e) => {
+        const { name, value } = e.target;
+        setAccessInfo((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+    const fetchLabPermission = async () => {
+        try {
+            const response = await getSecureApiData(`lab/permission/${userId}`);
+            if (response.success) {
+                setPermissions(response.data)
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+    useEffect(() => {
+        fetchLabPermission()
+    }, [])
+    const handleBack = (e,name) => {
+    e.preventDefault(); // prevent page reload
+    const tabTrigger = document.querySelector(name); // the tab button for "contact"
+    const tab = new Tab(tabTrigger);
+    tab.show();
+};
     return (
         <>
             <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -154,7 +261,10 @@ function AddEmployee() {
                                                             type="text"
                                                             className="form-control"
                                                             placeholder="Enter name"
-                                                            value=""
+                                                            value={userInfo.name}
+                                                            name="name"
+                                                            onChange={handleUserChange}
+                                                            required
                                                         />
                                                     </div>
                                                 </div>
@@ -166,7 +276,10 @@ function AddEmployee() {
                                                             type="date"
                                                             className="form-control "
                                                             placeholder=""
-                                                            value=""
+                                                            value={userInfo.dob}
+                                                            name="dob"
+                                                            onChange={handleUserChange}
+                                                            required
                                                         />
                                                     </div>
                                                 </div>
@@ -174,7 +287,10 @@ function AddEmployee() {
                                                 <div className="col-lg-4 col-md-6 col-sm-12">
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">Gender</label>
-                                                        <select className="form-select nw-frm-control">
+                                                        <select className="form-select nw-frm-control" value={userInfo.gender}
+                                                            name="gender"
+                                                            onChange={handleUserChange}
+                                                            required>
                                                             <option>---Select Gender---</option>
                                                         </select>
                                                     </div>
@@ -183,14 +299,20 @@ function AddEmployee() {
                                                 <div className="col-lg-12">
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">Address</label>
-                                                        <textarea name="" id="" className="form-control" placeholder="Enter Address"></textarea>
+                                                        <textarea value={userInfo.address}
+                                                            name="address"
+                                                            onChange={handleUserChange}
+                                                            required id="" className="form-control" placeholder="Enter Address"></textarea>
                                                     </div>
                                                 </div>
 
                                                 <div className="col-lg-4 col-md-6 col-sm-12">
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">State</label>
-                                                        <select className="form-select nw-frm-control">
+                                                        <select className="form-select nw-frm-control" value={userInfo.state}
+                                                            name="state"
+                                                            onChange={handleUserChange}
+                                                            required>
                                                             <option>---Select State---</option>
                                                         </select>
                                                     </div>
@@ -199,7 +321,10 @@ function AddEmployee() {
                                                 <div className="col-lg-4 col-md-6 col-sm-12">
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">City</label>
-                                                        <select className="form-select nw-frm-control">
+                                                        <select className="form-select nw-frm-control" value={userInfo.city}
+                                                            name="city"
+                                                            onChange={handleUserChange}
+                                                            required>
                                                             <option>---Select City---</option>
                                                         </select>
                                                     </div>
@@ -212,7 +337,10 @@ function AddEmployee() {
                                                             type="text"
                                                             className="form-control "
                                                             placeholder="Enter Pin code"
-                                                            value=""
+                                                            value={userInfo.pinCode}
+                                                            name="pinCode"
+                                                            onChange={handleUserChange}
+                                                            required
                                                         />
 
                                                     </div>
@@ -231,7 +359,10 @@ function AddEmployee() {
                                                             type="number"
                                                             className="form-control "
                                                             placeholder="Enter  mobile number"
-                                                            value=""
+                                                            value={userInfo.contactInformation.contactNumber}
+                                                            name="contactNumber"
+                                                            onChange={handleUserChange}
+                                                            required
                                                         />
 
                                                     </div>
@@ -244,7 +375,10 @@ function AddEmployee() {
                                                             type="email"
                                                             className="form-control "
                                                             placeholder="Enter  Email"
-                                                            value=""
+                                                            value={userInfo.contactInformation.email}
+                                                            name="email"
+                                                            onChange={handleUserChange}
+                                                            required
                                                         />
 
                                                     </div>
@@ -257,7 +391,10 @@ function AddEmployee() {
                                                             type="email"
                                                             className="form-control "
                                                             placeholder="Enter  Emergency Contact Name"
-                                                            value=""
+                                                            value={userInfo.contactInformation.emergencyContactName}
+                                                            name="emergencyContactName"
+                                                            onChange={handleUserChange}
+                                                            required
                                                         />
 
                                                     </div>
@@ -270,14 +407,17 @@ function AddEmployee() {
                                                             type="email"
                                                             className="form-control "
                                                             placeholder="Enter  Emergency Contact Phone"
-                                                            value=""
+                                                            value={userInfo.contactInformation.emergencyContactNumber}
+                                                            name="emergencyContactNumber"
+                                                            onChange={handleUserChange}
+                                                            required
                                                         />
                                                     </div>
                                                 </div>
 
-                                                 <div className="text-end">
-                                                <button type="submit" className="nw-thm-btn">Save & Continue</button>
-                                            </div>
+                                                <div className="text-end">
+                                                    <button type="submit" className="nw-thm-btn">Save & Continue</button>
+                                                </div>
 
                                             </div>
                                         </form>
@@ -295,7 +435,10 @@ function AddEmployee() {
                                                             type="text"
                                                             className="form-control"
                                                             placeholder="e.g. Pharmacist, Nurse, etc."
-                                                            value=""
+                                                            value={professionalInfo.profession}
+                                                            name="profession"
+                                                            onChange={handleProfessionalChange}
+                                                            required
                                                         />
                                                     </div>
                                                 </div>
@@ -307,7 +450,10 @@ function AddEmployee() {
                                                             type="text"
                                                             className="form-control "
                                                             placeholder="e.g. Cardiology, Pediatrics, etc."
-                                                            value=""
+                                                            value={professionalInfo.specialization}
+                                                            name="specialization"
+                                                            onChange={handleProfessionalChange}
+                                                            required
                                                         />
                                                     </div>
                                                 </div>
@@ -319,7 +465,10 @@ function AddEmployee() {
                                                             type="text"
                                                             className="form-control "
                                                             placeholder="Enter  Total Experience"
-                                                            value=""
+                                                            value={professionalInfo.totalExperience}
+                                                            name="totalExperience"
+                                                            onChange={handleProfessionalChange}
+                                                            required
                                                         />
                                                     </div>
                                                 </div>
@@ -327,7 +476,10 @@ function AddEmployee() {
                                                 <div className="col-lg-12">
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">Professional Bio</label>
-                                                        <textarea name="" id="" className="form-control" placeholder="Enter professional biography and experience"></textarea>
+                                                        <textarea value={professionalInfo.professionalBio}
+                                                            name="professionalBio"
+                                                            onChange={handleProfessionalChange}
+                                                            required id="" className="form-control" placeholder="Enter professional biography and experience"></textarea>
                                                     </div>
                                                 </div>
 
@@ -350,7 +502,10 @@ function AddEmployee() {
                                                                 type="number"
                                                                 className="form-control "
                                                                 placeholder="Enter University / Institution"
-                                                                value=""
+                                                                value={professionalInfo.education.university}
+                                                                name="university"
+                                                                onChange={handleProfessionalChange}
+                                                                required
                                                             />
 
                                                         </div>
@@ -363,7 +518,10 @@ function AddEmployee() {
                                                                 type="email"
                                                                 className="form-control "
                                                                 placeholder="Enter Degree / Qualification"
-                                                                value=""
+                                                                value={professionalInfo.education.degree}
+                                                                name="degree"
+                                                                onChange={handleProfessionalChange}
+                                                                required
                                                             />
 
                                                         </div>
@@ -376,33 +534,39 @@ function AddEmployee() {
                                                                 type="email"
                                                                 className="form-control "
                                                                 placeholder="Enter Year form"
-                                                                value=""
+                                                                value={professionalInfo.education.yearFrom}
+                                                                name="yearFrom"
+                                                                onChange={handleProfessionalChange}
+                                                                required
                                                             />
 
                                                         </div>
                                                     </div>
 
                                                     <div className="col-lg-3 col-md-6 col-sm-12">
-                                                      <div className="return-box">
-                                                          <div className="custom-frm-bx flex-column flex-grow-1">
-                                                            <label htmlFor="">Year to</label>
-                                                            <input
-                                                                type="email"
-                                                                className="form-control "
-                                                                placeholder="Enter  Year to"
-                                                                value=""
-                                                            />
+                                                        <div className="return-box">
+                                                            <div className="custom-frm-bx flex-column flex-grow-1">
+                                                                <label htmlFor="">Year to</label>
+                                                                <input
+                                                                    type="email"
+                                                                    className="form-control "
+                                                                    placeholder="Enter  Year to"
+                                                                    value={professionalInfo.education.yearTo}
+                                                                    name="yearTo"
+                                                                    onChange={handleProfessionalChange}
+                                                                    required
+                                                                />
 
+                                                            </div>
+
+                                                            <div className="">
+                                                                <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
+                                                            </div>
                                                         </div>
-
-                                                        <div className="">
-                                                    <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
-                                                </div>
-                                                      </div>
                                                     </div>
                                                 </div>
 
-                                                
+
 
                                             </div>
 
@@ -448,26 +612,26 @@ function AddEmployee() {
                                                     </div>
 
                                                     <div className="col-lg-3 col-md-6 col-sm-12">
-                                                         <div className="return-box">
-                                                          <div className="custom-frm-bx flex-column flex-grow-1">
-                                                            <label htmlFor="">Year to</label>
-                                                            <input
-                                                                type="email"
-                                                                className="form-control "
-                                                                placeholder="Enter  Year to"
-                                                                value=""
-                                                            />
+                                                        <div className="return-box">
+                                                            <div className="custom-frm-bx flex-column flex-grow-1">
+                                                                <label htmlFor="">Year to</label>
+                                                                <input
+                                                                    type="email"
+                                                                    className="form-control "
+                                                                    placeholder="Enter  Year to"
+                                                                    value=""
+                                                                />
 
+                                                            </div>
+
+                                                            <div className="">
+                                                                <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
+                                                            </div>
                                                         </div>
-
-                                                        <div className="">
-                                                    <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
-                                                </div>
-                                                      </div>
                                                     </div>
                                                 </div>
 
-                                               
+
 
 
 
@@ -498,25 +662,25 @@ function AddEmployee() {
                                                     </div>
 
                                                     <div className="col-lg-6 col-md-6 col-sm-12">
-                                                       <div className="return-box">
-                                                         <div className="custom-frm-bx mb-3 flex-column flex-grow-1">
-                                                            <label className="">Certificate Upload</label>
+                                                        <div className="return-box">
+                                                            <div className="custom-frm-bx mb-3 flex-column flex-grow-1">
+                                                                <label className="">Certificate Upload</label>
 
-                                                            <div className="custom-file-wrapper">
-                                                                <span className="em-browse-btn">Browse File</span>
-                                                                <span className="em-file-name">No Choose file</span>
-                                                                <input type="file" className="real-file-input" />
+                                                                <div className="custom-file-wrapper">
+                                                                    <span className="em-browse-btn">Browse File</span>
+                                                                    <span className="em-file-name">No Choose file</span>
+                                                                    <input type="file" className="real-file-input" />
+                                                                </div>
+                                                            </div>
+
+                                                            <div>
+                                                                <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
                                                             </div>
                                                         </div>
 
-                                                        <div>
-                                                            <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
-                                                        </div>
-                                                       </div>
-
                                                     </div>
                                                 </div>
-                                                
+
 
                                             </div>
 
@@ -536,45 +700,38 @@ function AddEmployee() {
                                                     </div>
 
                                                     <div className="col-lg-6 col-md-6 col-sm-12">
-                                                          <div className="return-box">
-                                                         <div className="custom-frm-bx mb-3 flex-column flex-grow-1">
-                                                            <label className="">Certificate Upload</label>
+                                                        <div className="return-box">
+                                                            <div className="custom-frm-bx mb-3 flex-column flex-grow-1">
+                                                                <label className="">Certificate Upload</label>
 
-                                                            <div className="custom-file-wrapper">
-                                                                <span className="em-browse-btn">Browse File</span>
-                                                                <span className="em-file-name">No Choose file</span>
-                                                                <input type="file" className="real-file-input" />
+                                                                <div className="custom-file-wrapper">
+                                                                    <span className="em-browse-btn">Browse File</span>
+                                                                    <span className="em-file-name">No Choose file</span>
+                                                                    <input type="file" className="real-file-input" />
+                                                                </div>
+                                                            </div>
+
+                                                            <div>
+                                                                <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
                                                             </div>
                                                         </div>
 
-                                                        <div>
-                                                            <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
-                                                        </div>
-                                                       </div>
-
                                                     </div>
                                                 </div>
-
-                                               
-
                                             </div>
-
                                             <div className="text-end my-3">
                                                 <a href="javascript:void(0)" className="add-employee-btn"><FaPlusSquare /> Add More</a>
                                             </div>
-
                                             <div className="d-flex align-items-center justify-content-end gap-3">
-                                                    <button type="submit" className="nw-thm-btn outline rounded-3">Back </button>
-                                                    <button type="submit" className="nw-thm-btn rounded-3" >Save & Continue</button>
-                                                </div>
-
+                                                <button type="button" onClick={(e)=>handleBack(e,'#home-tab')} className="nw-thm-btn outline rounded-3">Back </button>
+                                                <button type="submit" className="nw-thm-btn rounded-3" >Save & Continue</button>
+                                            </div>
                                         </form>
                                     </div>
-
                                     <div className="tab-pane fade" id="contact" role="tabpanel">
                                         <form action="">
                                             <div className="row">
-                                             
+
                                                 <div className="d-flex align-items-center gap-3">
                                                     <h4 className="lg_title text-black">Employment Details</h4>
                                                     <div className="switch">
@@ -683,10 +840,10 @@ function AddEmployee() {
                                             </div>
 
 
-                                             <div className="d-flex align-items-center justify-content-end gap-3">
-                                                    <button type="submit" className="nw-thm-btn outline rounded-3">Back </button>
-                                                    <button type="submit" className="nw-thm-btn rounded-3" >Save & Continue</button>
-                                                </div>
+                                            <div className="d-flex align-items-center justify-content-end gap-3">
+                                                <button type="button" className="nw-thm-btn outline rounded-3" onClick={(e)=>handleBack(e,'#profile-tab')}>Back </button>
+                                                <button type="submit" className="nw-thm-btn rounded-3" >Save & Continue</button>
+                                            </div>
 
                                         </form>
                                     </div>
@@ -703,7 +860,10 @@ function AddEmployee() {
                                                             type="text"
                                                             className="form-control "
                                                             placeholder="Enter Username"
-                                                            value=""
+                                                            value={accessInfo.userName}
+                                                            onChange={handleAccessChange}
+                                                            name="userName"
+                                                            required
                                                         />
                                                     </div>
                                                 </div>
@@ -715,7 +875,10 @@ function AddEmployee() {
                                                             type="email"
                                                             className="form-control "
                                                             placeholder="Enter Email  Address"
-                                                            value=""
+                                                            value={accessInfo.email}
+                                                            onChange={handleAccessChange}
+                                                            name="email"
+                                                            required
                                                         />
                                                     </div>
                                                 </div>
@@ -727,7 +890,10 @@ function AddEmployee() {
                                                             type="password"
                                                             className="form-control "
                                                             placeholder="Enter Password"
-                                                            value=""
+                                                            value={accessInfo.password}
+                                                            onChange={handleAccessChange}
+                                                            name="password"
+                                                            required
                                                         />
                                                     </div>
                                                 </div>
@@ -739,7 +905,10 @@ function AddEmployee() {
                                                             type="password"
                                                             className="form-control "
                                                             placeholder="Enter Confirm Password"
-                                                            value=""
+                                                            value={accessInfo.confirmPassword}
+                                                            onChange={handleAccessChange}
+                                                            name="confirmPassword"
+                                                            required
                                                         />
                                                     </div>
                                                 </div>
@@ -753,12 +922,16 @@ function AddEmployee() {
                                                         <label htmlFor="">Permission  Type</label>
                                                         <select name="" id="" className="form-select nw-frm-control">
                                                             <option value="">---Select Permission Type---</option>
+                                                            {permisions?.length > 0 &&
+                                                                permisions?.map((item, key) =>
+                                                                    <option value={item?._id} key={key}>{item?.name}</option>)}
                                                         </select>
                                                     </div>
                                                 </div>
 
                                                 <div className="d-flex align-items-center justify-content-end gap-3">
-                                                    <button type="submit" className="nw-thm-btn outline rounded-3">Back </button>
+                                                    <button className="nw-thm-btn outline rounded-3" onClick={(e)=>handleBack(e,'#contact-tab')}
+                                                      >Back </button>
                                                     <button type="submit" className="nw-thm-btn rounded-3" >Submit</button>
                                                 </div>
 

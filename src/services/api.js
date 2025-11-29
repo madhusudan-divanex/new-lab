@@ -46,13 +46,12 @@ export const securePostData=async(endpoint,data)=>{
     })
     return res.data
 }
-export const deleteApiData=async(endpoint)=>{
-
-
-    const res=await axios.delete(`${base_url}/${endpoint}`,{
-        headers:{
-            'Token': `${localStorage.getItem("token")}`
-        }
-    })
-    return res.data
-}
+export const deleteApiData = async (endpoint, data) => {
+  const res = await axios.delete(`${base_url}/${endpoint}`, {
+    data: data,
+    headers: {
+      Token: localStorage.getItem("token")
+    }
+  });
+  return res.data;
+};

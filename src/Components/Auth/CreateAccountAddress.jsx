@@ -69,7 +69,6 @@ function CreateAccountAddress() {
                     <div className="row justify-content-center mb-4">
                         <div className="col-lg-8">
                             <div className="account-step-main-bx">
-
                                 <NavLink to="/create-account">
                                     <div className="account-step-crd account-step-one account-progress-done">
                                         <div className="account-step-bx account-step-complete">
@@ -114,15 +113,8 @@ function CreateAccountAddress() {
                                         <h6>Upload</h6>
                                     </div>
                                 </NavLink>
-
                             </div>
-
-
-
-
-
                         </div>
-
                         <div className="col-lg-12">
                             <div>
                                 {/* <img src="/footer-bnner.png" alt="" /> */}
@@ -140,9 +132,6 @@ function CreateAccountAddress() {
                                             <h3>Laboratory Address</h3>
                                             <p>Enter  Laboratory  Address </p>
                                         </div>
-
-
-
                                         <div className="custom-frm-bx">
                                             <label htmlFor="">Full Address</label>
                                             <input type="text" className="form-control" name="fullAddress" value={formData.fullAddress} onChange={handleChange} placeholder="Enter Full Address" />
@@ -187,11 +176,7 @@ function CreateAccountAddress() {
                                         <div className='text-center mt-5'>
                                             <span className='do-account-title'>Already have an account? <NavLink to="/login" className='lab-login-forgot-btn'>Login here</NavLink></span>
                                         </div>
-
                                     </div>
-
-
-
                                 </div>
                             </form>
                         </div>
@@ -207,13 +192,6 @@ function CreateAccountAddress() {
 
                 </div>
             </section>
-
-
-
-
-
-
-
         </>
     )
 }

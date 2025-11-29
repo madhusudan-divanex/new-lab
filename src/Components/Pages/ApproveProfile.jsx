@@ -5,9 +5,49 @@ import {
   faFilePdf,
   faPen
 } from "@fortawesome/free-solid-svg-icons";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { fetchUserDetail } from "../../redux/features/userSlice";
+import base_url from "../../../baseUrl";
 
 function ApproveProfile() {
+  const navigate=useNavigate()
+  const dispatch = useDispatch()
+  const { profiles, labPerson, labAddress, labImg,
+    rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
+  useEffect(() => {
+    dispatch(fetchUserDetail())
+  }, [dispatch])
+  const handleDownload = async (filePath) => {
+    if (!filePath) return;
+
+    const fileUrl = `${base_url}/${filePath}`;
+    const fileName = filePath.split("\\").pop().split("-").pop();
+
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName; // forces download
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
+  useEffect(()=>{
+    if(profiles && profiles.status!=='verify'){
+      navigate('/profile')
+    }
+  },[profiles])
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -33,11 +73,11 @@ function ApproveProfile() {
                 </nav>
               </div>
             </div>
-            <div className="add-nw-bx">
+            {/* <div className="add-nw-bx">
               <a href="javascript:void(0)" className="add-nw-btn nw-thm-btn sub-nw-brd-tbn"  >
                 Send Profile Edit Request
               </a>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -147,8 +187,8 @@ function ApproveProfile() {
                               </div>
 
                               <div>
-                                <h4 className="lg_title ">Advance Lab Tech</h4>
-                                <p className="first_para">ID : #94969548</p>
+                                <h4 className="lg_title ">{profiles?.name}</h4>
+                                <p className="first_para">ID : #{profiles?._id?.slice(-10)}</p>
                               </div>
 
 
@@ -163,7 +203,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="Advance Lab Tech"
+                                value={profiles?.name}
                               />
                             </div>
                           </div>
@@ -175,7 +215,7 @@ function ApproveProfile() {
                                 type="number"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="9665190183"
+                                value={profiles?.contactNumber}
                               />
                             </div>
                           </div>
@@ -187,7 +227,7 @@ function ApproveProfile() {
                                 type="email"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="advancelab68gmail.com "
+                                value={profiles?.email}
                               />
                             </div>
                           </div>
@@ -196,10 +236,10 @@ function ApproveProfile() {
                             <div className="custom-frm-bx">
                               <label htmlFor="">Gst Number</label>
                               <input
-                                type="number"
+                                type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="9704789479247"
+                                value={profiles?.gstNumber}
                               />
                             </div>
                           </div>
@@ -207,7 +247,7 @@ function ApproveProfile() {
                           <div className="col-lg-12">
                             <div className="custom-frm-bx">
                               <label htmlFor="">About</label>
-                              <textarea name="" id="" className="form-control patient-frm-control" placeholder="Advance Lab Tech, a dedicated cardiologist, brings a wealth of experience to Golden Gate Cardiology Center in Golden Gate, "></textarea>
+                              <textarea name="" id="" className="form-control patient-frm-control" value={profiles?.about}></textarea>
                             </div>
                           </div>
                         </div>
@@ -221,19 +261,21 @@ function ApproveProfile() {
                         <h5>Thumbnail image</h5>
                         <div className="col-lg-4">
                           <div className="lab-images-bx">
-                            <img src="/thumb.png" alt="" />
+                            <img src={labImg?.thumbnail ? `${base_url}/${labImg?.thumbnail}` : "/thumb.png"} alt="" />
                           </div>
                         </div>
                       </div>
 
                       <div className="row">
                         <h5>Image</h5>
-                        <div className="col-lg-4 mb-3">
-                          <div className="lab-multi-image-bx">
-                            <img src="/pic-first.png" alt="" />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 mb-3">
+                        {labImg?.labImg?.length > 0 &&
+                          labImg?.labImg?.map((item, key) =>
+                            <div className="col-lg-4 mb-3" key={key}>
+                              <div className="lab-multi-image-bx">
+                                <img src={item ? `${base_url}/${item}` : "/pic-first.png"} alt="" />
+                              </div>
+                            </div>)}
+                        {/* <div className="col-lg-4 mb-3">
                           <div className="lab-multi-image-bx">
                             <img src="/pic-two.png" alt="" />
                           </div>
@@ -242,7 +284,7 @@ function ApproveProfile() {
                           <div className="lab-multi-image-bx">
                             <img src="/pic-three.png" alt="" />
                           </div>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   </div>
@@ -258,7 +300,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="123 Oak Street, Jaipur"
+                                value={labAddress?.fullAddress}
                               />
                             </div>
                           </div>
@@ -270,7 +312,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="India "
+                                value={labAddress?.country}
                               />
                             </div>
                           </div>
@@ -282,7 +324,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="Rajasthan "
+                                value={labAddress?.state}
                               />
                             </div>
                           </div>
@@ -294,7 +336,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="Jaipur"
+                                value={labAddress?.city}
                               />
                             </div>
                           </div>
@@ -306,7 +348,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="302028"
+                                value={labAddress?.pinCode}
                               />
                             </div>
                           </div>
@@ -327,7 +369,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="LIC98r37894789"
+                                value={labLicense?.labLicenseNumber}
                               />
                             </div>
                           </div>
@@ -338,10 +380,10 @@ function ApproveProfile() {
                               <div className="form-control lablcense-frm-control">
                                 <div className="lablcense-bx">
                                   <div>
-                                    <h6 ><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} /> Lablcense.pdf</h6>
+                                    <h6 ><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} />  {labLicense?.licenseFile?.split("\\").pop()?.split("-").pop()}</h6>
                                   </div>
                                   <div className="">
-                                    <button type="" className="pdf-download-tbn">Download</button>
+                                    <button type="button" className="pdf-download-tbn" onClick={() => handleDownload(labLicense?.licenseFile)}>Download</button>
                                   </div>
                                 </div>
                               </div>
@@ -353,33 +395,35 @@ function ApproveProfile() {
                           </div>
 
 
-                          <div className="col-lg-6">
-                            <div className="custom-frm-bx">
-                              <label htmlFor="">Certified Name</label>
-                              <input
-                                type="email"
-                                className="form-control patient-frm-control"
-                                placeholder=""
-                                value="ISO Certified "
-                              />
-                            </div>
-                          </div>
-
-                          <div className="col-lg-6">
-                            <div className="custom-frm-bx">
-                              <label htmlFor="">Certified Documents</label>
-                              <div className="form-control lablcense-frm-control">
-                                <div className="lablcense-bx">
-                                  <div>
-                                    <h6 ><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} /> Lablcense.pdf</h6>
-                                  </div>
-                                  <div className="">
-                                    <button type="" className="pdf-download-tbn">Download</button>
+                          {labLicense?.labCert?.map((item, key) =>
+                            <>
+                              <div className="col-lg-6">
+                                <div className="custom-frm-bx">
+                                  <label htmlFor="">Certified Name</label>
+                                  <input
+                                    type="email"
+                                    className="form-control patient-frm-control"
+                                    placeholder=""
+                                    value={item?.certName}
+                                  />
+                                </div>
+                              </div>
+                              <div className="col-lg-6">
+                                <div className="custom-frm-bx">
+                                  <label htmlFor="">Certified Documents</label>
+                                  <div className="form-control lablcense-frm-control">
+                                    <div className="lablcense-bx">
+                                      <div>
+                                        <h6 ><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} />  {item?.certFile?.split("\\").pop()?.split("-").pop()}</h6>
+                                      </div>
+                                      <div className="">
+                                        <button type="button" className="pdf-download-tbn" onClick={() => handleDownload(item?.certFile)}>Download</button>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
+                            </>)}
                         </div>
                       </form>
                     </div>
@@ -391,7 +435,7 @@ function ApproveProfile() {
                           <div className="col-lg-12">
                             <div className="lab-profile-mega-bx">
                               <div className="lab-profile-avatr-bx lab-contact-prson">
-                                <img src="/user-avatar.png" alt="" />
+                                <img src={labPerson?.photo ? `${base_url}/${labPerson?.photo}` : "/user-avatar.png"} alt="" />
                                 <div className="lab-profile-edit-avatr">
                                   <a href="javascript:void(0)" className="edit-btn cursor-pointer">
                                     <FontAwesomeIcon icon={faPen} />
@@ -405,7 +449,7 @@ function ApproveProfile() {
                               </div>
 
                               <div>
-                                <h4 className="lg_title ">Jonh Smith</h4>
+                                <h4 className="lg_title ">{labPerson?.name}</h4>
                               </div>
 
 
@@ -420,7 +464,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="Jonh Smith"
+                                value={labPerson?.name}
                               />
                             </div>
                           </div>
@@ -432,7 +476,7 @@ function ApproveProfile() {
                                 type="number"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="9665190183"
+                                value={labPerson?.contactNumber}
                               />
                             </div>
                           </div>
@@ -444,7 +488,7 @@ function ApproveProfile() {
                                 type="email"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="advancelab68gmail.com "
+                                value={labPerson?.email}
                               />
                             </div>
                           </div>
@@ -456,7 +500,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value="Male"
+                                value={labPerson?.gender}
                               />
                             </div>
                           </div>
