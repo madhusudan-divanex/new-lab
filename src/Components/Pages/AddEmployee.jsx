@@ -4,35 +4,38 @@ import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { getSecureApiData } from "../../services/api";
+import { getSecureApiData, securePostData } from "../../services/api";
 import { Tab } from "bootstrap";
+import { useSearchParams } from "react-router-dom";
+import base_url from "../../../baseUrl";
 
 function AddEmployee() {
+    const [searchParams] = useSearchParams()
+    const [staffId, setStaffId] = useState(searchParams.get('id'))
     const userId = localStorage.getItem('userId')
     const [permisions, setPermissions] = useState([])
     const [userInfo, setUserInfo] = useState({
         name: '',
         address: '',
         dob: '',
-        contactNumber: '',
         state: '',
         city: '',
-        phoneCode: '',
-        contactInformation: {}, // can initialize contact schema here if needed
-        profileImage: '',
+        pinCode: '',
+        contactInformation: { contactNumber: "", email: "", emergencyContactName: "", emergencyContactNumber: "" },
+        profileImage: null,
         status: 'active',
-        labId: '',
+        labId: userId,
     });
 
     // 2. Professional Info state
     const [professionalInfo, setProfessionalInfo] = useState({
-        labCert: [], // array of certificates
+        labCert: [{ certName: "", certFile: null }], // array of certificates
         profession: '',
         specialization: '',
         totalExperience: '',
         professionalBio: '',
-        education: [], // array of education objects
-        empId: '', // link to lab-staff
+        education: [{ university: "", degree: "", yearFrom: "", yearTo: "" }], // array of education objects
+        empId: staffId,
     });
 
     // 3. Employment Info state
@@ -44,7 +47,7 @@ function AddEmployee() {
         contractEnd: '',
         salary: '',
         note: '',
-        empId: '', // link to lab-staff
+        labId: userId
     });
 
     // 4. Access Info state
@@ -54,25 +57,121 @@ function AddEmployee() {
         password: '',
         confirmPassword: '',
         permissionId: '', // ref to lab-permission
-        empId: '', // link to lab-staff
+        labId: userId
     });
     const handleUserChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, files } = e.target;
+        if (files && files.length > 0) {
+            setUserInfo((prev) => ({
+                ...prev,
+                [name]: files[0],
+            }));
+            return;
+        }
+        if (name.startsWith("contactInformation.")) {
+            const key = name.split(".")[1];
+            setUserInfo((prev) => ({
+                ...prev,
+                contactInformation: {
+                    ...prev.contactInformation,
+                    [key]: value,
+                },
+            }));
+
+            return;
+        }
         setUserInfo((prev) => ({
             ...prev,
             [name]: value,
         }));
     };
 
+
     // 2. Professional Info
-    const handleProfessionalChange = (e) => {
-        const { name, value } = e.target;
-        setProfessionalInfo((prev) => ({
+    const handleProfessionalChange = (e, index = null, section = null) => {
+        const { name, value, files } = e.target;
+
+        // Handle File upload (certFile)
+        if (files) {
+            const file = files[0];
+
+            // Allow only PDF or Image
+            const validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+            if (!validTypes.includes(file.type)) {
+                return alert("Only images or PDF allowed");
+            }
+
+            setProfessionalInfo(prev => ({
+                ...prev,
+                labCert: prev.labCert.map((item, i) =>
+                    i === index ? { ...item, certFile: file } : item
+                )
+            }));
+            return;
+        }
+
+        // Handle nested arrays like education[index]
+        if (section === "education") {
+            setProfessionalInfo(prev => ({
+                ...prev,
+                education: prev.education.map((item, i) =>
+                    i === index ? { ...item, [name]: value } : item
+                )
+            }));
+            return;
+        }
+
+        // Handle nested certificate name update
+        if (section === "labCert") {
+            setProfessionalInfo(prev => ({
+                ...prev,
+                labCert: prev.labCert.map((item, i) =>
+                    i === index ? { ...item, [name]: value } : item
+                )
+            }));
+            return;
+        }
+
+        // Normal fields
+        setProfessionalInfo(prev => ({
             ...prev,
             [name]: value,
         }));
     };
+    const addEducation = () => {
+        setProfessionalInfo(prev => ({
+            ...prev,
+            education: [...prev.education, { university: "", degree: "", yearFrom: "", yearTo: "" }]
+        }));
+    };
 
+    const addCertificate = () => {
+        setProfessionalInfo(prev => ({
+            ...prev,
+            labCert: [...prev.labCert, { certName: "", certFile: null }]
+        }));
+    };
+    const removeEducation =async (index,item) => {
+        if(item && item._id){
+            const data={empId:staffId,id:item._id,type:'education'}
+            await securePostData('lab/sub-professional',data)
+        }
+        setProfessionalInfo(prev => ({
+            ...prev,
+            education: prev.education.filter((_, i) => i !== index)
+        }));
+    };
+
+    const removeCertificate = async(index,item) => {
+        if(item && item._id){
+            const data={empId:staffId,id:item._id,type:'cert'}
+            await securePostData('lab/sub-professional',data)
+        }
+        setProfessionalInfo(prev => ({
+            ...prev,
+            labCert: prev.labCert.filter((_, i) => i !== index)
+        }));
+    };
     // 3. Employment Info
     const handleEmploymentChange = (e) => {
         const { name, value } = e.target;
@@ -81,7 +180,6 @@ function AddEmployee() {
             [name]: value,
         }));
     };
-
     // 4. Access Info
     const handleAccessChange = (e) => {
         const { name, value } = e.target;
@@ -105,12 +203,157 @@ function AddEmployee() {
     useEffect(() => {
         fetchLabPermission()
     }, [])
-    const handleBack = (e,name) => {
-    e.preventDefault(); // prevent page reload
-    const tabTrigger = document.querySelector(name); // the tab button for "contact"
-    const tab = new Tab(tabTrigger);
-    tab.show();
-};
+    const handleBack = (e, name) => {
+        e.preventDefault(); // prevent page reload
+        const tabTrigger = document.querySelector(name); // the tab button for "contact"
+        const tab = new Tab(tabTrigger);
+        tab.show();
+    };
+    const userInfoSubmit = async (e) => {
+        e.preventDefault()
+        const data = new FormData()
+        for (let key in userInfo) {
+            if (key == 'contactInformation' || key == 'profileImage') continue
+            data.append(key, userInfo[key])
+        }
+        const cdata = JSON.stringify(userInfo.contactInformation)
+        data.append('contactInformation', cdata)
+        if (userInfo.profileImage) {
+            data.append('profileImage', userInfo.profileImage)
+        }
+        if (staffId) {
+            data.append('empId', staffId)
+        }
+        try {
+            const response = await securePostData(`lab/staff`, data);
+            if (response.success) {
+                toast.success("Personal Info was saved")
+                setStaffId(response.empId)
+                handleBack(e, '#profile-tab')
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+    const professionalSubmit = async (e) => {
+        e.preventDefault();
+        const data = new FormData();
+
+        // Basic fields
+        for (let key in professionalInfo) {
+            if (key === 'labCert' || key === 'education') continue;
+            data.append(key, professionalInfo[key]);
+        }
+
+        // Education
+        data.append("education", JSON.stringify(professionalInfo.education));
+
+        // Certificate metadata
+        const certMeta = professionalInfo.labCert.map(i => ({
+            certName: i.certName
+        }));
+        data.append("labCert", JSON.stringify(certMeta));
+
+        // Certificate files
+        professionalInfo.labCert.forEach(i => {
+            if (i.certFile) {
+                data.append("certFile", i.certFile);
+            }
+        });
+
+        try {
+            const response = await securePostData(`lab/professional`, data);
+            if (response.success) {
+                toast.success("Professional data was saved")
+                handleBack(e, "#contact-tab");
+            } else {
+                toast.error(response.message);
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    };
+
+    const employmentSubmit = async (e) => {
+        e.preventDefault()
+        // const data = new FormData()
+        // for (let key in employmentInfo) {
+        //     data.append(key, employmentInfo[key])
+        // }
+        if (!staffId) return
+        const data = { ...employmentInfo, empId: staffId }
+        try {
+            const response = await securePostData(`lab/employment`, data);
+            if (response.success) {
+                toast.success("Employment data was saved")
+                handleBack(e, '#upload-tab')
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+    const accessSubmit = async (e) => {
+        e.preventDefault()
+        if (!staffId) return
+        if (accessInfo.password !== accessInfo.confirmPassword) {
+            toast.error('Password not matched')
+        }
+        const data = { ...accessInfo, empId: staffId }
+        try {
+            const response = await securePostData(`lab/access`, data);
+            if (response.success) {
+                toast.success("Data updated")
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+
+    const [empData, setEmpData] = useState()
+    const fetchStaffData = async () => {
+        if (!staffId) return
+        try {
+            const response = await getSecureApiData(`lab/staff-data/${staffId}`);
+            if (response.success) {
+                setUserInfo(prev => ({
+                    ...prev,
+                    ...response.employee,
+                    dob: response.employee.dob?.split("T")[0]
+                }));
+                setEmploymentInfo(prev => ({
+                    ...prev,
+                    ...response.employment,
+                    joinDate: response?.employment?.joinDate ? response.employment.joinDate.split("T")[0] : "",
+                    contractEnd: response?.employment?.contractEnd ? response.employment.contractEnd.split("T")[0] : "",
+                    contractStart: response?.employment?.contractStart ? response.employment.contractStart.split("T")[0] : "",
+                    onLeaveDate: response?.employment?.onLeaveDate ? response.employment.onLeaveDate.split("T")[0] : ""
+                }))
+
+                setAccessInfo(prev => ({
+                    ...prev,
+                    ...response.empAccess
+                }))
+                setProfessionalInfo(prev => ({
+                    ...prev,
+                    ...response.professional
+                }))
+
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+    useEffect(() => {
+        fetchStaffData()
+    }, [staffId])
     return (
         <>
             <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -203,7 +446,7 @@ function AddEmployee() {
                                         id="home"
                                         role="tabpanel"
                                     >
-                                        <form action="">
+                                        <form onSubmit={userInfoSubmit}>
                                             <div className="row">
                                                 <div className="d-flex align-items-center gap-3">
                                                     <h4 className="lg_title text-black">Personal Information</h4>
@@ -238,13 +481,31 @@ function AddEmployee() {
                                                                 <input
                                                                     type="file"
                                                                     className="d-none"
+                                                                    onChange={handleUserChange}
                                                                     id="fileInput1"
+                                                                    name="profileImage"
                                                                     accept=".png,.jpg,.jpeg"
                                                                 />
 
-                                                                <div id="filePreviewWrapper" className="d-none mt-3">
-                                                                    <img src="" alt="Preview" className="img-thumbnail" />
-                                                                </div>
+                                                                {userInfo.profileImage instanceof File && (
+                                                                    <div id="filePreviewWrapper" className="mt-3">
+                                                                        <img
+                                                                            src={URL.createObjectURL(userInfo.profileImage)}
+                                                                            alt="Preview"
+                                                                            className="img-thumbnail"
+                                                                        />
+                                                                    </div>
+                                                                )}{typeof userInfo.profileImage === "string" &&
+                                                                    userInfo.profileImage.startsWith("uploads") && (
+                                                                        <div id="filePreviewWrapper" className="mt-3">
+                                                                            <img
+                                                                                src={`${base_url}/${userInfo.profileImage}`}
+                                                                                alt="Preview"
+                                                                                className="img-thumbnail"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
                                                             </div>
                                                         </div>
                                                     </div>
@@ -278,6 +539,7 @@ function AddEmployee() {
                                                             placeholder=""
                                                             value={userInfo.dob}
                                                             name="dob"
+                                                            max={new Date().toISOString().split("T")[0]}
                                                             onChange={handleUserChange}
                                                             required
                                                         />
@@ -292,6 +554,10 @@ function AddEmployee() {
                                                             onChange={handleUserChange}
                                                             required>
                                                             <option>---Select Gender---</option>
+                                                            <option value="male">Male</option>
+                                                            <option value="female">Female</option>
+                                                            <option value="other">other</option>
+
                                                         </select>
                                                     </div>
                                                 </div>
@@ -314,6 +580,8 @@ function AddEmployee() {
                                                             onChange={handleUserChange}
                                                             required>
                                                             <option>---Select State---</option>
+                                                            <option value="rajasthan">Rajasthan</option>
+                                                            <option value="gujrat">Gujrat</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -326,6 +594,8 @@ function AddEmployee() {
                                                             onChange={handleUserChange}
                                                             required>
                                                             <option>---Select City---</option>
+                                                            <option value="jaipur">Jaipur</option>
+                                                            <option value="ahemdabad">Ahemdabad</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -360,7 +630,7 @@ function AddEmployee() {
                                                             className="form-control "
                                                             placeholder="Enter  mobile number"
                                                             value={userInfo.contactInformation.contactNumber}
-                                                            name="contactNumber"
+                                                            name="contactInformation.contactNumber"
                                                             onChange={handleUserChange}
                                                             required
                                                         />
@@ -376,7 +646,7 @@ function AddEmployee() {
                                                             className="form-control "
                                                             placeholder="Enter  Email"
                                                             value={userInfo.contactInformation.email}
-                                                            name="email"
+                                                            name="contactInformation.email"
                                                             onChange={handleUserChange}
                                                             required
                                                         />
@@ -388,11 +658,11 @@ function AddEmployee() {
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">Emergency Contact Name</label>
                                                         <input
-                                                            type="email"
+                                                            type="text"
                                                             className="form-control "
                                                             placeholder="Enter  Emergency Contact Name"
                                                             value={userInfo.contactInformation.emergencyContactName}
-                                                            name="emergencyContactName"
+                                                            name="contactInformation.emergencyContactName"
                                                             onChange={handleUserChange}
                                                             required
                                                         />
@@ -404,11 +674,11 @@ function AddEmployee() {
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">Emergency Contact Phone</label>
                                                         <input
-                                                            type="email"
+                                                            type="number"
                                                             className="form-control "
                                                             placeholder="Enter  Emergency Contact Phone"
                                                             value={userInfo.contactInformation.emergencyContactNumber}
-                                                            name="emergencyContactNumber"
+                                                            name="contactInformation.emergencyContactNumber"
                                                             onChange={handleUserChange}
                                                             required
                                                         />
@@ -424,7 +694,7 @@ function AddEmployee() {
                                     </div>
 
                                     <div className="tab-pane fade" id="profile" role="tabpanel">
-                                        <form action="">
+                                        <form onSubmit={professionalSubmit}>
                                             <div className="row">
                                                 <h4 className="lg_title text-black">Professional Information</h4>
 
@@ -494,151 +764,89 @@ function AddEmployee() {
                                             </div>
 
                                             <div className="education-frm-bx mb-4">
-                                                <div className="row">
-                                                    <div className="col-lg-3 col-md-6 col-sm-12">
-                                                        <div className="custom-frm-bx">
-                                                            <label htmlFor="">University / Institution</label>
-                                                            <input
-                                                                type="number"
-                                                                className="form-control "
-                                                                placeholder="Enter University / Institution"
-                                                                value={professionalInfo.education.university}
-                                                                name="university"
-                                                                onChange={handleProfessionalChange}
-                                                                required
-                                                            />
+                                                {professionalInfo.education.map((item, index) => (
+                                                    <div className="row" key={index}>
 
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="col-lg-3 col-md-6 col-sm-12">
-                                                        <div className="custom-frm-bx">
-                                                            <label htmlFor="">Degree / Qualification</label>
-                                                            <input
-                                                                type="email"
-                                                                className="form-control "
-                                                                placeholder="Enter Degree / Qualification"
-                                                                value={professionalInfo.education.degree}
-                                                                name="degree"
-                                                                onChange={handleProfessionalChange}
-                                                                required
-                                                            />
-
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="col-lg-3 col-md-6 col-sm-12">
-                                                        <div className="custom-frm-bx">
-                                                            <label htmlFor="">Year form</label>
-                                                            <input
-                                                                type="email"
-                                                                className="form-control "
-                                                                placeholder="Enter Year form"
-                                                                value={professionalInfo.education.yearFrom}
-                                                                name="yearFrom"
-                                                                onChange={handleProfessionalChange}
-                                                                required
-                                                            />
-
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="col-lg-3 col-md-6 col-sm-12">
-                                                        <div className="return-box">
-                                                            <div className="custom-frm-bx flex-column flex-grow-1">
-                                                                <label htmlFor="">Year to</label>
+                                                        <div className="col-lg-3 col-md-6 col-sm-12">
+                                                            <div className="custom-frm-bx">
+                                                                <label>University / Institution</label>
                                                                 <input
-                                                                    type="email"
-                                                                    className="form-control "
-                                                                    placeholder="Enter  Year to"
-                                                                    value={professionalInfo.education.yearTo}
-                                                                    name="yearTo"
-                                                                    onChange={handleProfessionalChange}
+                                                                    type="text"
+                                                                    className="form-control"
+                                                                    placeholder="Enter University / Institution"
+                                                                    value={item.university}
+                                                                    name="university"
+                                                                    onChange={(e) => handleProfessionalChange(e, index, "education")}
                                                                     required
                                                                 />
-
-                                                            </div>
-
-                                                            <div className="">
-                                                                <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </div>
 
-
-
-                                            </div>
-
-                                            <div className="education-frm-bx">
-                                                <div className="row">
-                                                    <div className="col-lg-3 col-md-6 col-sm-12">
-                                                        <div className="custom-frm-bx">
-                                                            <label htmlFor="">University / Institution</label>
-                                                            <input
-                                                                type="number"
-                                                                className="form-control "
-                                                                placeholder="Enter University / Institution"
-                                                                value=""
-                                                            />
-
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="col-lg-3 col-md-6 col-sm-12">
-                                                        <div className="custom-frm-bx">
-                                                            <label htmlFor="">Degree / Qualification</label>
-                                                            <input
-                                                                type="email"
-                                                                className="form-control "
-                                                                placeholder="Enter Degree / Qualification"
-                                                                value=""
-                                                            />
-
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="col-lg-3 col-md-6 col-sm-12">
-                                                        <div className="custom-frm-bx">
-                                                            <label htmlFor="">Year form</label>
-                                                            <input
-                                                                type="email"
-                                                                className="form-control "
-                                                                placeholder="Enter Year form"
-                                                                value=""
-                                                            />
-
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="col-lg-3 col-md-6 col-sm-12">
-                                                        <div className="return-box">
-                                                            <div className="custom-frm-bx flex-column flex-grow-1">
-                                                                <label htmlFor="">Year to</label>
+                                                        <div className="col-lg-3 col-md-6 col-sm-12">
+                                                            <div className="custom-frm-bx">
+                                                                <label>Degree / Qualification</label>
                                                                 <input
-                                                                    type="email"
-                                                                    className="form-control "
-                                                                    placeholder="Enter  Year to"
-                                                                    value=""
+                                                                    type="text"
+                                                                    className="form-control"
+                                                                    placeholder="Enter Degree / Qualification"
+                                                                    value={item.degree}
+                                                                    name="degree"
+                                                                    onChange={(e) => handleProfessionalChange(e, index, "education")}
+                                                                    required
                                                                 />
-
-                                                            </div>
-
-                                                            <div className="">
-                                                                <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
                                                             </div>
                                                         </div>
+
+                                                        <div className="col-lg-3 col-md-6 col-sm-12">
+                                                            <div className="custom-frm-bx">
+                                                                <label>Year From</label>
+                                                                <input
+                                                                    type="number"
+                                                                    className="form-control"
+                                                                    placeholder="Enter Year From"
+                                                                    value={item.yearFrom}
+                                                                    name="yearFrom"
+                                                                    onChange={(e) => handleProfessionalChange(e, index, "education")}
+                                                                    required
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="col-lg-3 col-md-6 col-sm-12">
+                                                            <div className="return-box">
+                                                                <div className="custom-frm-bx flex-column flex-grow-1">
+                                                                    <label>Year To</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="form-control"
+                                                                        placeholder="Enter Year To"
+                                                                        value={item.yearTo}
+                                                                        name="yearTo"
+                                                                        onChange={(e) => handleProfessionalChange(e, index, "education")}
+                                                                        required
+                                                                    />
+                                                                </div>
+
+                                                                <div>
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={professionalInfo.education.length === 1}
+                                                                        className="text-black"
+                                                                        onClick={() => removeEducation(index,item)}
+                                                                    >
+                                                                        <FontAwesomeIcon icon={faTrash} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
                                                     </div>
-                                                </div>
-
-
-
-
+                                                ))}
 
                                             </div>
 
                                             <div className="text-end my-3">
-                                                <a href="javascript:void(0)" className="add-employee-btn"><FaPlusSquare /> Add More</a>
+                                                <button onClick={() => addEducation()} className="employee-data-btn"><FaPlusSquare /> Add More</button>
                                             </div>
 
                                             <div className="col-lg-12 my-3">
@@ -647,89 +855,59 @@ function AddEmployee() {
                                                 </div>
                                             </div>
                                             <div className="education-frm-bx mt-4 mb-4">
-                                                <div className="row">
-                                                    <div className="col-lg-6 col-md-6 col-sm-12">
-                                                        <div className="custom-frm-bx">
-                                                            <label htmlFor="">Certificate</label>
-                                                            <input
-                                                                type="number"
-                                                                className="form-control "
-                                                                placeholder="Enter Certificate Name"
-                                                                value=""
-                                                            />
+                                                {professionalInfo.labCert.map((item, index) => (
+                                                    <div className="row">
+                                                        <div className="col-lg-6 col-md-6 col-sm-12">
+                                                            <div className="custom-frm-bx">
+                                                                <label htmlFor="">Certificate</label>
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-control "
+                                                                    placeholder="Enter Certificate Name"
+                                                                    value={item.certName}
+                                                                    name="certName"
+                                                                    onChange={(e) => handleProfessionalChange(e, index, "labCert")}
+                                                                    required
+                                                                />
 
+                                                            </div>
                                                         </div>
-                                                    </div>
 
-                                                    <div className="col-lg-6 col-md-6 col-sm-12">
-                                                        <div className="return-box">
-                                                            <div className="custom-frm-bx mb-3 flex-column flex-grow-1">
-                                                                <label className="">Certificate Upload</label>
+                                                        <div className="col-lg-6 col-md-6 col-sm-12">
+                                                            <div className="return-box">
+                                                                <div className="custom-frm-bx mb-3 flex-column flex-grow-1">
+                                                                    <label className="">Certificate Upload</label>
 
-                                                                <div className="custom-file-wrapper">
-                                                                    <span className="em-browse-btn">Browse File</span>
-                                                                    <span className="em-file-name">No Choose file</span>
-                                                                    <input type="file" className="real-file-input" />
+                                                                    <div className="custom-file-wrapper">
+                                                                        <span className="em-browse-btn">Browse File</span>
+                                                                        <span className="em-file-name">{item.certFile ? (item.certFile.name || item?.certFile.split("\\").pop().split("-").slice(1).join("-")) : "No Choose file"}</span>
+                                                                        <input type="file" name="certFile" onChange={(e) => handleProfessionalChange(e, index, "labCert")} className="real-file-input" />
+                                                                    </div>
+                                                                </div>
+
+                                                                <div>
+                                                                    <button className="text-black"
+                                                                        disabled={professionalInfo?.labCert?.length === 1}
+                                                                        onClick={() => removeCertificate(index,item)}><FontAwesomeIcon icon={faTrash} /></button>
                                                                 </div>
                                                             </div>
 
-                                                            <div>
-                                                                <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
-                                                            </div>
                                                         </div>
-
-                                                    </div>
-                                                </div>
+                                                    </div>))}
 
 
-                                            </div>
-
-                                            <div className="education-frm-bx">
-                                                <div className="row">
-                                                    <div className="col-lg-6 col-md-6 col-sm-12">
-                                                        <div className="custom-frm-bx">
-                                                            <label htmlFor="">Certificate</label>
-                                                            <input
-                                                                type="number"
-                                                                className="form-control "
-                                                                placeholder="Enter Certificate Name"
-                                                                value=""
-                                                            />
-
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="col-lg-6 col-md-6 col-sm-12">
-                                                        <div className="return-box">
-                                                            <div className="custom-frm-bx mb-3 flex-column flex-grow-1">
-                                                                <label className="">Certificate Upload</label>
-
-                                                                <div className="custom-file-wrapper">
-                                                                    <span className="em-browse-btn">Browse File</span>
-                                                                    <span className="em-file-name">No Choose file</span>
-                                                                    <input type="file" className="real-file-input" />
-                                                                </div>
-                                                            </div>
-
-                                                            <div>
-                                                                <button className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
-                                                </div>
                                             </div>
                                             <div className="text-end my-3">
-                                                <a href="javascript:void(0)" className="add-employee-btn"><FaPlusSquare /> Add More</a>
+                                                <button onClick={() => addCertificate()} className="employee-data-btn"><FaPlusSquare /> Add More</button>
                                             </div>
                                             <div className="d-flex align-items-center justify-content-end gap-3">
-                                                <button type="button" onClick={(e)=>handleBack(e,'#home-tab')} className="nw-thm-btn outline rounded-3">Back </button>
+                                                <button type="button" onClick={(e) => handleBack(e, '#home-tab')} className="nw-thm-btn outline rounded-3">Back </button>
                                                 <button type="submit" className="nw-thm-btn rounded-3" >Save & Continue</button>
                                             </div>
                                         </form>
                                     </div>
                                     <div className="tab-pane fade" id="contact" role="tabpanel">
-                                        <form action="">
+                                        <form onSubmit={employmentSubmit}>
                                             <div className="row">
 
                                                 <div className="d-flex align-items-center gap-3">
@@ -746,8 +924,9 @@ function AddEmployee() {
                                                         <input
                                                             type="text"
                                                             className="form-control"
+                                                            disabled
                                                             placeholder="Enter Employee ID"
-                                                            value=""
+                                                            value={staffId}
                                                         />
                                                     </div>
                                                 </div>
@@ -759,7 +938,10 @@ function AddEmployee() {
                                                             type="text"
                                                             className="form-control "
                                                             placeholder="Enter Position/Role"
-                                                            value=""
+                                                            value={employmentInfo?.position}
+                                                            required
+                                                            name="position"
+                                                            onChange={handleEmploymentChange}
                                                         />
                                                     </div>
                                                 </div>
@@ -773,7 +955,10 @@ function AddEmployee() {
                                                             type="date"
                                                             className="form-control "
                                                             placeholder="Enter  Total Experience"
-                                                            value=""
+                                                            value={employmentInfo?.joinDate}
+                                                            required
+                                                            name="joinDate"
+                                                            onChange={handleEmploymentChange}
                                                         />
                                                     </div>
                                                 </div>
@@ -785,7 +970,10 @@ function AddEmployee() {
                                                             type="date"
                                                             className="form-control "
                                                             placeholder="Enter  Total Experience"
-                                                            value=""
+                                                            value={employmentInfo?.onLeaveDate}
+                                                            required
+                                                            name="onLeaveDate"
+                                                            onChange={handleEmploymentChange}
                                                         />
                                                     </div>
                                                 </div>
@@ -793,9 +981,11 @@ function AddEmployee() {
                                                 <div className="col-lg-4 col-md-6 col-sm-12">
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">Salary($)</label>
-                                                        <select name="" id="" className="form-select">
-                                                            <option value="">Enter Salary</option>
-                                                        </select>
+                                                        <input type="number" value={employmentInfo?.salary}
+                                                            required
+                                                            name="salary"
+                                                            onChange={handleEmploymentChange} id="" className="form-control"
+                                                        />
                                                     </div>
                                                 </div>
                                                 <div className="col-lg-12 my-3">
@@ -811,7 +1001,10 @@ function AddEmployee() {
                                                             type="date"
                                                             className="form-control "
                                                             placeholder="Enter  Total Experience"
-                                                            value=""
+                                                            value={employmentInfo?.contractStart}
+                                                            required
+                                                            name="contractStart"
+                                                            onChange={handleEmploymentChange}
                                                         />
                                                     </div>
                                                 </div>
@@ -823,7 +1016,10 @@ function AddEmployee() {
                                                             type="date"
                                                             className="form-control "
                                                             placeholder="Enter  Total Experience"
-                                                            value=""
+                                                            value={employmentInfo?.contractEnd}
+                                                            required
+                                                            name="contractEnd"
+                                                            onChange={handleEmploymentChange}
                                                         />
                                                     </div>
                                                 </div>
@@ -831,7 +1027,10 @@ function AddEmployee() {
                                                 <div className="col-lg-12 mt-5">
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">Note</label>
-                                                        <textarea name="" id="" className="form-control" placeholder="Enter Note"></textarea>
+                                                        <textarea value={employmentInfo?.note}
+                                                            required
+                                                            name="note"
+                                                            onChange={handleEmploymentChange} id="" className="form-control" placeholder="Enter Note"></textarea>
                                                     </div>
                                                 </div>
 
@@ -841,7 +1040,7 @@ function AddEmployee() {
 
 
                                             <div className="d-flex align-items-center justify-content-end gap-3">
-                                                <button type="button" className="nw-thm-btn outline rounded-3" onClick={(e)=>handleBack(e,'#profile-tab')}>Back </button>
+                                                <button type="button" className="nw-thm-btn outline rounded-3" onClick={(e) => handleBack(e, '#profile-tab')}>Back </button>
                                                 <button type="submit" className="nw-thm-btn rounded-3" >Save & Continue</button>
                                             </div>
 
@@ -850,7 +1049,7 @@ function AddEmployee() {
 
 
                                     <div className="tab-pane fade" id="upload" role="tabpanel">
-                                        <form action="">
+                                        <form onSubmit={accessSubmit}>
                                             <div className="row">
                                                 <h4 className="lg_title text-black">Access</h4>
                                                 <div className="col-lg-6 col-md-6 col-sm-12">
@@ -920,7 +1119,7 @@ function AddEmployee() {
                                                 <div className="col-lg-6 col-md-6 col-sm-12">
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">Permission  Type</label>
-                                                        <select name="" id="" className="form-select nw-frm-control">
+                                                        <select name="permissionId" onChange={handleAccessChange} value={accessInfo?.permissionId} id="" className="form-select nw-frm-control">
                                                             <option value="">---Select Permission Type---</option>
                                                             {permisions?.length > 0 &&
                                                                 permisions?.map((item, key) =>
@@ -930,8 +1129,8 @@ function AddEmployee() {
                                                 </div>
 
                                                 <div className="d-flex align-items-center justify-content-end gap-3">
-                                                    <button className="nw-thm-btn outline rounded-3" onClick={(e)=>handleBack(e,'#contact-tab')}
-                                                      >Back </button>
+                                                    <button className="nw-thm-btn outline rounded-3" onClick={(e) => handleBack(e, '#contact-tab')}
+                                                    >Back </button>
                                                     <button type="submit" className="nw-thm-btn rounded-3" >Submit</button>
                                                 </div>
 

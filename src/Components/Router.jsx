@@ -100,11 +100,11 @@ function Router() {
           element: <ProtectedRoute component={PermissionCheck} />,
         },
         {
-          path: "/add-employee",
+          path: "/employee-data",
           element: <ProtectedRoute component={AddEmployee} />,
         },
         {
-          path: "/view-employee",
+          path: "/view-employee/:name/:id",
           element: <ProtectedRoute component={ViewEmployee} />,
         },
         {

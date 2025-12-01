@@ -367,6 +367,22 @@ font-size: 14px;
   flex-wrap: wrap;
 }
 
+      .account-step-crd {
+        width: 150px;
+    }
+ 
+    .account-step-one::after {
+        content: "";
+        position: absolute;
+        top: 25px;
+        right: -45px;
+        width: 60%;
+        height: 1px;
+        background: #000;
+    }
+ 
+  
+ 
 
 }
 
@@ -391,6 +407,9 @@ font-size: 14px;
 
  .laboratory-card{
       flex-wrap: wrap;
+    }
+    .account-step-crd {
+        width: 75px;
     }
 
 
