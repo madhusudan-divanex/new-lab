@@ -4,20 +4,168 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FaPlusCircle } from "react-icons/fa";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaTrash } from "react-icons/fa6";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import { getSecureApiData, securePostData, updateApiData } from "../../services/api";
 
-
-function EditTest() {
-      const [selectedOption, setSelectedOption] = useState("select");
+function EditTest() {  
+  const navigate = useNavigate()
+  const params=useParams()
+  const testId=params.id
+  const userId = localStorage.getItem('userId')
+  const [selectedOption, setSelectedOption] = useState("select");
 
   const handleRadioChange = (event) => {
     setSelectedOption(event.target.value);
   };
+  const [testData, setTestData] = useState({
+    labId: userId,
+    title: [""],
+    precautions: "",
+    shortName: "",
+    testCategory: "",
+    sampleType: "",
+    price: "",
+    status: "inactive",
+  });
+  const [components, setComponents] = useState([
+    {
+      name: "",
+      unit: "",
+      optionType: "text",
+      result: [''],
+      referenceRange: "",
+      status: false,
+    },
+  ]);
+
+  const addTitle = () => {
+    setTestData((prev) => ({
+      ...prev,
+      title: [...prev.title, ""],
+    }));
+  };
+
+  // Remove a title by index
+  const removeTitle = (index) => {
+    setTestData((prev) => ({
+      ...prev,
+      title: prev.title.filter((_, i) => i !== index),
+    }));
+  };
+
+  // Handle input change for a specific title
+  const handleTitleChange = (index, value) => {
+    const newTitles = [...testData.title];
+    newTitles[index] = value;
+    setTestData((prev) => ({
+      ...prev,
+      title: newTitles,
+    }));
+  };
+  const handleComponentChange = (index, e) => {
+    const { name, value, type, checked } = e.target;
+    const updated = [...components];
+
+    // Update normal fields
+    updated[index][name] = type === "checkbox" ? checked : value;
+
+    // When switching optionType, convert result appropriately
+    if (name === "optionType") {
+      if (value === "text") {
+        // convert array → string
+        updated[index].result = "";
+      } else if (value === "select") {
+        // convert string → array
+        updated[index].result = [""];
+      }
+    }
+
+    setComponents(updated);
+  };
+
+
+
+  // -------------------- Add Component --------------------
+  const addComponent = () => {
+    setComponents([
+      ...components,
+      { name: "", unit: "", optionType: "text", result: [""], referenceRange: "", status: false },
+    ]);
+  };
+
+  // -------------------- Remove Component --------------------
+  const removeComponent = (index) => {
+    const updatedComponents = components.filter((_, i) => i !== index);
+    setComponents(updatedComponents);
+  };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setTestData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleAddOption = (index) => {
+    const updated = [...components];
+    updated[index].result.push("");
+    setComponents(updated);
+  };
+
+  const handleOptionChange = (componentIndex, optionIndex, value) => {
+    const updated = [...components];
+    updated[componentIndex].result[optionIndex] = value;
+    setComponents(updated);
+  };
+
+  const handleRemoveOption = (componentIndex, optionIndex) => {
+    const updated = [...components];
+    updated[componentIndex].result.splice(optionIndex, 1);
+    setComponents(updated);
+  };
+
+  const testSubmit = async (e) => {
+    e.preventDefault()
+    const data = { ...testData, component: components,testId }
+    try {
+      const response = await updateApiData(`lab/test`, data)
+      if (response.success) {
+        toast.success('Test updated successfully')
+        navigate('/tests')
+      } else {
+        toast.error(result.message)
+      }
+    } catch (error) {
+
+    }
+  }
+   const getTestData = async () => {
+    try {
+      const response = await getSecureApiData(`lab/test-data/${testId}`)
+      if (response.success) {
+
+        setTestData({...testData,...response.data})
+        const data=response.data.component
+        setComponents(data)
+      } else {
+        toast.error(result.message)
+      }
+    } catch (error) {
+
+    }
+  }
+  useEffect(()=>{
+    if(testId){
+      getTestData()
+    }
+  },[testId])
+
 
   return (
-     <>
+    <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
         <div className="row mb-3">
           <div className="d-flex align-items-center justify-content-between tp-sub-main-bx">
@@ -68,13 +216,23 @@ function EditTest() {
                 </div>
               </div>
 
-              <div className="patient-bio-tab">
+              <form onSubmit={testSubmit} className="patient-bio-tab">
                 <div className="row">
                   <div className="col-lg-3 col-md-6 col-sm-12">
                     <div className="custom-frm-bx">
                       <label htmlFor="">Select Test Category</label>
-                      <select name="" id="" className="form-select nw-control-frm">
+                      <select name="testCategory" value={testData.testCategory} onChange={handleChange} id="" className="form-select nw-control-frm">
                         <option value="">---Select Categories---</option>
+                        <option value="hematology">Hematology</option>
+                        <option value="biochemistry">Biochemistry</option>
+                        <option value="microbiology">Microbiology</option>
+                        <option value="immunology">Immunology</option>
+                        <option value="pathology">Pathology</option>
+                        <option value="serology">Serology</option>
+                        <option value="urinalysis">Urinalysis</option>
+                        <option value="molecular_diagnostics">Molecular Diagnostics</option>
+                        <option value="toxicology">Toxicology</option>
+                        <option value="genetics">Genetics</option>
                       </select>
                     </div>
                   </div>
@@ -82,21 +240,21 @@ function EditTest() {
                   <div className="col-lg-3 col-md-6 col-sm-12">
                     <div className="custom-frm-bx">
                       <label htmlFor="">Short Name</label>
-                      <input type="text" className="form-control nw-control-frm" value="CBC" />
+                      <input type="text" className="form-control nw-control-frm" name="shortName" value={testData.shortName} onChange={handleChange} />
                     </div>
                   </div>
 
                   <div className="col-lg-3 col-md-6 col-sm-12">
                     <div className="custom-frm-bx">
                       <label htmlFor="">Sample Type</label>
-                      <input type="text" className="form-control nw-control-frm" value="Blood" />
+                      <input type="text" className="form-control nw-control-frm" name="sampleType" value={testData.sampleType} onChange={handleChange} />
                     </div>
                   </div>
 
                   <div className="col-lg-3 col-md-6 col-sm-12">
                     <div className="custom-frm-bx">
                       <label htmlFor="">Price</label>
-                      <input type="text" className="form-control nw-control-frm" value="25" />
+                      <input type="text" className="form-control nw-control-frm" name="price" value={testData.price} onChange={handleChange} />
 
                       <div className="reprt-price-bx">
                         <a href="javascript:void(0)" className="reprt-price-btn">$</a>
@@ -107,7 +265,7 @@ function EditTest() {
                   <div className="col-lg-12">
                     <div className="custom-frm-bx">
                       <label htmlFor="">Precautions</label>
-                      <textarea name="" id="" className="form-control nw-control-frm" placeholder="8 hours fasting"></textarea>
+                      <textarea name="precautions" value={testData.precautions} onChange={handleChange} id="" className="form-control nw-control-frm" placeholder="8 hours fasting"></textarea>
                     </div>
                   </div>
 
@@ -123,13 +281,13 @@ function EditTest() {
                         </div>
 
                         <div className="add-nw-bx d-flex gap-2">
-                          <a href="javascript:void(0)" className="add-nw-btn thm-btn">
+                          <button type="button" onClick={addTitle} className="add-nw-btn thm-btn">
                             <img src="/plus-icon.png" alt="" /> Title
-                          </a>
+                          </button>
 
-                          <a href="javascript:void(0)" className="add-nw-btn thm-btn">
+                          <button type="button" onClick={addComponent} className="add-nw-btn thm-btn">
                             <img src="/plus-icon.png" alt="" /> component
-                          </a>
+                          </button>
 
                         </div>
 
@@ -152,182 +310,167 @@ function EditTest() {
                               </thead>
                               <tbody>
 
-                                <tr>
-                                  <td>
-                                    <div className="custom-frm-bx mb-0">
-                                      <input type="text" name="" id="" className="form-control" placeholder="Lymphocyte" />
-                                    </div>
-                                  </td>
-
-                                  <td>
-                                    <div className="custom-frm-bx mb-0">
-                                      <input type="text" name="" id="" className="form-control" placeholder="mm/dl" />
-                                    </div>
-                                  </td>
-
-                                  <td>
-                                    <div className="custom-radio-group">
+                                {components.map((component, index) => (
+                                  <tr key={index}>
+                                    <td>
+                                      <input
+                                        type="text"
+                                        name="name"
+                                        className="form-control"
+                                        placeholder="Lymphocyte"
+                                        value={component.name}
+                                        onChange={(e) => handleComponentChange(index, e)}
+                                      />
+                                    </td>
+                                    <td>
+                                      <input
+                                        type="text"
+                                        name="unit"
+                                        className="form-control"
+                                        placeholder="mm/dl"
+                                        value={component.unit}
+                                        onChange={(e) => handleComponentChange(index, e)}
+                                      />
+                                    </td>
+                                    <td>
                                       <div className="form-check form-check-inline">
                                         <input
                                           className="form-check-input"
                                           type="radio"
                                           name="optionType"
-                                          id="textOption"
                                           value="text"
-                                          defaultChecked
+                                          checked={component.optionType == "text"}
+                                          onChange={(e) => handleComponentChange(index, e)}
                                         />
-                                        <label className="form-check-label" htmlFor="textOption">
-                                          Text
-                                        </label>
+                                        <label className="form-check-label">Text</label>
                                       </div>
-
                                       <div className="form-check form-check-inline">
                                         <input
                                           className="form-check-input"
                                           type="radio"
                                           name="optionType"
-                                          id="selectOption"
                                           value="select"
+                                          checked={component.optionType == "select"}
+                                          onChange={(e) => handleComponentChange(index, e)}
                                         />
-                                        <label className="form-check-label" htmlFor="selectOption">
-                                          Select
-                                        </label>
+                                        <label htmlFor="optionType" className="form-check-label">Select</label>
                                       </div>
-                                    </div>
-                                  </td>
+                                      {component.optionType === "select" ? (
+                                        <div className="report-droping-bx">
 
-                                  <td>
-                                    <textarea name="" id="" className="form-control" placeholder="20-100" style={{ resize: "auto", height: "100px" }}></textarea>
-                                  </td>
-                                  <td>
-                                    <div className="form-check custom-check pt-0">
-                                      <input className="form-check-input" type="checkbox" value="" id="addTests" />
+                                          <div className="d-flex justify-content-between align-items-center mb-2">
+                                            <h5 className="optin-title">Options</h5>
 
-                                    </div>
-                                  </td>
+                                            {/* ADD OPTION BUTTON */}
+                                            <button
+                                              type="button"
+                                              className="option-rep-add-btn"
+                                              onClick={() => handleAddOption(index)}
+                                            >
+                                              <FaPlusCircle />
+                                            </button>
+                                          </div>
 
-                                  <td>
-                                    <a href="javascript:void(0)" className="text-black"> <FontAwesomeIcon icon={faTrash} /> </a>
-                                  </td>
-                                </tr>
+                                          {/* RENDER ALL OPTIONS */}
+                                          {component.result.map((opt, optIndex) => (
+                                            <div className="d-flex align-items-center gap-2 mb-2" key={optIndex}>
 
+                                              <div className="custom-frm-bx mb-0 flex-grow-1">
+                                                <input
+                                                  type="text"
+                                                  className="form-control"
+                                                  placeholder="Option"
+                                                  value={opt}
+                                                  onChange={(e) => handleOptionChange(index, optIndex, e.target.value)}
+                                                />
+                                              </div>
 
-                                <tr>
-                                  <td>
-                                    <div className="custom-frm-bx mb-0">
-                                      <input type="text" name="" id="" className="form-control" placeholder="Lymphocyte" />
-                                    </div>
-                                  </td>
+                                              {/* REMOVE OPTION BUTTON */}
+                                              <div>
+                                                <button
+                                                  type="button"
+                                                  className="text-black"
+                                                  disabled={component.result.length==1}
+                                                  onClick={() => handleRemoveOption(index, optIndex)}
+                                                >
+                                                  <FaTrash />
+                                                </button>
+                                              </div>
 
-                                  <td>
-                                    <div className="custom-frm-bx mb-0">
-                                      <input type="text" name="" id="" className="form-control" placeholder="mm/dl" />
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className="custom-radio-group">
-                                      <div className="form-check form-check-inline">
-                                        <input
-                                          className="form-check-input"
-                                          type="radio"
-                                          name="optionTypes"
-                                          id="textOption1"
-                                          value="text"
-                                          checked={selectedOption === "text"}
-                                          onChange={handleRadioChange}
-                                        />
-                                        <label
-                                          className="form-check-label"
-                                          htmlFor="textOption1"
-                                        >
-                                          Text
-                                        </label>
-                                      </div>
+                                            </div>
+                                          ))}
 
-                                      <div className="form-check form-check-inline">
-                                        <input
-                                          className="form-check-input"
-                                          type="radio"
-                                          name="optionTypes"
-                                          id="selectOption2"
-                                          value="select"
-                                          checked={selectedOption === "select"}
-                                          onChange={handleRadioChange}
-                                        />
-                                        <label
-                                          className="form-check-label"
-                                          htmlFor="selectOption2"
-                                        >
-                                          Select
-                                        </label>
-                                      </div>
-                                    </div>
+                                        </div>
+                                      ) : (
+                                        <div className="custom-frm-bx mb-0 flex-grow-1">
+                                          <textarea
+                                            rows={5}
+                                            type="text"
+                                            name="result"
+                                            value={component.result}
+                                            onChange={(e) => handleComponentChange(index, e)}
+                                            className="form-control"
+                                          />
+                                        </div>
+                                      )}
 
-                                    {selectedOption === "select" && (
-                                      <div
-                                        className="report-droping-bx"
+                                    </td>
+                                    <td>
+                                      <textarea
+                                        name="referenceRange"
+                                        className="form-control"
+                                        style={{ resize: "auto", height: "100px" }}
+                                        value={component.referenceRange}
+                                        onChange={(e) => handleComponentChange(index, e)}
+                                        placeholder="20-100"
+                                      />
+                                    </td>
+                                    <td>
+                                      <input
+                                        type="checkbox"
+                                        name="status"
+                                        checked={component.status}
+                                        onChange={(e) => handleComponentChange(index, e)}
+                                      />
+                                    </td>
+                                    <td>
+                                      <button
+                                        type="button"
+                                        className="text-black"
+                                        disabled={components.length==1}
+                                        onClick={() => removeComponent(index)}
                                       >
-                                        <div className="d-flex justify-content-between align-items-center mb-2">
-                                          <h5 className="optin-title">Option</h5>
-                                          <button className="option-rep-add-btn">
-                                            <FaPlusCircle />
-                                          </button>
-                                        </div>
+                                        <FontAwesomeIcon icon={faTrash} />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
 
-                                        <div className="d-flex align-items-center gap-2 mb-2">
-                                          <div className="custom-frm-bx mb-0 flex-grow-1">
-                                            <input type="text" name="" id="" className="form-control" placeholder="Negative" />
-                                          </div>
-                                          <div>
-                                            <a href="javascript:void(0)" className="text-black"><FaTrash /></a>
-                                          </div>
-                                        </div>
-
-                                        <div className="d-flex align-items-center gap-2 mb-2">
-                                          <div className="custom-frm-bx mb-0 flex-grow-1">
-                                            <input type="text" name="" id="" className="form-control" placeholder="Positive" />
-                                          </div>
-                                          <div>
-                                            <a href="javascript:void(0)" className="text-black"><FaTrash /></a>
-                                          </div>
-                                        </div>
-
-
-                                      </div>
-                                    )}
-                                  </td>
-
-                                  <td>
-                                    <textarea name="" id="" className="form-control resize-auto" placeholder="20-100" style={{ resize: "auto", height: "100px" }}></textarea>
-                                  </td>
-                                  <td>
-                                    <div className="form-check custom-check pt-0">
-                                      <input className="form-check-input" type="checkbox" value="" id="addTests" />
-
-                                    </div>
-                                  </td>
-
-                                  <td>
-                                    <a href="javascript:void(0)" className="text-black"> <FontAwesomeIcon icon={faTrash} /> </a>
-                                  </td>
-                                </tr>
                               </tbody>
                             </table>
-                            
-                          </div>
 
-                          <div className="custom-frm-bx my-3 mx-3">
-                                      <input type="text" name="" id="" className="form-control nw-control-frm" placeholder="Blood details" />
-                                    </div>
+                          </div>
+                          {testData.title.map((t, index) => (
+                            <div className="custom-frm-bx  my-3 mx-3">
+                              <input type="text" name="" value={t}
+                                onChange={(e) => handleTitleChange(index, e.target.value)} id="" className="form-control nw-control-frm" placeholder="Blood details" />
+                              {index !== 0 && <button
+                                onClick={() => removeTitle(index)}
+                                style={{ marginLeft: "8px" }}
+                                className="thm-btn mt-2"
+                              >
+                                Remove
+                              </button>}
+                            </div>))}
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="text-end mt-3">
-                  <NavLink  to="/tests" className="nw-thm-btn sub-nw-brd-tbn">Save</NavLink>
+                  <button to="submit" className="nw-thm-btn sub-nw-brd-tbn">Save</button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         </div>

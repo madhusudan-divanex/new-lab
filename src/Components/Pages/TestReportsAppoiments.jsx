@@ -8,8 +8,29 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { NavLink } from "react-router-dom";
 import { Nav } from "react-bootstrap";
+import { getSecureApiData } from "../../services/api";
+import { useEffect, useState } from "react";
 
 function TestReportsAppoiments() {
+  const userId=localStorage.getItem('userId')
+  const [allTest,setAllTest]=useState([])
+  const fetchLabTest = async () => {
+    try {
+      const response = await getSecureApiData(`lab/test/${userId}`);
+      if (response.success) {
+        // setCurrentPage(response.pagination.page)
+        // setTotalPage(response.pagination.totalPages)
+        setAllTest(response.data)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
+  useEffect(()=>{
+    fetchLabTest()
+  },[userId])
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -20,24 +41,24 @@ function TestReportsAppoiments() {
                 <h3 className="innr-title">Test Reports / Appoiments</h3>
                 <div className="admin-breadcrumb">
                   <nav aria-label="breadcrumb">
-                  <ol className="breadcrumb custom-breadcrumb">
-                    <li className="breadcrumb-item">
-                      <a href="#" className="breadcrumb-link">
-                        Dashboard
-                      </a>
-                    </li>
+                    <ol className="breadcrumb custom-breadcrumb">
+                      <li className="breadcrumb-item">
+                        <a href="#" className="breadcrumb-link">
+                          Dashboard
+                        </a>
+                      </li>
 
-                   
-                    <li
-                      className="breadcrumb-item active"
-                      aria-current="page"
-                    >
-                     Test Reports / Appoiments
-                    </li>
-                  </ol>
+
+                      <li
+                        className="breadcrumb-item active"
+                        aria-current="page"
+                      >
+                        Test Reports / Appoiments
+                      </li>
+                    </ol>
                   </nav>
 
-                  
+
 
                 </div>
               </div>
@@ -52,7 +73,7 @@ function TestReportsAppoiments() {
               </div>
             </div>
 
-    
+
 
             <div className="filters">
               <div className="field custom-frm-bx mb-0">

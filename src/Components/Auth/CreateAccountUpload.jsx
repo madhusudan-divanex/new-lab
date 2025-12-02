@@ -117,7 +117,6 @@ function CreateAccountUpload() {
             navigate('/')
         }
     },[labLicense])
-console.log(labLicense)
     return (
         <>
             <section className="admin-login-section account-lg-section nw-create-account-section">

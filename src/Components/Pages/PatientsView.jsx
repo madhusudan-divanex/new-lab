@@ -1,8 +1,56 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar, faDroplet, faEnvelope, faEye, faFilePdf, faLocationDot, faPerson, faPhone, faPrint } from "@fortawesome/free-solid-svg-icons";
 import { TbGridDots } from "react-icons/tb";
+import { useEffect, useState } from "react";
+import { getSecureApiData } from "../../services/api";
+import { toast } from "react-toastify";
+import { useParams } from "react-router-dom";
 
 function PatientsView() {
+    const params = useParams()
+    const patientId = params.id
+    const userId = localStorage.getItem('userId')
+    const [appointments, setAppointments] = useState([])
+    const [ptData, setPtData] = useState()
+    const [medicalHistory, setMedicalHistory] = useState()
+    const [demographicData, setDemographicData] = useState()
+    const [prescriptionData, setPrescriptionData] = useState()
+    const fetchPatient = async () => {
+        try {
+            const response = await getSecureApiData(`patient/detail/${patientId}`);
+            if (response.success) {
+                console.log(response)
+                setPtData(response.user)
+                setMedicalHistory(response.medicalHistory)
+                setDemographicData(response.demographic)
+                setPrescriptionData(response.prescription)
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+    useEffect(() => {
+        fetchPatient()
+    }, [userId])
+    const calculateAge = (dob) => {
+        if (!dob) return "";
+
+        const birthDate = new Date(dob);
+        const today = new Date();
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        const dayDiff = today.getDate() - birthDate.getDate();
+
+        if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+            age--; // haven't had birthday yet this year
+        }
+
+        return age;
+    };
+
     return (
         <>
             <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -43,9 +91,9 @@ function PatientsView() {
                                 <div>
                                     <div className="view-avatr-bio-bx text-center">
                                         <img src="/view-avatr.png" alt="" />
-                                        <h4>Ravi Kumar</h4>
-                                        <p><span className="vw-id">ID:</span> STC7654</p>
-                                        <h6 className="vw-activ">Active</h6>
+                                        <h4>{ptData?.name}</h4>
+                                        <p><span className="vw-id">ID:</span> {ptData?._id?.slice(-10)}</p>
+                                        <h6 className="vw-activ text-capitalize">{ptData?.status}</h6>
 
                                     </div>
 
@@ -55,15 +103,16 @@ function PatientsView() {
                                                 <span className="vw-info-icon"><FontAwesomeIcon icon={faPerson} /></span>
                                                 <div>
                                                     <p className="vw-info-title">Age</p>
-                                                    <p className="vw-info-value">20 Year</p>
+                                                    <p className="vw-info-value">{calculateAge(demographicData?.dob)} Years</p>
                                                 </div>
+
                                             </li>
 
                                             <li className="vw-info-item">
                                                 <span className="vw-info-icon"><FontAwesomeIcon icon={faCalendar} /></span>
                                                 <div>
                                                     <p className="vw-info-title">Gender </p>
-                                                    <p className="vw-info-value">Male</p>
+                                                    <p className="vw-info-value text-capitalize">{ptData?.gender}</p>
                                                 </div>
                                             </li>
 
@@ -71,7 +120,7 @@ function PatientsView() {
                                                 <span className="vw-info-icon"><FontAwesomeIcon icon={faDroplet} /></span>
                                                 <div>
                                                     <p className="vw-info-title">Blood  Group </p>
-                                                    <p className="vw-info-value">A+</p>
+                                                    <p className="vw-info-value">{demographicData?.bloodGroup}</p>
                                                 </div>
                                             </li>
 
@@ -79,7 +128,7 @@ function PatientsView() {
                                                 <span className="vw-info-icon"><FontAwesomeIcon icon={faEnvelope} /></span>
                                                 <div>
                                                     <p className="vw-info-title">Email </p>
-                                                    <p className="vw-info-value">david.patel @medixpro.com</p>
+                                                    <p className="vw-info-value">{ptData?.email}</p>
                                                 </div>
                                             </li>
 
@@ -87,25 +136,25 @@ function PatientsView() {
                                                 <span className="vw-info-icon"><FontAwesomeIcon icon={faPhone} /></span>
                                                 <div>
                                                     <p className="vw-info-title">Phone </p>
-                                                    <p className="vw-info-value">+91-9876543210</p>
+                                                    <p className="vw-info-value">{ptData?.contactNumber}</p>
                                                 </div>
                                             </li>
 
-                                            <li className="vw-info-item">
+                                            {/* <li className="vw-info-item">
                                                 <span className="vw-info-icon"><FontAwesomeIcon icon={faPhone} /></span>
                                                 <div>
                                                     <p className="vw-info-title">Emergency Contact Name </p>
                                                     <p className="vw-info-value"><span className="fw-700">(Ravi Patel) </span> +91-9876543210</p>
                                                 </div>
-                                            </li>
+                                            </li> */}
 
-                                            <li className="vw-info-item">
+                                            {/* <li className="vw-info-item">
                                                 <span className="vw-info-icon"><FontAwesomeIcon icon={faLocationDot} /></span>
                                                 <div>
                                                     <p className="vw-info-title">Address</p>
-                                                    <p className="vw-info-value">23 Medical Center Blvd, Suite 45,  jaipur,  india</p>
+                                                    <p className="vw-info-value">{23 Medical Center Blvd, Suite 45,  jaipur,  india}</p>
                                                 </div>
-                                            </li>
+                                            </li> */}
 
                                         </ul>
 
@@ -969,12 +1018,12 @@ function PatientsView() {
                                                             <div className="medical-history-content">
                                                                 <div>
                                                                     <h4 className="fz-16 fw-700">Do you have any chronic conditions?</h4>
-                                                                    <h5 className="hearth-disese">Heart Disease</h5>
+                                                                    <h5 className="hearth-disese">{medicalHistory?.chronicCondition}</h5>
                                                                 </div>
 
                                                                 <div className="mt-3">
                                                                     <h4 className="fz-16 fw-700">Are you currently on any medications?</h4>
-                                                                    <h5 className="hearth-disese">Yes</h5>
+                                                                    <h5 className="hearth-disese">{medicalHistory?.onMedication ? 'Yes' : 'No'}</h5>
                                                                 </div>
 
                                                             </div>
@@ -1000,16 +1049,16 @@ function PatientsView() {
                                                             <div className="medical-history-content my-3">
                                                                 <div>
                                                                     <h4 className="fz-16 fw-700">Any family history of chronic disease?</h4>
-                                                                    <h5 className="hearth-disese">Yes</h5>
+                                                                    <h5 className="hearth-disese">{medicalHistory?.familyHistory?.chronicHistory}</h5>
 
                                                                 </div>
 
                                                                 <div className="mt-3">
                                                                     <h4 className="fz-16 fw-700">Chronic Diseases in Family</h4>
-                                                                    <p> Father: Hypertension, Type 2 Diabetes</p>
-                                                                    <p>Mother: Osteoarthritis</p>
+                                                                    <p> {medicalHistory?.familyHistory?.diseasesInFamiy}</p>
+                                                                    {/* <p>Mother: Osteoarthritis</p>
                                                                     <p>Maternal Grandfather: Heart Disease</p>
-                                                                    <p>Paternal Grandmother: Stroke</p>
+                                                                    <p>Paternal Grandmother: Stroke</p> */}
                                                                 </div>
 
                                                             </div>

@@ -8,6 +8,7 @@ import base_url from "../../../baseUrl";
 function AppointmentRequest() {
     const userId = localStorage.getItem('userId')
     const [appointments, setAppointments] = useState([])
+    const [allTest,setAllTest]=useState([])
     const fetchLabAppointment = async () => {
         try {
             const response = await getSecureApiData(`lab/appointment/${userId}`);
@@ -37,8 +38,23 @@ function AppointmentRequest() {
             console.error("Error creating lab:", err);
         }
     }
+    const fetchLabTest = async () => {
+        try {
+            const response = await getSecureApiData(`lab/test/${userId}`);
+            if (response.success) {
+                // setCurrentPage(response.pagination.page)
+                // setTotalPage(response.pagination.totalPages)
+                setAllTest(response.data)
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
     useEffect(() => {
         fetchLabAppointment()
+        fetchLabTest()
     }, [])
     return (
         <>
@@ -111,8 +127,9 @@ function AppointmentRequest() {
                                 <label className="label">Test:</label>
                                 <select>
                                     <option>All</option>
-                                    <option>Test 1</option>
-                                    <option>Test 2</option>
+                                    {allTest?.length>0 && 
+                                    allTest?.map((item,key)=><option value={item._id} key={key}>{item?.shortName}</option>)}
+                                    
                                 </select>
                             </div>
 
@@ -201,7 +218,7 @@ function AppointmentRequest() {
                                                         year: "numeric"
                                                     })}
                                                     </td>
-                                                    <td>CBC</td>
+                                                    <td>{item?.testId?.shortName}</td>
                                                     <td>
                                                         {item?.status=='rejected'&& <span className="approved reject">Reject</span>}
                                                         {(item?.status!=='rejected' && item?.status!=='pending')&& 

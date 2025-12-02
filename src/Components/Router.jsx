@@ -112,7 +112,7 @@ function Router() {
           element: <ProtectedRoute component={LabTestReports} />,
         },
         {
-          path: "/edit-profile",
+          path: "/edit-profile/:id",
           element: <ProtectedRoute component={EditProfile} />,
         },
         {
@@ -136,7 +136,7 @@ function Router() {
           element: <ProtectedRoute component={ApproveProfile} />,
         },
         {
-          path: "/patient-view",
+          path: "/patient-view/:id",
           element: <ProtectedRoute component={PatientsView} />,
         },
         {
@@ -168,7 +168,7 @@ function Router() {
           element: <ProtectedRoute component={Notification} />,
         },
         {
-          path: "/edit-test",
+          path: "/edit-test/:id",
           element: <ProtectedRoute component={EditTest} />,
         },
 
