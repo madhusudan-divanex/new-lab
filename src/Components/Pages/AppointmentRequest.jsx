@@ -218,7 +218,7 @@ function AppointmentRequest() {
                                                         year: "numeric"
                                                     })}
                                                     </td>
-                                                    <td>{item?.testId?.shortName}</td>
+                                                    <td>{item?.testId?.map((item)=>item?.shortName+',')}</td>
                                                     <td>
                                                         {item?.status=='rejected'&& <span className="approved reject">Reject</span>}
                                                         {(item?.status!=='rejected' && item?.status!=='pending')&& 

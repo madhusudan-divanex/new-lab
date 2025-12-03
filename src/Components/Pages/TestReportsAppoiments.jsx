@@ -6,14 +6,16 @@ import {
   faSearch,
 
 } from "@fortawesome/free-solid-svg-icons";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { Nav } from "react-bootstrap";
 import { getSecureApiData } from "../../services/api";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import base_url from "../../../baseUrl";
 
 function TestReportsAppoiments() {
-  const userId=localStorage.getItem('userId')
-  const [allTest,setAllTest]=useState([])
+  const userId = localStorage.getItem('userId')
+  const [allTest, setAllTest] = useState([])
   const fetchLabTest = async () => {
     try {
       const response = await getSecureApiData(`lab/test/${userId}`);
@@ -28,9 +30,25 @@ function TestReportsAppoiments() {
       console.error("Error creating lab:", err);
     }
   }
-  useEffect(()=>{
+  useEffect(() => {
     fetchLabTest()
-  },[userId])
+    fetchLabAppointment()
+  }, [userId])
+  const [appointments, setAppointments] = useState([])
+  const fetchLabAppointment = async () => {
+    try {
+      const response = await getSecureApiData(`lab/appointment/${userId}?type=approved`);
+      if (response.success) {
+        // setCurrentPage(response.pagination.page)
+        // setTotalPage(response.pagination.totalPages)
+        setAppointments(response.data)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -169,6 +187,170 @@ function TestReportsAppoiments() {
                   </thead>
                   <tbody>
 
+                    {appointments?.length > 0 &&
+                      appointments?.map((item, key) =>
+                        <tr key={key}>
+                          <td>{key + 1}</td>
+                          <td>
+                            <div className="admin-table-bx">
+                              <div className="admin-table-sub-bx">
+                                <img src={item?.patientId?.profileImage ? `${base_url}/${item?.patientId?.profileImage}` : "/table-avatar.jpg"} alt="" />
+                                <div className="admin-table-sub-details">
+                                  <h6>{item?.patientId?.name} </h6>
+                                  <p>ID: {item?.patientId?._id?.slice(-10)}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <ul className="admin-appointment-list">
+                              <li className="admin-appoint-item">
+                                <span className="admin-appoint-id">
+                                  Appointment ID : #{item?._id?.slice(-10)}
+                                </span>
+                              </li>
+                              <li className="admin-appoint-item">
+                                Appointment Book Date : {item?.date ? new Date(item?.date)?.toLocaleDateString('en-GB', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric'
+                                }) : '-'}
+                              </li>
+                              <li className="admin-appoint-item">
+                                Total Amount : ${item?.fees}
+                              </li>
+                            </ul>
+                          </td>
+                          <td>
+                            <ul className="admin-test-list">
+                              {item?.testId?.map((item, key) =>
+                                <li className="admin-test-item" key={key}>{item?.shortName}</li>)}
+                              {/* <li className="admin-test-item">Haemoglobin</li> */}
+                            </ul>
+                          </td>
+                          <td>
+                            <ul className="admin-paid-list">
+                              <li>
+
+                                <span className="paid">Paid</span>
+                              </li>
+                              <li>
+                                <a
+                                  href="javascript:void(0)"
+                                  className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
+                                >
+                                  <FontAwesomeIcon icon={faPen} />
+                                </a>
+                              </li>
+                            </ul>
+                          </td>
+                          <td>
+                            <ul className="admin-paid-list">
+                              <li>
+
+                                <span className="paid text-capitalize">
+                                  {item?.status}
+                                </span>
+                              </li>
+                              <li>
+                                <a
+                                  href="javascript:void(0)"
+                                  className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
+                                >
+                                  <FontAwesomeIcon icon={faPen} />
+                                </a>
+                              </li>
+                            </ul>
+                          </td>
+                          <td>
+                            <a
+                              href="javascript:void(0)"
+                              className=" admin-sub-dropdown dropdown-toggle"
+                              data-bs-toggle="dropdown"
+                              aria-expanded="false"
+                            >
+
+                              <FontAwesomeIcon icon={faGear} /> Action
+                            </a>
+
+                            <div class="dropdown">
+                              <a
+                                href="javascript:void(0)"
+                                class="attendence-edit-btn"
+                                id="acticonMenu1"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                              >
+                                {/* <i class="fas fa-pen"></i> */}
+                              </a>
+                              <ul
+                                class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
+                                aria-labelledby="acticonMenu1"
+                              >
+                                <li className="drop-item">
+                                  <Link
+                                    class="nw-dropdown-item"
+                                    to={`/lab-test-reports/${item._id}`}
+                                  >
+                                    <img src="/flask-report.png" alt="" />
+                                    Edit Report
+                                  </Link>
+                                </li>
+                                <li className="drop-item">
+                                  <Link class="nw-dropdown-item" to={`/patient-view/${item?.patientId?._id}`}>
+                                    <img src="/add-user.png" alt="" />
+                                    Patient Details
+                                  </Link>
+                                </li>
+                                <li className="drop-item">
+                                  <Link class="nw-dropdown-item" to={`/appointment-details/${item?._id}`}>
+                                    <img src="/flask-report.png" alt="" />
+                                    Appointment Details
+                                  </Link>
+                                </li>
+
+                                <li className="drop-item">
+                                  <NavLink to="/report-tabs" className="nw-dropdown-item" href="#">
+                                    <img src="/reprt-icon.png" alt="" />
+                                    Generate Report
+                                  </NavLink>
+                                </li>
+
+                                <li className="drop-item">
+                                  <NavLink to="/label" className="nw-dropdown-item" href="#">
+                                    <img src="/barcd-icon.png" alt="" />
+                                    Labels
+                                  </NavLink>
+                                </li>
+
+                                <li className="drop-item">
+                                  <NavLink to="/report-view" className="nw-dropdown-item" href="#">
+                                    <img src="/file.png" alt="" />
+                                    Report  view
+                                  </NavLink>
+                                </li>
+                                <li className="drop-item">
+                                  <NavLink to="/new-invoice" className="nw-dropdown-item" href="#">
+                                    <img src="/invoices.png" alt="" />
+                                    Invoice
+                                  </NavLink>
+                                </li>
+                                <li className="drop-item">
+                                  <a className="nw-dropdown-item" href="#">
+                                    <img src="/dc-usr.png" alt="" />
+                                    Send  Report Doctor
+                                  </a>
+                                </li>
+                                <li className="drop-item">
+                                  <a className="nw-dropdown-item" href="#">
+                                    <img src="/report-mail.png" alt="" />
+                                    Send  Report Patient
+                                  </a>
+                                </li>
+                              </ul>
+                            </div>
+                          </td>
+                        </tr>)}
                     <tr>
                       <td>01.</td>
                       <td>

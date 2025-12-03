@@ -4,7 +4,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FaPlusCircle } from "react-icons/fa";
-import { useState } from "react";
+import React, { useState } from "react";
 import { FaTrash } from "react-icons/fa6";
 import { NavLink, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -20,7 +20,6 @@ function Reports() {
   };
   const [testData, setTestData] = useState({
     labId: userId,
-    title: [""],
     precautions: "",
     shortName: "",
     testCategory: "",
@@ -32,6 +31,7 @@ function Reports() {
     {
       name: "",
       unit: "",
+      title:'',
       optionType: "text",
       result: [''],
       referenceRange: "",
@@ -39,30 +39,8 @@ function Reports() {
     },
   ]);
 
-  const addTitle = () => {
-    setTestData((prev) => ({
-      ...prev,
-      title: [...prev.title, ""],
-    }));
-  };
 
-  // Remove a title by index
-  const removeTitle = (index) => {
-    setTestData((prev) => ({
-      ...prev,
-      title: prev.title.filter((_, i) => i !== index),
-    }));
-  };
-
-  // Handle input change for a specific title
-  const handleTitleChange = (index, value) => {
-    const newTitles = [...testData.title];
-    newTitles[index] = value;
-    setTestData((prev) => ({
-      ...prev,
-      title: newTitles,
-    }));
-  };
+ 
   const handleComponentChange = (index, e) => {
     const { name, value, type, checked } = e.target;
     const updated = [...components];
@@ -259,9 +237,9 @@ function Reports() {
                         </div>
 
                         <div className="add-nw-bx d-flex gap-2">
-                          <button type="button" onClick={addTitle} className="add-nw-btn thm-btn">
+                          {/* <button type="button" onClick={addTitle} className="add-nw-btn thm-btn">
                             <img src="/plus-icon.png" alt="" /> Title
-                          </button>
+                          </button> */}
 
                           <button type="button" onClick={addComponent} className="add-nw-btn thm-btn">
                             <img src="/plus-icon.png" alt="" /> component
@@ -289,7 +267,8 @@ function Reports() {
                               <tbody>
 
                                 {components.map((component, index) => (
-                                  <tr key={index}>
+                                  <React.Fragment key={index}>
+                                  <tr >
                                     <td>
                                       <input
                                         type="text"
@@ -420,24 +399,19 @@ function Reports() {
                                       </button>
                                     </td>
                                   </tr>
+                                  <div className="  my-3 mx-3 w-100">
+                                      <input type="text" name="title" value={component.title}
+                                        onChange={(e) => handleComponentChange(index, e)} id="" className="form-control nw-control-frm" placeholder="Blood details" />
+
+                                    </div>
+                                  </React.Fragment>
                                 ))}
 
                               </tbody>
                             </table>
 
                           </div>
-                          {testData.title.map((t, index) => (
-                            <div className="custom-frm-bx  my-3 mx-3">
-                              <input type="text" name="" value={t}
-                                onChange={(e) => handleTitleChange(index, e.target.value)} id="" className="form-control nw-control-frm" placeholder="Blood details" />
-                              {index !== 0 && <button
-                                onClick={() => removeTitle(index)}
-                                style={{ marginLeft: "8px" }}
-                                className="thm-btn mt-2"
-                              >
-                                Remove
-                              </button>}
-                            </div>))}
+                          
                         </div>
                       </div>
                     </div>

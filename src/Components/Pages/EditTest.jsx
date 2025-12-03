@@ -4,16 +4,16 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FaPlusCircle } from "react-icons/fa";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaTrash } from "react-icons/fa6";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getSecureApiData, securePostData, updateApiData } from "../../services/api";
 
-function EditTest() {  
+function EditTest() {
   const navigate = useNavigate()
-  const params=useParams()
-  const testId=params.id
+  const params = useParams()
+  const testId = params.id
   const userId = localStorage.getItem('userId')
   const [selectedOption, setSelectedOption] = useState("select");
 
@@ -22,7 +22,6 @@ function EditTest() {
   };
   const [testData, setTestData] = useState({
     labId: userId,
-    title: [""],
     precautions: "",
     shortName: "",
     testCategory: "",
@@ -34,6 +33,7 @@ function EditTest() {
     {
       name: "",
       unit: "",
+      title: '',
       optionType: "text",
       result: [''],
       referenceRange: "",
@@ -41,30 +41,7 @@ function EditTest() {
     },
   ]);
 
-  const addTitle = () => {
-    setTestData((prev) => ({
-      ...prev,
-      title: [...prev.title, ""],
-    }));
-  };
 
-  // Remove a title by index
-  const removeTitle = (index) => {
-    setTestData((prev) => ({
-      ...prev,
-      title: prev.title.filter((_, i) => i !== index),
-    }));
-  };
-
-  // Handle input change for a specific title
-  const handleTitleChange = (index, value) => {
-    const newTitles = [...testData.title];
-    newTitles[index] = value;
-    setTestData((prev) => ({
-      ...prev,
-      title: newTitles,
-    }));
-  };
   const handleComponentChange = (index, e) => {
     const { name, value, type, checked } = e.target;
     const updated = [...components];
@@ -92,7 +69,7 @@ function EditTest() {
   const addComponent = () => {
     setComponents([
       ...components,
-      { name: "", unit: "", optionType: "text", result: [""], referenceRange: "", status: false },
+      { name: "", unit: "", optionType: "text", title:"", result: [""], referenceRange: "", status: false },
     ]);
   };
 
@@ -129,7 +106,7 @@ function EditTest() {
 
   const testSubmit = async (e) => {
     e.preventDefault()
-    const data = { ...testData, component: components,testId }
+    const data = { ...testData, component: components, testId }
     try {
       const response = await updateApiData(`lab/test`, data)
       if (response.success) {
@@ -142,13 +119,13 @@ function EditTest() {
 
     }
   }
-   const getTestData = async () => {
+  const getTestData = async () => {
     try {
       const response = await getSecureApiData(`lab/test-data/${testId}`)
       if (response.success) {
 
-        setTestData({...testData,...response.data})
-        const data=response.data.component
+        setTestData({ ...testData, ...response.data })
+        const data = response.data.component
         setComponents(data)
       } else {
         toast.error(result.message)
@@ -157,11 +134,11 @@ function EditTest() {
 
     }
   }
-  useEffect(()=>{
-    if(testId){
+  useEffect(() => {
+    if (testId) {
       getTestData()
     }
-  },[testId])
+  }, [testId])
 
 
   return (
@@ -281,9 +258,9 @@ function EditTest() {
                         </div>
 
                         <div className="add-nw-bx d-flex gap-2">
-                          <button type="button" onClick={addTitle} className="add-nw-btn thm-btn">
+                          {/* <button type="button" onClick={addTitle} className="add-nw-btn thm-btn">
                             <img src="/plus-icon.png" alt="" /> Title
-                          </button>
+                          </button> */}
 
                           <button type="button" onClick={addComponent} className="add-nw-btn thm-btn">
                             <img src="/plus-icon.png" alt="" /> component
@@ -311,157 +288,154 @@ function EditTest() {
                               <tbody>
 
                                 {components.map((component, index) => (
-                                  <tr key={index}>
-                                    <td>
-                                      <input
-                                        type="text"
-                                        name="name"
-                                        className="form-control"
-                                        placeholder="Lymphocyte"
-                                        value={component.name}
-                                        onChange={(e) => handleComponentChange(index, e)}
-                                      />
-                                    </td>
-                                    <td>
-                                      <input
-                                        type="text"
-                                        name="unit"
-                                        className="form-control"
-                                        placeholder="mm/dl"
-                                        value={component.unit}
-                                        onChange={(e) => handleComponentChange(index, e)}
-                                      />
-                                    </td>
-                                    <td>
-                                      <div className="form-check form-check-inline">
+                                  <React.Fragment key={index}>
+                                    <tr >
+                                      <td>
                                         <input
-                                          className="form-check-input"
-                                          type="radio"
-                                          name="optionType"
-                                          value="text"
-                                          checked={component.optionType == "text"}
+                                          type="text"
+                                          name="name"
+                                          className="form-control"
+                                          placeholder="Lymphocyte"
+                                          value={component.name}
                                           onChange={(e) => handleComponentChange(index, e)}
                                         />
-                                        <label className="form-check-label">Text</label>
-                                      </div>
-                                      <div className="form-check form-check-inline">
+                                      </td>
+                                      <td>
                                         <input
-                                          className="form-check-input"
-                                          type="radio"
-                                          name="optionType"
-                                          value="select"
-                                          checked={component.optionType == "select"}
+                                          type="text"
+                                          name="unit"
+                                          className="form-control"
+                                          placeholder="mm/dl"
+                                          value={component.unit}
                                           onChange={(e) => handleComponentChange(index, e)}
                                         />
-                                        <label htmlFor="optionType" className="form-check-label">Select</label>
-                                      </div>
-                                      {component.optionType === "select" ? (
-                                        <div className="report-droping-bx">
-
-                                          <div className="d-flex justify-content-between align-items-center mb-2">
-                                            <h5 className="optin-title">Options</h5>
-
-                                            {/* ADD OPTION BUTTON */}
-                                            <button
-                                              type="button"
-                                              className="option-rep-add-btn"
-                                              onClick={() => handleAddOption(index)}
-                                            >
-                                              <FaPlusCircle />
-                                            </button>
-                                          </div>
-
-                                          {/* RENDER ALL OPTIONS */}
-                                          {component.result.map((opt, optIndex) => (
-                                            <div className="d-flex align-items-center gap-2 mb-2" key={optIndex}>
-
-                                              <div className="custom-frm-bx mb-0 flex-grow-1">
-                                                <input
-                                                  type="text"
-                                                  className="form-control"
-                                                  placeholder="Option"
-                                                  value={opt}
-                                                  onChange={(e) => handleOptionChange(index, optIndex, e.target.value)}
-                                                />
-                                              </div>
-
-                                              {/* REMOVE OPTION BUTTON */}
-                                              <div>
-                                                <button
-                                                  type="button"
-                                                  className="text-black"
-                                                  disabled={component.result.length==1}
-                                                  onClick={() => handleRemoveOption(index, optIndex)}
-                                                >
-                                                  <FaTrash />
-                                                </button>
-                                              </div>
-
-                                            </div>
-                                          ))}
-
-                                        </div>
-                                      ) : (
-                                        <div className="custom-frm-bx mb-0 flex-grow-1">
-                                          <textarea
-                                            rows={5}
-                                            type="text"
-                                            name="result"
-                                            value={component.result}
+                                      </td>
+                                      <td>
+                                        <div className="form-check form-check-inline">
+                                          <input
+                                            className="form-check-input"
+                                            type="radio"
+                                            name="optionType"
+                                            value="text"
+                                            checked={component.optionType == "text"}
                                             onChange={(e) => handleComponentChange(index, e)}
-                                            className="form-control"
                                           />
+                                          <label className="form-check-label">Text</label>
                                         </div>
-                                      )}
+                                        <div className="form-check form-check-inline">
+                                          <input
+                                            className="form-check-input"
+                                            type="radio"
+                                            name="optionType"
+                                            value="select"
+                                            checked={component.optionType == "select"}
+                                            onChange={(e) => handleComponentChange(index, e)}
+                                          />
+                                          <label htmlFor="optionType" className="form-check-label">Select</label>
+                                        </div>
+                                        {component.optionType === "select" ? (
+                                          <div className="report-droping-bx">
 
-                                    </td>
-                                    <td>
-                                      <textarea
-                                        name="referenceRange"
-                                        className="form-control"
-                                        style={{ resize: "auto", height: "100px" }}
-                                        value={component.referenceRange}
-                                        onChange={(e) => handleComponentChange(index, e)}
-                                        placeholder="20-100"
-                                      />
-                                    </td>
-                                    <td>
-                                      <input
-                                        type="checkbox"
-                                        name="status"
-                                        checked={component.status}
-                                        onChange={(e) => handleComponentChange(index, e)}
-                                      />
-                                    </td>
-                                    <td>
-                                      <button
-                                        type="button"
-                                        className="text-black"
-                                        disabled={components.length==1}
-                                        onClick={() => removeComponent(index)}
-                                      >
-                                        <FontAwesomeIcon icon={faTrash} />
-                                      </button>
-                                    </td>
-                                  </tr>
+                                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                              <h5 className="optin-title">Options</h5>
+
+                                              {/* ADD OPTION BUTTON */}
+                                              <button
+                                                type="button"
+                                                className="option-rep-add-btn"
+                                                onClick={() => handleAddOption(index)}
+                                              >
+                                                <FaPlusCircle />
+                                              </button>
+                                            </div>
+
+                                            {/* RENDER ALL OPTIONS */}
+                                            {component.result.map((opt, optIndex) => (
+                                              <div className="d-flex align-items-center gap-2 mb-2" key={optIndex}>
+
+                                                <div className="custom-frm-bx mb-0 flex-grow-1">
+                                                  <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    placeholder="Option"
+                                                    value={opt}
+                                                    onChange={(e) => handleOptionChange(index, optIndex, e.target.value)}
+                                                  />
+                                                </div>
+
+                                                {/* REMOVE OPTION BUTTON */}
+                                                <div>
+                                                  <button
+                                                    type="button"
+                                                    className="text-black"
+                                                    disabled={component.result.length == 1}
+                                                    onClick={() => handleRemoveOption(index, optIndex)}
+                                                  >
+                                                    <FaTrash />
+                                                  </button>
+                                                </div>
+
+                                              </div>
+                                            ))}
+
+                                          </div>
+                                        ) : (
+                                          <div className="custom-frm-bx mb-0 flex-grow-1">
+                                            <textarea
+                                              rows={5}
+                                              type="text"
+                                              name="result"
+                                              value={component.result}
+                                              onChange={(e) => handleComponentChange(index, e)}
+                                              className="form-control"
+                                            />
+                                          </div>
+                                        )}
+
+                                      </td>
+                                      <td>
+                                        <textarea
+                                          name="referenceRange"
+                                          className="form-control"
+                                          style={{ resize: "auto", height: "100px" }}
+                                          value={component.referenceRange}
+                                          onChange={(e) => handleComponentChange(index, e)}
+                                          placeholder="20-100"
+                                        />
+                                      </td>
+                                      <td>
+                                        <input
+                                          type="checkbox"
+                                          name="status"
+                                          checked={component.status}
+                                          onChange={(e) => handleComponentChange(index, e)}
+                                        />
+                                      </td>
+                                      <td>
+                                        <button
+                                          type="button"
+                                          className="text-black"
+                                          disabled={components.length == 1}
+                                          onClick={() => removeComponent(index)}
+                                        >
+                                          <FontAwesomeIcon icon={faTrash} />
+                                        </button>
+                                      </td>
+                                    </tr>
+
+                                    <div className="my-3 mx-3 w-100">
+                                      <input type="text" name="title" value={component.title}
+                                        onChange={(e) => handleComponentChange(index, e)} id="" className="form-control nw-control-frm" placeholder="Blood details" />
+
+                                    </div>
+                                  </React.Fragment>
                                 ))}
 
                               </tbody>
                             </table>
 
                           </div>
-                          {testData.title.map((t, index) => (
-                            <div className="custom-frm-bx  my-3 mx-3">
-                              <input type="text" name="" value={t}
-                                onChange={(e) => handleTitleChange(index, e.target.value)} id="" className="form-control nw-control-frm" placeholder="Blood details" />
-                              {index !== 0 && <button
-                                onClick={() => removeTitle(index)}
-                                style={{ marginLeft: "8px" }}
-                                className="thm-btn mt-2"
-                              >
-                                Remove
-                              </button>}
-                            </div>))}
+
                         </div>
                       </div>
                     </div>

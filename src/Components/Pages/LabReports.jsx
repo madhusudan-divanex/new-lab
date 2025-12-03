@@ -6,8 +6,13 @@ import {
   faSearch,
 
 } from "@fortawesome/free-solid-svg-icons";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { getSecureApiData } from "../../services/api";
+import { useParams } from "react-router-dom";
 
 function LabReports() {
+
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -76,34 +81,34 @@ function LabReports() {
           </div>
         </form>
 
-            <div className="row ">
-                              <div className="d-flex align-items-center justify-content-between">
-                                 <div className="custom-frm-bx">
-                                        <input type="text" className="form-control" placeholder="Search " />
+        <div className="row ">
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="custom-frm-bx">
+              <input type="text" className="form-control" placeholder="Search " />
 
-                                        <div className="search-item-bx">
-                                            <button className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
-                                        </div>
+              <div className="search-item-bx">
+                <button className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
+              </div>
 
-                                    </div>
+            </div>
 
-                                    <div>
-                                    <div className="page-selector d-flex align-items-center">
+            <div>
+              <div className="page-selector d-flex align-items-center">
 
-                                      <div className="custom-frm-bx">
-                                          <select className="form-select custom-page-dropdown">
-                                            <option value="1" selected>1</option>
-                                            <option value="2">2</option>
-                                        </select>
-                                      </div>
-                                    
-                                    </div>
-                                </div>
-                              </div>
-
-                                
+                <div className="custom-frm-bx">
+                  <select className="form-select custom-page-dropdown">
+                    <option value="1" selected>1</option>
+                    <option value="2">2</option>
+                  </select>
+                </div>
 
               </div>
+            </div>
+          </div>
+
+
+
+        </div>
 
         <div className="row">
           <div className="col-lg-12 col-md-12 col-sm-12">
@@ -123,133 +128,135 @@ function LabReports() {
                   </thead>
                   <tbody>
 
-                    <tr>
-                      <td>01.</td>
-                      <td>
-                        <div className="admin-table-bx">
-                          <div className="admin-table-sub-bx">
-                            <img src="/table-avatar.jpg" alt="" />
-                            <div className="admin-table-sub-details">
-                              <h6>Sunil </h6>
-                              <p>ID: SUNIL3320</p>
+                    {appointments?.length > 0 &&
+                      appointments?.map((item, key) =>
+                        <tr key={key}>
+                          <td>{key + 1}</td>
+                          <td>
+                            <div className="admin-table-bx">
+                              <div className="admin-table-sub-bx">
+                                <img src="/table-avatar.jpg" alt="" />
+                                <div className="admin-table-sub-details">
+                                  <h6>{item?.patientId?.name} </h6>
+                                  <p>ID: {item?.patientId?._id?.slice(-10)}</p>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <ul className="admin-appointment-list">
-                          <li className="admin-appoint-item">
-                            <span className="admin-appoint-id">
-                              Appointment ID : #0959595
-                            </span>
-                          </li>
-                          <li className="admin-appoint-item">
-                            Appointment Book Date : 20 jun 2025
-                          </li>
-                          <li className="admin-appoint-item">
-                            Total Amount : $25
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-test-list">
-                          <li className="admin-test-item">CBC</li>
-                          <li className="admin-test-item">Haemoglobin</li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-paid-list">
-                          <li>
+                          </td>
+                          <td>
+                            <ul className="admin-appointment-list">
+                              <li className="admin-appoint-item">
+                                <span className="admin-appoint-id">
+                                  Appointment ID : #{item?._id?.slice(-10)}
+                                </span>
+                              </li>
+                              <li className="admin-appoint-item">
+                                Appointment Book Date : 20 jun 2025
+                              </li>
+                              <li className="admin-appoint-item">
+                                Total Amount : ${item?.fees}
+                              </li>
+                            </ul>
+                          </td>
+                          <td>
+                            <ul className="admin-test-list">
+                              <li className="admin-test-item">CBC</li>
+                              <li className="admin-test-item">Haemoglobin</li>
+                            </ul>
+                          </td>
+                          <td>
+                            <ul className="admin-paid-list">
+                              <li>
 
-                            <span className="paid">Paid</span>
-                          </li>
-                          <li>
+                                <span className="paid">Paid</span>
+                              </li>
+                              <li>
+                                <a
+                                  href="javascript:void(0)"
+                                  className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
+                                >
+                                  <FontAwesomeIcon icon={faPen} />
+                                </a>
+                              </li>
+                            </ul>
+                          </td>
+                          <td>
+                            <ul className="admin-paid-list">
+                              <li>
+
+                                <span className="paid">
+                                  Deliver Report
+                                </span>
+                              </li>
+                              <li>
+                                <a
+                                  href="javascript:void(0)"
+                                  className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
+                                >
+                                  <FontAwesomeIcon icon={faPen} />
+                                </a>
+                              </li>
+                            </ul>
+                          </td>
+                          <td>
                             <a
                               href="javascript:void(0)"
-                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
+                              className=" admin-sub-dropdown dropdown-toggle"
+                              data-bs-toggle="dropdown"
+                              aria-expanded="false"
                             >
-                              <FontAwesomeIcon icon={faPen} />
+
+                              <FontAwesomeIcon icon={faGear} /> Action
                             </a>
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-paid-list">
-                          <li>
 
-                            <span className="paid">
-                              Deliver Report
-                            </span>
-                          </li>
-                          <li>
-                            <a
-                              href="javascript:void(0)"
-                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
-                            >
-                              <FontAwesomeIcon icon={faPen} />
-                            </a>
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <a
-                          href="javascript:void(0)"
-                          className=" admin-sub-dropdown dropdown-toggle"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                        >
-
-                          <FontAwesomeIcon icon={faGear} /> Action
-                        </a>
-
-                        <div class="dropdown">
-                          <a
-                            href="javascript:void(0)"
-                            class="attendence-edit-btn"
-                            id="acticonMenu1"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                          >
-                            {/* <i class="fas fa-pen"></i> */}
-                          </a>
-                          <ul
-                            class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
-                            aria-labelledby="acticonMenu1"
-                          >
-                            <li className="drop-item">
+                            <div class="dropdown">
                               <a
-                                class="nw-dropdown-item"
-                                href="#"
-                                data-bs-toggle="modal"
-                                data-bs-target="#attendance-edit"
+                                href="javascript:void(0)"
+                                class="attendence-edit-btn"
+                                id="acticonMenu1"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
                               >
-                                <img src="/flask-report.png" alt="" />
-                                Edit Report
+                                {/* <i class="fas fa-pen"></i> */}
                               </a>
-                            </li>
-                            <li className="drop-item">
-                              <a class="nw-dropdown-item" href="#">
-                                <img src="/add-user.png" alt="" />
-                                Patient Details
-                              </a>
-                            </li>
-                            <li className="drop-item">
-                              <a class="nw-dropdown-item" href="#">
-                                <img src="/flask-report.png" alt="" />
-                                Appointment Details
-                              </a>
-                            </li>
+                              <ul
+                                class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
+                                aria-labelledby="acticonMenu1"
+                              >
+                                <li className="drop-item">
+                                  <a
+                                    class="nw-dropdown-item"
+                                    href="#"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#attendance-edit"
+                                  >
+                                    <img src="/flask-report.png" alt="" />
+                                    Edit Report
+                                  </a>
+                                </li>
+                                <li className="drop-item">
+                                  <a class="nw-dropdown-item" href="#">
+                                    <img src="/add-user.png" alt="" />
+                                    Patient Details
+                                  </a>
+                                </li>
+                                <li className="drop-item">
+                                  <a class="nw-dropdown-item" href="#">
+                                    <img src="/flask-report.png" alt="" />
+                                    Appointment Details
+                                  </a>
+                                </li>
 
-                            <li className="drop-item">
-                              <a class="nw-dropdown-item" href="#">
-                                <img src="/report-mail.png" alt="" />
-                                Send  Report  Email
-                              </a>
-                            </li>
-                          </ul>
-                        </div>
-                      </td>
-                    </tr>
+                                <li className="drop-item">
+                                  <a class="nw-dropdown-item" href="#">
+                                    <img src="/report-mail.png" alt="" />
+                                    Send  Report  Email
+                                  </a>
+                                </li>
+                              </ul>
+                            </div>
+                          </td>
+                        </tr>)}
 
                     <tr>
                       <td>02.</td>
@@ -294,7 +301,7 @@ function LabReports() {
                           <li>
                             <a
                               href="javascript:void(0)"
-                              className="edit-btn"  data-bs-toggle="modal" data-bs-target="#payment-Status"
+                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
                             >
                               <FontAwesomeIcon icon={faPen} />
                             </a>
@@ -422,7 +429,7 @@ function LabReports() {
                           <li>
                             <a
                               href="javascript:void(0)"
-                              className="edit-btn"  data-bs-toggle="modal" data-bs-target="#payment-Status"
+                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
                             >
                               <FontAwesomeIcon icon={faPen} />
                             </a>

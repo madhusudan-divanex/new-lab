@@ -108,7 +108,7 @@ function Router() {
           element: <ProtectedRoute component={ViewEmployee} />,
         },
         {
-          path: "/lab-test-reports",
+          path: "/lab-test-reports/:id",
           element: <ProtectedRoute component={LabTestReports} />,
         },
         {
@@ -116,7 +116,7 @@ function Router() {
           element: <ProtectedRoute component={EditProfile} />,
         },
         {
-          path: "/appointment-details",
+          path: "/appointment-details/:id",
           element: <ProtectedRoute component={AppointmentDetails} />,
         },
         {

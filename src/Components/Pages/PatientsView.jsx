@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { getSecureApiData } from "../../services/api";
 import { toast } from "react-toastify";
 import { useParams } from "react-router-dom";
+import base_url from "../../../baseUrl";
 
 function PatientsView() {
     const params = useParams()
@@ -15,15 +16,16 @@ function PatientsView() {
     const [medicalHistory, setMedicalHistory] = useState()
     const [demographicData, setDemographicData] = useState()
     const [prescriptionData, setPrescriptionData] = useState()
+    const [labAppointments, setLabAppointments] = useState([])
     const fetchPatient = async () => {
         try {
             const response = await getSecureApiData(`patient/detail/${patientId}`);
             if (response.success) {
-                console.log(response)
                 setPtData(response.user)
                 setMedicalHistory(response.medicalHistory)
                 setDemographicData(response.demographic)
                 setPrescriptionData(response.prescription)
+                setLabAppointments(response.labAppointment)
             } else {
                 toast.error(response.message)
             }
@@ -90,7 +92,7 @@ function PatientsView() {
                             <div className="view-employee-bx patient-vw-main">
                                 <div>
                                     <div className="view-avatr-bio-bx text-center">
-                                        <img src="/view-avatr.png" alt="" />
+                                        <img src={ptData?.profileImage ? `${base_url}/${ptData?.profileImage}` : "/view-avatr.png"} alt="" />
                                         <h4>{ptData?.name}</h4>
                                         <p><span className="vw-id">ID:</span> {ptData?._id?.slice(-10)}</p>
                                         <h6 className="vw-activ text-capitalize">{ptData?.status}</h6>
@@ -230,30 +232,36 @@ function PatientsView() {
                                                                     </thead>
                                                                     <tbody>
 
-                                                                        <tr>
-                                                                            <td>01.</td>
-                                                                            <td>  #89324879</td>
-                                                                            <td>
-                                                                                <div className="admin-table-bx">
-                                                                                    <div className="admin-table-sub-bx">
-                                                                                        <img src="/admin-tb-logo.png" alt="" />
-                                                                                        <div className="admin-table-sub-details">
-                                                                                            <h6>Sunil</h6>
-                                                                                            <p>ID: SU3320</p>
+                                                                        {labAppointments?.length > 0 &&
+                                                                            labAppointments?.map((item, key) =>
+                                                                                <tr key={key}>
+                                                                                    <td>{key + 1}</td>
+                                                                                    <td>  #{item?._id?.slice(-10)}</td>
+                                                                                    <td>
+                                                                                        <div className="admin-table-bx">
+                                                                                            <div className="admin-table-sub-bx">
+                                                                                                <img src={ptData?.profileImage ? `${base_url}/${ptData?.profileImage}` : "/admin-tb-logo.png"} alt="" />
+                                                                                                <div className="admin-table-sub-details">
+                                                                                                    <h6>{ptData?.name}</h6>
+                                                                                                    <p>ID: {ptData?._id?.slice(-10)}</p>
+                                                                                                </div>
+                                                                                            </div>
                                                                                         </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </td>
-                                                                            <td>
-                                                                                <ul className="ad-info-list">
-                                                                                    <li className="ad-info-item patient-report-item"><span className="ad-info-title"></span>Appointment ID : #0959595</li>
-                                                                                    <li className="ad-info-item"><span className="ad-info-title">Appointment Book Date : 20 jun 2025</span></li>
-                                                                                    <li className="ad-info-item"><span className="ad-info-title">Total Amount  :  $25</span></li>
-                                                                                </ul>
-                                                                            </td>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <ul className="ad-info-list">
+                                                                                            <li className="ad-info-item patient-report-item"><span className="ad-info-title"></span>Appointment ID : #{item?._id?.slice(-10)}</li>
+                                                                                            <li className="ad-info-item"><span className="ad-info-title">Appointment Book Date : {item?.date && new Date(item?.date)?.toLocaleDateString("en-GB", {
+                                                                                                day: "2-digit",
+                                                                                                month: "short",
+                                                                                                year: "numeric"
+                                                                                            })}</span></li>
+                                                                                            <li className="ad-info-item"><span className="ad-info-title">Total Amount  :  ${item?.fees}</span></li>
+                                                                                        </ul>
+                                                                                    </td>
 
-                                                                            <td ><span className="approved approved-active fw-400">Deliver Report</span></td>
-                                                                            {/* <td>
+                                                                                    <td ><span className="approved approved-active fw-400 text-capitalize">{item?.status}</span></td>
+                                                                                    {/* <td>
                                                                                 <a
                                                                                     href="javascript:void(0)"
                                                                                     className="grid-dots-btn"
@@ -262,101 +270,101 @@ function PatientsView() {
                                                                                 </a>
                                                                             </td> */}
 
-                                                                            <td>
-                                                                                <a
-                                                                                    href="javascript:void(0)"
-                                                                                    className="grid-dots-btn "
-                                                                                    data-bs-toggle="dropdown"
-                                                                                    aria-expanded="false"
-                                                                                >
+                                                                                    <td>
+                                                                                        <a
+                                                                                            href="javascript:void(0)"
+                                                                                            className="grid-dots-btn "
+                                                                                            data-bs-toggle="dropdown"
+                                                                                            aria-expanded="false"
+                                                                                        >
 
-                                                                                    <TbGridDots />
-                                                                                </a>
+                                                                                            <TbGridDots />
+                                                                                        </a>
 
-                                                                                <div class="dropdown">
-                                                                                    <a
-                                                                                        href="javascript:void(0)"
-                                                                                        class="attendence-edit-btn"
-                                                                                        id="acticonMenu1"
-                                                                                        data-bs-toggle="dropdown"
-                                                                                        aria-expanded="false"
-                                                                                    >
-                                                                                    </a>
-                                                                                    <ul
-                                                                                        class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
-                                                                                        aria-labelledby="acticonMenu1"
-                                                                                    >
-                                                                                        <li className="drop-item">
+                                                                                        <div class="dropdown">
                                                                                             <a
-                                                                                                class="nw-dropdown-item"
-                                                                                                href="#"
-                                                                                                data-bs-toggle="modal"
-                                                                                                data-bs-target="#attendance-edit"
+                                                                                                href="javascript:void(0)"
+                                                                                                class="attendence-edit-btn"
+                                                                                                id="acticonMenu1"
+                                                                                                data-bs-toggle="dropdown"
+                                                                                                aria-expanded="false"
                                                                                             >
-                                                                                                <img src="/flask-report.png" alt="" />
-                                                                                                Edit Report
                                                                                             </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/add-user.png" alt="" />
-                                                                                                Patient Details
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/flask-report.png" alt="" />
-                                                                                                Appointment Details
-                                                                                            </a>
-                                                                                        </li>
+                                                                                            <ul
+                                                                                                class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
+                                                                                                aria-labelledby="acticonMenu1"
+                                                                                            >
+                                                                                                <li className="drop-item">
+                                                                                                    <a
+                                                                                                        class="nw-dropdown-item"
+                                                                                                        href="#"
+                                                                                                        data-bs-toggle="modal"
+                                                                                                        data-bs-target="#attendance-edit"
+                                                                                                    >
+                                                                                                        <img src="/flask-report.png" alt="" />
+                                                                                                        Edit Report
+                                                                                                    </a>
+                                                                                                </li>
+                                                                                                <li className="drop-item">
+                                                                                                    <a class="nw-dropdown-item" href="#">
+                                                                                                        <img src="/add-user.png" alt="" />
+                                                                                                        Patient Details
+                                                                                                    </a>
+                                                                                                </li>
+                                                                                                <li className="drop-item">
+                                                                                                    <a class="nw-dropdown-item" href="#">
+                                                                                                        <img src="/flask-report.png" alt="" />
+                                                                                                        Appointment Details
+                                                                                                    </a>
+                                                                                                </li>
 
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/reprt-icon.png" alt="" />
-                                                                                                Generate Report
-                                                                                            </a>
-                                                                                        </li>
+                                                                                                <li className="drop-item">
+                                                                                                    <a class="nw-dropdown-item" href="#">
+                                                                                                        <img src="/reprt-icon.png" alt="" />
+                                                                                                        Generate Report
+                                                                                                    </a>
+                                                                                                </li>
 
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/barcd-icon.png" alt="" />
-                                                                                                Labels
-                                                                                            </a>
-                                                                                        </li>
+                                                                                                <li className="drop-item">
+                                                                                                    <a class="nw-dropdown-item" href="#">
+                                                                                                        <img src="/barcd-icon.png" alt="" />
+                                                                                                        Labels
+                                                                                                    </a>
+                                                                                                </li>
 
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/file.png" alt="" />
-                                                                                                Report  view
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/file.png" alt="" />
-                                                                                                Invoice
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/dc-usr.png" alt="" />
-                                                                                                Send  Report Doctor
-                                                                                            </a>
-                                                                                        </li>
+                                                                                                <li className="drop-item">
+                                                                                                    <a class="nw-dropdown-item" href="#">
+                                                                                                        <img src="/file.png" alt="" />
+                                                                                                        Report  view
+                                                                                                    </a>
+                                                                                                </li>
+                                                                                                <li className="drop-item">
+                                                                                                    <a class="nw-dropdown-item" href="#">
+                                                                                                        <img src="/file.png" alt="" />
+                                                                                                        Invoice
+                                                                                                    </a>
+                                                                                                </li>
+                                                                                                <li className="drop-item">
+                                                                                                    <a class="nw-dropdown-item" href="#">
+                                                                                                        <img src="/dc-usr.png" alt="" />
+                                                                                                        Send  Report Doctor
+                                                                                                    </a>
+                                                                                                </li>
 
 
 
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/add-user.png" alt="" />
-                                                                                                Send  Report Patient
-                                                                                            </a>
-                                                                                        </li>
-                                                                                    </ul>
-                                                                                </div>
-                                                                            </td>
-                                                                        </tr>
+                                                                                                <li className="drop-item">
+                                                                                                    <a class="nw-dropdown-item" href="#">
+                                                                                                        <img src="/add-user.png" alt="" />
+                                                                                                        Send  Report Patient
+                                                                                                    </a>
+                                                                                                </li>
+                                                                                            </ul>
+                                                                                        </div>
+                                                                                    </td>
+                                                                                </tr>)}
 
-                                                                        <tr>
+                                                                        {/* <tr>
                                                                             <td>02.</td>
                                                                             <td>  #89324879</td>
                                                                             <td>
@@ -471,241 +479,8 @@ function PatientsView() {
                                                                                     </ul>
                                                                                 </div>
                                                                             </td>
-                                                                        </tr>
+                                                                        </tr> */}
 
-                                                                        <tr>
-                                                                            <td>03.</td>
-                                                                            <td>  #89324879</td>
-                                                                            <td>
-                                                                                <div className="admin-table-bx">
-                                                                                    <div className="admin-table-sub-bx">
-                                                                                        <img src="/admin-tb-logo.png" alt="" />
-                                                                                        <div className="admin-table-sub-details">
-                                                                                            <h6>Sunil</h6>
-                                                                                            <p>ID: SU3320</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </td>
-                                                                            <td>
-                                                                                <ul className="ad-info-list">
-                                                                                    <li className="ad-info-item patient-report-item"><span className="ad-info-title"></span>Appointment ID : #0959595</li>
-                                                                                    <li className="ad-info-item"><span className="ad-info-title">Appointment Book Date : 20 jun 2025</span></li>
-                                                                                    <li className="ad-info-item"><span className="ad-info-title">Total Amount  :  $25</span></li>
-                                                                                </ul>
-                                                                            </td>
-
-                                                                            <td ><span className="approved approved-active fw-400">Deliver Report</span></td>
-                                                                            <td>
-                                                                                <a
-                                                                                    href="javascript:void(0)"
-                                                                                    className="grid-dots-btn "
-                                                                                    data-bs-toggle="dropdown"
-                                                                                    aria-expanded="false"
-                                                                                >
-
-                                                                                    <TbGridDots />
-                                                                                </a>
-
-                                                                                <div class="dropdown">
-                                                                                    <a
-                                                                                        href="javascript:void(0)"
-                                                                                        class="attendence-edit-btn"
-                                                                                        id="acticonMenu1"
-                                                                                        data-bs-toggle="dropdown"
-                                                                                        aria-expanded="false"
-                                                                                    >
-                                                                                    </a>
-                                                                                    <ul
-                                                                                        class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
-                                                                                        aria-labelledby="acticonMenu1"
-                                                                                    >
-                                                                                        <li className="drop-item">
-                                                                                            <a
-                                                                                                class="nw-dropdown-item"
-                                                                                                href="#"
-                                                                                                data-bs-toggle="modal"
-                                                                                                data-bs-target="#attendance-edit"
-                                                                                            >
-                                                                                                <img src="/flask-report.png" alt="" />
-                                                                                                Edit Report
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/add-user.png" alt="" />
-                                                                                                Patient Details
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/flask-report.png" alt="" />
-                                                                                                Appointment Details
-                                                                                            </a>
-                                                                                        </li>
-
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/reprt-icon.png" alt="" />
-                                                                                                Generate Report
-                                                                                            </a>
-                                                                                        </li>
-
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/barcd-icon.png" alt="" />
-                                                                                                Labels
-                                                                                            </a>
-                                                                                        </li>
-
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/file.png" alt="" />
-                                                                                                Report  view
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/file.png" alt="" />
-                                                                                                Invoice
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/dc-usr.png" alt="" />
-                                                                                                Send  Report Doctor
-                                                                                            </a>
-                                                                                        </li>
-
-
-
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/add-user.png" alt="" />
-                                                                                                Send  Report Patient
-                                                                                            </a>
-                                                                                        </li>
-                                                                                    </ul>
-                                                                                </div>
-                                                                            </td>
-                                                                        </tr>
-
-                                                                        <tr>
-                                                                            <td>04.</td>
-                                                                            <td>  #89324879</td>
-                                                                            <td>
-                                                                                <div className="admin-table-bx">
-                                                                                    <div className="admin-table-sub-bx">
-                                                                                        <img src="/admin-tb-logo.png" alt="" />
-                                                                                        <div className="admin-table-sub-details">
-                                                                                            <h6>Sunil</h6>
-                                                                                            <p>ID: SU3320</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </td>
-                                                                            <td>
-                                                                                <ul className="ad-info-list">
-                                                                                    <li className="ad-info-item patient-report-item"><span className="ad-info-title"></span>Appointment ID : #0959595</li>
-                                                                                    <li className="ad-info-item"><span className="ad-info-title">Appointment Book Date : 20 jun 2025</span></li>
-                                                                                    <li className="ad-info-item"><span className="ad-info-title">Total Amount  :  $25</span></li>
-                                                                                </ul>
-                                                                            </td>
-
-                                                                            <td ><span className="approved approved-active fw-400">Deliver Report</span></td>
-                                                                            <td>
-                                                                                <a
-                                                                                    href="javascript:void(0)"
-                                                                                    className="grid-dots-btn "
-                                                                                    data-bs-toggle="dropdown"
-                                                                                    aria-expanded="false"
-                                                                                >
-
-                                                                                    <TbGridDots />
-                                                                                </a>
-
-                                                                                <div class="dropdown">
-                                                                                    <a
-                                                                                        href="javascript:void(0)"
-                                                                                        class="attendence-edit-btn"
-                                                                                        id="acticonMenu1"
-                                                                                        data-bs-toggle="dropdown"
-                                                                                        aria-expanded="false"
-                                                                                    >
-                                                                                    </a>
-                                                                                    <ul
-                                                                                        class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
-                                                                                        aria-labelledby="acticonMenu1"
-                                                                                    >
-                                                                                        <li className="drop-item">
-                                                                                            <a
-                                                                                                class="nw-dropdown-item"
-                                                                                                href="#"
-                                                                                                data-bs-toggle="modal"
-                                                                                                data-bs-target="#attendance-edit"
-                                                                                            >
-                                                                                                <img src="/flask-report.png" alt="" />
-                                                                                                Edit Report
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/add-user.png" alt="" />
-                                                                                                Patient Details
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/flask-report.png" alt="" />
-                                                                                                Appointment Details
-                                                                                            </a>
-                                                                                        </li>
-
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/reprt-icon.png" alt="" />
-                                                                                                Generate Report
-                                                                                            </a>
-                                                                                        </li>
-
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/barcd-icon.png" alt="" />
-                                                                                                Labels
-                                                                                            </a>
-                                                                                        </li>
-
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/file.png" alt="" />
-                                                                                                Report  view
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/file.png" alt="" />
-                                                                                                Invoice
-                                                                                            </a>
-                                                                                        </li>
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/dc-usr.png" alt="" />
-                                                                                                Send  Report Doctor
-                                                                                            </a>
-                                                                                        </li>
-
-
-
-                                                                                        <li className="drop-item">
-                                                                                            <a class="nw-dropdown-item" href="#">
-                                                                                                <img src="/add-user.png" alt="" />
-                                                                                                Send  Report Patient
-                                                                                            </a>
-                                                                                        </li>
-                                                                                    </ul>
-                                                                                </div>
-                                                                            </td>
-                                                                        </tr>
 
 
 

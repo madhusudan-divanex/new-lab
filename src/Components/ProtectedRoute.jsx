@@ -2,7 +2,7 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { getApiData } from "../services/api";
+import { getApiData, getSecureApiData } from "../services/api";
 
 
 const ProtectedRoute = ({ component: Component }) => {
@@ -18,10 +18,13 @@ const ProtectedRoute = ({ component: Component }) => {
         return;
       }
       try {
-        const res = await getApiData(`lab/${localStorage.getItem("userId")}`);
+        const res = await getSecureApiData(`lab/${localStorage.getItem("userId")}`);
         if (res?.success) {
           setIsAuthenticated(true);
+          console.log("hehe")
         } else {
+          setIsAuthenticated(false)
+          navigate('/login')
           throw new Error("Invalid token");
         }
       } catch (error) {

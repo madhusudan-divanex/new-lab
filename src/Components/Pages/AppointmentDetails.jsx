@@ -1,8 +1,30 @@
 
 import { faCircleXmark, faPen } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { useEffect, useState } from "react"
+import { useParams } from "react-router-dom"
+import { getSecureApiData } from "../../services/api"
+import { toast } from "react-toastify"
 
 function AppointmentDetails() {
+  const params=useParams()
+  const appointmentId=params.id
+  const [appointmentData,setAppointmentData]=useState({})
+  const fetchAppointmentData=async()=>{
+    try {
+      const response=await getSecureApiData(`lab/appointment-data/${appointmentId}`)
+      if(response.success){
+        setAppointmentData(response.data)
+      }else{
+        toast.error(response.message)
+      }
+    } catch (error) {
+      
+    }
+  }
+  useEffect(()=>{
+    fetchAppointmentData()
+  },[appointmentId])
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -49,7 +71,7 @@ function AppointmentDetails() {
                       <span className="vw-info-icon"><img src="/schedule.svg" alt="" /></span>
                       <div>
                         <p className="vw-info-value mb-2">Appointment Date</p>
-                        <p className="vw-info-title">20 June 2025, at 10:00pm</p>
+                        <p className="vw-info-title">{new Date(appointmentData?.date)?.toLocaleString()}</p>
                       </div>
                     </li>
 
@@ -59,10 +81,10 @@ function AppointmentDetails() {
 
               <div className="appointment-crd-details">
                 <ul className="appointment-crd-list">
-                  <li className="appointment-crd-item">Appointment ID : <span className="appointment-crd-title">#0959595</span></li>
+                  <li className="appointment-crd-item">Appointment ID : <span className="appointment-crd-title">#{appointmentData?._id?.slice(-10)}</span></li>
                   <li className="appointment-crd-item">Appointment Completed date  : <span className="appointment-crd-title">-</span></li>
-                  <li className="appointment-crd-item">Amount : <span className="appointment-crd-title"> $25</span></li>
-                  <li className="appointment-crd-item">Payment Status : <span className="appointment-due-title"> Due</span></li>
+                  <li className="appointment-crd-item">Amount : <span className="appointment-crd-title"> ${appointmentData?.fees}</span></li>
+                  <li className="appointment-crd-item">Payment Status : <span className="appointment-due-title text-capitalize"> {appointmentData?.paymentStatus}</span></li>
                 </ul>
               </div>
 
@@ -76,7 +98,7 @@ function AppointmentDetails() {
                   <h6 className="subtitle mb-2">Payment Status</h6>
                   <ul className="admin-paid-list justify-content-center">
                     <li>
-                      <span className="paid due">Due</span>
+                      <span className="paid due text-capitalize">{appointmentData?.paymentStatus}</span>
                     </li>
                     <li>
                       <a
@@ -94,8 +116,8 @@ function AppointmentDetails() {
                   <ul className="admin-paid-list justify-content-center">
                     <li>
 
-                      <span className="paid pending">
-                        Visit Pending
+                      <span className="paid pending text-capitalize">
+                        {appointmentData?.status}
                       </span>
                     </li>
                     <li>

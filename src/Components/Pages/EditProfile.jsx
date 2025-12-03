@@ -7,12 +7,12 @@ import {
     faTrash
 } from "@fortawesome/free-solid-svg-icons";
 import { IoCloudUploadOutline } from "react-icons/io5";
-import { FaPlusCircle } from "react-icons/fa";
+import { FaPlusCircle, FaTrash } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { fetchUserDetail } from "../../redux/features/userSlice";
 import base_url from "../../../baseUrl";
-import { securePostData } from "../../services/api";
+import { postApiData, securePostData } from "../../services/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
@@ -68,13 +68,12 @@ function EditProfile() {
         for (let key in labData) {
             payload.append(key, labData[key]);
         }
-
+        payload.append('labId', userId)
         try {
             const response = await postApiData('lab', payload)
             if (response.success) {
-                toast.success('Signup successfully')
-                localStorage.setItem('token', response.token)
-                localStorage.setItem('userId', response.userId)
+                dispatch(fetchUserDetail())
+                toast.success('Data updated successfully')
                 // navigate('/create-account-image') 
             } else {
                 toast.error(response.message)
@@ -113,6 +112,9 @@ function EditProfile() {
         try {
             const res = await securePostData('lab/image', formData);
             if (res.success) {
+                setPreviewLabImages([])
+                setPreviewThumb(null)
+                dispatch(fetchUserDetail())
                 toast.success("Images saved successfully")
                 // navigate('/create-account-address')
             } else {
@@ -228,11 +230,14 @@ function EditProfile() {
         licenseFile: null,
         labCert: [{ certName: "", certFile: null }]
     });
+    const [certPreviews, setCertPreviews] = useState([]);
+    const [licencePreview, setLicensePreview] = useState(null)
     const handleLicenseInput = (e) => {
         setLicenseData({ ...licenseData, labLicenseNumber: e.target.value });
     };
 
     const handleLicenseFile = (e) => {
+        setLicensePreview(URL.createObjectURL(e.target.files[0]))
         setLicenseData({ ...licenseData, licenseFile: e.target.files[0] });
     };
 
@@ -240,17 +245,29 @@ function EditProfile() {
     const handleCertChange = (key, e) => {
         const { name, value } = e.target;
         const list = [...licenseData.labCert];
-        console.log(key,e.target,name,value)
         list[key][name] = value;
         setLicenseData({ ...licenseData, labCert: list });
     };
 
     const handleCertFile = (key, e) => {
         const file = e.target.files[0];
-        const list = [...licenseData.labCert];
-        list[key].certFile = file;
+
+        // Update licenseData safely (immutable)
+        const list = licenseData.labCert.map((cert, index) => {
+            if (index === key) {
+                return { ...cert, certFile: file }; // create a new object
+            }
+            return cert;
+        });
         setLicenseData({ ...licenseData, labCert: list });
+
+        // Update previews
+        const previewList = [...certPreviews];
+        previewList[key] = URL.createObjectURL(file);
+        setCertPreviews(previewList);
     };
+
+
 
     // Add/Remove Certificates
     const addCertificate = () => {
@@ -284,29 +301,33 @@ function EditProfile() {
         }
 
         // --- Create licenseData ---
-        const dataToSend = new licenseData();
+        const dataToSend = new FormData();
         dataToSend.append("userId", userId);      // Make sure this exists
         dataToSend.append("labLicenseNumber", licenseData.labLicenseNumber);
 
-        // Send JSON meta data for certificates
-        const certMeta = licenseData.labCert.map(c => ({ certName: c.certName }));
-        dataToSend.append("labCert", JSON.stringify(certMeta));
-
-        // Append certificate files (backend expects: certFiles[])
+        const certMeta = licenseData.labCert.map(c => ({
+            certName: c.certName,
+            certFile: c.certFile instanceof File ? null : c.certFile // keep existing path
+        }));
+        dataToSend.append("labCert", JSON.stringify(certMeta));      
         licenseData.labCert.forEach((item) => {
-            dataToSend.append("certFiles", item.certFile);
+            if (item.certFile instanceof File) {
+                dataToSend.append("certFiles", item.certFile);
+            }
         });
 
-        // Append license file (backend expects: licenseFile)
         dataToSend.append("licenseFile", licenseData.licenseFile);
+        try {
+            const result = await securePostData("lab/license", dataToSend);
+            if (result.success) {
+                toast.success("Lab license data saved successfully");
+                dispatch(fetchUserDetail())
+                setCertPreviews([])
+            } else {
+                toast.error(result.message);
+            }
+        } catch (error) {
 
-        const result = await securePostData("lab/license", dataToSend);
-
-        if (result.success) {
-            toast.success("Lab license data saved successfully");
-            setIsShow(true);
-        } else {
-            toast.error(result.message);
         }
     };
     useEffect(() => {
@@ -320,8 +341,9 @@ function EditProfile() {
         if (labAddress) {
             setAddressData(labAddress)
         }
-        if (labImages) {
-            setLabImages(labImages)
+        if (labImg) {
+            setLabImages(labImg)
+            setThumbnail(labImg.thumbnail)
         }
         if (labLicense) {
             setLicenseData(labLicense)
@@ -330,7 +352,40 @@ function EditProfile() {
             setPersonData(labPerson)
         }
 
-    }, [profiles, labAddress, labImages, labLicense, labPerson])
+    }, [profiles, labAddress, labImg, labLicense, labPerson])
+
+    const handleDeleteImg = async (path, type) => {
+        if (previewThumb) {
+            setLabImages(labImg)
+            setPreviewThumb(null)
+            return
+        }
+        const confirm = window.confirm('Are you sure')
+        if (!confirm) {
+            return
+        }
+        const data = { labId: userId, path, type }
+        try {
+            const response = await securePostData('lab/delete-image', data)
+            if (response.success) {
+                dispatch(fetchUserDetail())
+                toast.success("Image deleted")
+            } else {
+                toast.error(response.message)
+            }
+        } catch (error) {
+
+        }
+    }
+    const handleRemovePreview = (index) => {
+        setPreviewLabImages(prev => prev?.filter((_, i) => i !== index));
+        setLabImages(prev => ({
+            ...prev,
+            labImg: prev.labImg?.filter((_, i) => i !== index)
+        }));
+    };
+
+
     return (
         <>
             <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -446,7 +501,16 @@ function EditProfile() {
                                                     <div className="col-lg-12">
                                                         <div className="lab-profile-mega-bx">
                                                             <div className="lab-profile-avatr-bx">
-                                                                <img src={profiles?.logo ? `${base_url}/${profiles?.logo}` : "/profile-tab-avatar.png"} alt="" />
+                                                                <img src={
+                                                                    labData?.logo
+                                                                        ? typeof labData.logo === "string"
+                                                                            ? (labData.logo.startsWith("uploads")
+                                                                                ? `${base_url}/${labData.logo}`
+                                                                                : labData.logo
+                                                                            )
+                                                                            : URL.createObjectURL(labData.logo) // File object
+                                                                        : ""
+                                                                } alt="" />
                                                                 <div className="lab-profile-edit-avatr">
                                                                     <a href="javascript:void(0)" className="edit-btn cursor-pointer">
                                                                         <FontAwesomeIcon icon={faPen} />
@@ -454,7 +518,9 @@ function EditProfile() {
                                                                 </div>
                                                                 <input
                                                                     type="file"
-                                                                    accept=""
+                                                                    accept="images/*"
+                                                                    name="logo"
+                                                                    onChange={labChange}
                                                                     className="lab-profile-file-input"
                                                                 />
                                                             </div>
@@ -580,28 +646,30 @@ function EditProfile() {
                                                                         type="file"
                                                                         className="d-none"
                                                                         id="fileInput1"
-                                                                        accept=".png,.jpg,.jpeg"
+                                                                        name="thumbnail"
+                                                                        onChange={handleThumbnailChange}
+                                                                        accept=".png,jpg,.jpeg"
                                                                     />
 
-                                                                    <div id="filePreviewWrapper" className="d-none mt-3">
-                                                                        <img src="" alt="Preview" className="img-thumbnail" />
-                                                                    </div>
+                                                                    {previewThumb && <div id="filePreviewWrapper" className=" mt-3">
+                                                                        <img src={previewThumb} alt="Preview" className="img-thumbnail" />
+                                                                    </div>}
                                                                 </div>
                                                             </div>
                                                         </div>
-
-                                                        <div className="custom-frm-bx ">
+                                                        {(labImages?.thumbnail || labImg?.thumbnail) && <div className="custom-frm-bx ">
                                                             <div className="form-control lablcense-frm-control align-content-center border-0">
                                                                 <div className="lablcense-bx">
                                                                     <div>
-                                                                        <h6 ><FontAwesomeIcon icon={faImage} /> {labImg?.thumbnail.split("\\").pop().split("-").slice(1).join("-")}</h6>
+                                                                        <h6><FontAwesomeIcon icon={faImage} />
+                                                                            {thumbnail?.name || labImg?.thumbnail?.split("\\").pop().split("-").slice(1).join("-")}</h6>
                                                                     </div>
                                                                     <div className="">
-                                                                        <a href="javascript:void(0)" className="text-black"><FontAwesomeIcon icon={faTrash} /></a>
+                                                                        <button type="button" onClick={() => handleDeleteImg(labImages.thumbnail, 'thumbnail')} className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        </div>}
                                                     </div>
 
                                                     <div className="col-lg-5">
@@ -614,7 +682,7 @@ function EditProfile() {
 
                                                                 <div>
                                                                     <p className="fw-semibold mb-1">
-                                                                        <label htmlFor="fileInput1" className="file-label file-select-label">
+                                                                        <label htmlFor="fileInput2" className="file-label file-select-label">
                                                                             Choose a file or drag & drop here
                                                                         </label>
                                                                     </p>
@@ -623,7 +691,7 @@ function EditProfile() {
 
 
                                                                     <div className="mt-3">
-                                                                        <label htmlFor="fileInput1" className="browse-btn">
+                                                                        <label htmlFor="fileInput2" className="browse-btn">
                                                                             Browse File
                                                                         </label>
                                                                     </div>
@@ -631,18 +699,40 @@ function EditProfile() {
                                                                     <input
                                                                         type="file"
                                                                         className="d-none"
-                                                                        id="fileInput1"
+                                                                        id="fileInput2"
+                                                                        name="labImg"
+                                                                        multiple
+                                                                        onChange={handleLabImagesChange}
+                                                                        max={3}
                                                                         accept=".png,.jpg,.jpeg"
                                                                     />
 
                                                                     <div id="filePreviewWrapper" className="d-none mt-3">
-                                                                        <img src="" alt="Preview" className="img-thumbnail" />
+                                                                        <img src={previewLabImages} alt="Preview" className="img-thumbnail" />
                                                                     </div>
+
                                                                 </div>
                                                             </div>
                                                         </div>
 
                                                         <ul>
+                                                            {previewLabImages.map((src, idx) => (
+                                                                <div key={idx} style={{ display: "inline-block", position: "relative", marginRight: "10px" }}>
+                                                                    <img
+                                                                        src={src}
+                                                                        alt={`Lab Preview ${idx}`}
+                                                                        width={100}
+                                                                        style={{ marginRight: '10px' }}
+                                                                    />
+                                                                    <button
+                                                                        className="btn-close"
+                                                                        type="button"
+                                                                        onClick={() => handleRemovePreview(idx)}
+                                                                        style={{ position: "absolute", top: 0, right: 0 }}
+                                                                    ></button>
+                                                                </div>
+                                                            ))}
+
                                                             {labImg?.labImg?.length > 0 && labImg?.labImg?.map((item, key) =>
                                                                 <li key={key}>
                                                                     <div className="custom-frm-bx ">
@@ -652,7 +742,7 @@ function EditProfile() {
                                                                                     <h6 ><FontAwesomeIcon icon={faImage} /> {item?.split("\\").pop().split("-").slice(1).join("-")}</h6>
                                                                                 </div>
                                                                                 <div className="">
-                                                                                    <a href="javascript:void(0)" className="text-black"><FontAwesomeIcon icon={faTrash} /></a>
+                                                                                    <button type="button" onClick={() => handleDeleteImg(item, 'labImg')} className="text-black"><FontAwesomeIcon icon={faTrash} /></button>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -785,12 +875,12 @@ function EditProfile() {
                                                                     <label htmlFor="">Upload License</label>
                                                                     <div className="upload-box p-3 nw-upload-bx  justify-content-center">
                                                                         <div className="upload-icon mb-2">
-                                                                            <IoCloudUploadOutline />
+                                                                            {licencePreview ? <img style={{ borderRadius: '50%', objectFit: 'cover', height: '70px' }} src={licencePreview} /> : <IoCloudUploadOutline />}
                                                                         </div>
 
                                                                         <div>
                                                                             <p className="fw-semibold mb-1">
-                                                                                <label htmlFor="fileInput1" className="file-label file-select-label">
+                                                                                <label htmlFor="fileInput3" className="file-label file-select-label">
                                                                                     Choose a file or drag & drop here
                                                                                 </label>
                                                                             </p>
@@ -799,7 +889,7 @@ function EditProfile() {
 
 
                                                                             <div className="mt-3">
-                                                                                <label htmlFor="fileInput1" className="browse-btn">
+                                                                                <label htmlFor="fileInput3" className="browse-btn">
                                                                                     Browse File
                                                                                 </label>
                                                                             </div>
@@ -807,18 +897,23 @@ function EditProfile() {
                                                                             <input
                                                                                 type="file"
                                                                                 className="d-none"
-                                                                                id="fileInput1"
+                                                                                id="fileInput3"
+                                                                                onChange={handleLicenseFile}
+                                                                                name="licenseFile"
                                                                                 accept=".png,.jpg,.jpeg"
                                                                             />
 
-                                                                            <div id="filePreviewWrapper" className="d-none mt-3">
-                                                                                <img src="" alt="Preview" className="img-thumbnail" />
-                                                                            </div>
+                                                                            {/* {licencePreview &&
+                                                                            <div id="filePreviewWrapper position-relative display-inline" className=" mt-3">
+                                                                                <img src={licencePreview} alt="Preview" className="img-thumbnail" />
+                                                                                <button style={{ position: "absolute", top: 0, right: 0 }} onClick={()=>{setLicenseData({...licenseData,licenseFile:labLicense.licenceFile})
+                                                                                    setLicensePreview(null)}} className="btn-close" type="button"></button>
+                                                                            </div>} */}
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="custom-frm-bx ">
+                                                                {!licencePreview && <div className="custom-frm-bx ">
                                                                     <div className="form-control lablcense-frm-control align-content-center border-0">
                                                                         <div className="lablcense-bx">
                                                                             <div>
@@ -829,7 +924,7 @@ function EditProfile() {
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
+                                                                </div>}
                                                             </div>
                                                         </div>
                                                     </form>
@@ -840,8 +935,8 @@ function EditProfile() {
                                                 <h5 className="fz-18 my-3">Certificate</h5>
                                                 <div className="border edit-licence-tp-box border-black p-3">
                                                     <form action="">
-                                                        {labLicense?.labCert?.length > 0 &&
-                                                            labLicense?.labCert?.map((item, key) =>
+                                                        {licenseData?.labCert?.length > 0 &&
+                                                            licenseData?.labCert?.map((item, key) =>
                                                                 <div className="row" key={key}>
 
                                                                     <div className="col-lg-5">
@@ -854,7 +949,7 @@ function EditProfile() {
                                                                                 value={item?.certName}
                                                                                 name="certName"
                                                                                 required
-                                                                                onChange={(e)=>handleCertChange(key,e)}
+                                                                                onChange={(e) => handleCertChange(key, e)}
                                                                             />
                                                                         </div>
                                                                     </div>
@@ -865,6 +960,7 @@ function EditProfile() {
                                                                             <div className="upload-box p-3 nw-upload-bx  justify-content-center">
                                                                                 <div className="upload-icon mb-2">
                                                                                     <IoCloudUploadOutline />
+
                                                                                 </div>
 
                                                                                 <div>
@@ -889,34 +985,44 @@ function EditProfile() {
                                                                                         id={`certInput${key}`}
                                                                                         name="certFile"
                                                                                         required
-                                                                                        onChange={(e)=>handleCertFile(key,e)}
+                                                                                        onChange={(e) => handleCertFile(key, e)}
                                                                                         accept=".png,.jpg,.jpeg"
                                                                                     />
 
                                                                                     <div id="filePreviewWrapper" className="d-none mt-3">
                                                                                         <img src="" alt="Preview" className="img-thumbnail" />
                                                                                     </div>
+                                                                                    {certPreviews[key] && (
+                                                                                        <img
+                                                                                            src={certPreviews[key]}
+                                                                                            alt="Certificate Preview"
+                                                                                            style={{ height: '70px', marginTop: '10px' }}
+                                                                                        />
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
 
-                                                                        <div className="custom-frm-bx ">
+                                                                        {item?.certFile && <div className="custom-frm-bx ">
                                                                             <div className="form-control lablcense-frm-control align-content-center border-0">
                                                                                 <div className="lablcense-bx">
                                                                                     <div>
-                                                                                        <h6 ><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} /> {item?.certFile.split("\\").pop().split("-").slice(1).join("-")}</h6>
+                                                                                        <h6 ><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} />
+                                                                                            {item?.certFile instanceof File ? item?.certFile.name
+                                                                                                : item?.certFile?.split("\\").pop().split("-").slice(1).join("-")}</h6>
                                                                                     </div>
                                                                                     <div className="">
                                                                                         <a href="javascript:void(0)" className="text-black"><FontAwesomeIcon icon={faTrash} /></a>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
-                                                                        </div>
+                                                                        </div>}
                                                                     </div>
 
                                                                     <div className="col-lg-2 d-flex align-items-center justify-content-end">
-                                                                        <div>
-                                                                            <a href="javascript:void(0)" className=""><FaPlusCircle style={{ color: "#34A853", fontSize: "20px" }} /></a>
+                                                                        <div className="d-flex flex-column">
+                                                                            {licenseData.labCert?.length !== 1 && <button type="button" onClick={() => removeCertificate(key)} className="text-danger"><FontAwesomeIcon icon={faTrash} /></button>}
+                                                                            {key == licenseData.labCert?.length - 1 && <button type="button" onClick={() => addCertificate()} className=""><FaPlusCircle style={{ color: "#34A853", fontSize: "20px" }} /></button>}
                                                                         </div>
                                                                     </div>
 
@@ -927,7 +1033,7 @@ function EditProfile() {
 
                                             <div className="d-flex justify-content-end gap-3">
                                                 <button type="submit" className="nw-filtr-thm-btn outline">Cancel</button>
-                                                <button type="submit" className="nw-filtr-thm-btn">Save</button>
+                                                <button type="button" onClick={(e) => licenseSubmit(e)} className="nw-filtr-thm-btn">Save</button>
                                             </div>
 
                                         </div>

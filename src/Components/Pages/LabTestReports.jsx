@@ -4,9 +4,115 @@ import {
   faEye,
 } from "@fortawesome/free-solid-svg-icons";
 import { FaPlusCircle } from "react-icons/fa";
-import { NavLink } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
+import { getSecureApiData, securePostData } from "../../services/api";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 function LabTestReports() {
+  const params = useParams();
+  const appointMentId = params.id;
+  const [selectedTab, setSelectedTab] = useState(null)
+  const userId = localStorage.getItem('userId');
+
+  const [appointmentData, setAppointmentData] = useState(null);
+  const [testId, setTestId] = useState([]);
+  const [testData, setTestData] = useState([]);
+
+  // Fetch appointment data
+  const fetchLabAppointment = async () => {
+    try {
+      const response = await getSecureApiData(`lab/appointment-data/${appointMentId}`);
+      if (response.success) {
+        setAppointmentData(response.data);
+      } else {
+        toast.error(response.message);
+      }
+    } catch (err) {
+      console.error("Error fetching appointment:", err);
+    }
+  };
+
+  // Extract test IDs from appointment data
+  useEffect(() => {
+    fetchLabAppointment();
+  }, [userId]);
+
+  useEffect(() => {
+    if (appointmentData?.testId) {
+      const ids = appointmentData.testId.map(item => item);
+      setTestId(ids);
+    }
+  }, [appointmentData]);
+
+  // Fetch each test one by one
+  useEffect(() => {
+    const fetchTestsOneByOne = async () => {
+      if (testId.length === 0) return;
+      console.log(testId)
+      const allTests = [];
+      for (const id of testId) {
+        try {
+          const response = await getSecureApiData(`lab/test-data/${id}`);
+          if (response.success) {
+
+            setSelectedTab(response.data._id)
+            allTests.push(response.data);
+          } else {
+            toast.error(response.message);
+          }
+        } catch (err) {
+          console.error(`Error fetching test ${id}:`, err);
+        }
+      }
+      setTestData(allTests);
+    };
+
+    fetchTestsOneByOne();
+  }, [testId]);
+  const [reportData, setReportData] = useState([]);
+  const [componentResults, setComponentResults] = useState({});
+  const [comment, setComment] = useState("");
+  const handleSave = async () => {
+    const item = testData.find((t) => t._id === selectedTab);
+
+    const components = item.component.map((c, i) => ({
+      cmpId: c._id,
+      result: componentResults[i]?.result || "",
+      status: componentResults[i]?.status || "",
+    }));
+
+    const payload = {
+      labId: userId,
+      patientId: appointmentData.patientId,
+      testId: selectedTab,
+      appointmentId: appointMentId,
+      component: components,
+      comment: document.querySelector("#comment").value,
+    };
+    try {
+      const response = await securePostData('lab/test-report', payload)
+      if (response.success) {
+        fetchLabAppointment()
+      }
+    } catch (error) {
+
+    }
+  };
+  const fetchTestReport = async () => {
+    const data={appointmentId:appointMentId,testId:''}
+    try {
+      const response = await getSecureApiData(`lab/report-data/${appointMentId}`);
+      if (response.success) {
+        setAppointmentData(response.data);
+      } else {
+        toast.error(response.message);
+      }
+    } catch (err) {
+      console.error("Error fetching appointment:", err);
+    }
+  };
+
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -60,299 +166,124 @@ function LabTestReports() {
               </div>
 
               <div className="patient-bio-tab">
-                <ul className="nav nav-tabs gap-3" id="myTab" role="tablist">
-                  <li className="nav-item" role="presentation">
-                    <a
-                      className="nav-link active"
-                      id="home-tab"
-                      data-bs-toggle="tab"
-                      href="#home"
-                      role="tab"
-                    >
-                      CBC Report
-                    </a>
-                  </li>
-
-                  <li className="nav-item" role="presentation">
-                    <a
-                      className="nav-link"
-                      id="profile-tab"
-                      data-bs-toggle="tab"
-                      href="#profile"
-                      role="tab"
-                    >
-                      Haemoglobin
-                    </a>
-                  </li>
-
-
+                <ul className="nav nav-tabs gap-3">
+                  {testData?.map((item) => (
+                    <li className="nav-item" key={item._id}>
+                      <a
+                        className={`nav-link ${selectedTab === item._id ? "active" : ""
+                          } text-capitalize`}
+                        onClick={() => setSelectedTab(item._id)}
+                        role="button"
+                      >
+                        {item.shortName}
+                      </a>
+                    </li>
+                  ))}
                 </ul>
 
-                <div className="tab-content mt-4" id="myTabContent">
-                  <div
-                    className="tab-pane fade show active"
-                    id="home"
-                    role="tabpanel"
-                  >
-                    <div className="sub-tab-brd">
-                      <div className="table-section mega-table-section">
-                        <div className="table table-responsive mb-0">
-                          <table className="table mb-0">
-                            <thead>
-                              <tr>
-                                <th>Name</th>
-                                <th>Unit</th>
-                                <th>Reference Range</th>
-                                <th>Result</th>
-                                <th>Status</th>
+                <div className="tab-content mt-4">
+                  {testData
+                    ?.filter((t) => t._id === selectedTab)
+                    .map((item) => (
+                      <div className="tab-pane fade show active" key={item._id}>
+                        <div className="sub-tab-brd">
+                          <div className="table-section mega-table-section">
+                            <div className="table table-responsive mb-0">
+                              <table className="table mb-0">
+                                <thead>
+                                  <tr>
+                                    <th>Name</th>
+                                    <th>Unit</th>
+                                    <th>Reference Range</th>
+                                    <th>Result</th>
+                                    <th>Status</th>
+                                  </tr>
+                                </thead>
 
-                              </tr>
-                            </thead>
-                            <tbody>
+                                <tbody>
+                                  <tr>
+                                    <td colSpan={5}>
+                                      <span className="reprt-title text-capitalize">
+                                        {item.title}
+                                      </span>
+                                    </td>
+                                  </tr>
 
-                              <tr>
-                                <td><span className="reprt-title">Diffrential Count</span></td>
-                              </tr>
+                                  {item.component.map((c, i) => (
+                                    <tr key={i}>
+                                      <td>{c.name}</td>
+                                      <td>{c.unit}</td>
+                                      <td>{c.referenceRange}%</td>
 
+                                      <td>
+                                        <input
+                                          type="text"
+                                          className="form-control patient-frm-control"
+                                          placeholder="50"
+                                          value={componentResults[i]?.result || ""}
+                                          onChange={(e) =>
+                                            setComponentResults(prev => ({
+                                              ...prev,
+                                              [i]: {
+                                                ...prev[i],
+                                                result: e.target.value
+                                              }
+                                            }))
+                                          }
+                                        />
+                                      </td>
 
-                              <tr>
-                                <td>Lymphocyte</td>
-                                <td>
-                                  mm/dl
-                                </td>
-                                <td>
-                                  50-60%
-                                </td>
-                                <td>
-                                  <div className="custom-frm-bx mb-0">
-                                    <input type="text" name="" id="" className="form-control patient-frm-control" placeholder="50" />
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="custom-frm-bx mb-0">
-                                    <select name="" id="" className="form-select patient-frm-control">
-                                      <option value="">---Select status---</option>
-                                    </select>
-                                  </div>
-                                </td>
-                              </tr>
+                                      <td>
+                                        <select
+                                          className="form-select patient-frm-control"
+                                          value={componentResults[i]?.status || ""}
+                                          onChange={(e) =>
+                                            setComponentResults(prev => ({
+                                              ...prev,
+                                              [i]: {
+                                                ...prev[i],
+                                                status: e.target.value
+                                              }
+                                            }))
+                                          }
+                                        >
+                                          <option>---Select status---</option>
+                                          <option value="pass">Pass</option>
+                                          <option value="fail">Fail</option>
+                                        </select>
+                                      </td>
+                                    </tr>
+                                  ))}
 
-                              <tr>
-                                <td>Monocyte</td>
-                                <td>
-                                  mm/dl
-                                </td>
-                                <td>
-                                  50-60%
-                                </td>
-                                <td>
+                                </tbody>
+                              </table>
 
-                                </td>
-                                <td>
-
-                                </td>
-                              </tr>
-
-                              <tr>
-                                <td><span className="reprt-title">Blood details</span></td>
-                              </tr>
-                              <tr>
-                                <td>Monocyte</td>
-                                <td>
-                                  mm/dl
-                                </td>
-                                <td>
-                                  50-60%
-                                </td>
-                                <td>
-                                  <div className="custom-frm-bx mb-0">
-                                    <input type="text" name="" id="" className="form-control patient-frm-control" placeholder="50" />
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="custom-frm-bx mb-0">
-                                    <select name="" id="" className="form-select patient-frm-control">
-                                      <option value="">---Select status---</option>
-                                    </select>
-                                  </div>
-                                </td>
-                              </tr>
-
-                              <tr>
-                                <td>Monocyte</td>
-                                <td>
-                                  mm/dl
-                                </td>
-                                <td>
-                                  50-60%
-                                </td>
-                                <td>
-                                  <div className="custom-frm-bx mb-0">
-                                    <input type="text" name="" id="" className="form-control patient-frm-control" placeholder="50" />
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="custom-frm-bx mb-0">
-                                    <select name="" id="" className="form-select patient-frm-control">
-                                      <option value="">---Select status---</option>
-                                    </select>
-                                  </div>
-                                </td>
-                              </tr>
-                            </tbody>
-
-
-                          </table>
-                          <div>
-                            <div className="custom-frm-bx cbc-commnt-bx">
-                              <textarea name="" id="" className="form-control" placeholder="Comment"></textarea>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="text-end pe-3">
-                          <a href="javascript:void(0)" className="nw-thm-btn sub-nw-brd-tbn">Save</a>
-                        </div>
-
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="tab-pane fade" id="profile" role="tabpanel">
-                    <div
-                      className="tab-pane fade show active"
-                      id="home"
-                      role="tabpanel"
-                    >
-                      <div className="sub-tab-brd">
-                        <div className="table-section mega-table-section">
-                          <div className="table table-responsive mb-0">
-                            <table className="table mb-0">
-                              <thead>
-                                <tr>
-                                  <th>Name</th>
-                                  <th>Unit</th>
-                                  <th>Reference Range</th>
-                                  <th>Result</th>
-                                  <th>Status</th>
-
-                                </tr>
-                              </thead>
-                              <tbody>
-
-                                <tr>
-                                  <td><span className="reprt-title">Diffrential Count</span></td>
-                                </tr>
-
-                                <tr>
-                                  <td>Lymphocyte</td>
-                                  <td>
-                                    mm/dl
-                                  </td>
-                                  <td>
-                                    50-60%
-                                  </td>
-                                  <td>
-                                    <div className="custom-frm-bx mb-0">
-                                      <input type="text" name="" id="" className="form-control" placeholder="50" />
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className="custom-frm-bx mb-0">
-                                      <select name="" id="" className="form-select">
-                                        <option value="">---Select status---</option>
-                                      </select>
-                                    </div>
-                                  </td>
-                                </tr>
-
-                                <tr>
-                                  <td>Monocyte</td>
-                                  <td>
-                                    mm/dl
-                                  </td>
-                                  <td>
-                                    50-60%
-                                  </td>
-                                  <td>
-
-                                  </td>
-                                  <td>
-
-                                  </td>
-                                </tr>
-
-                                <tr>
-                                  <td><span className="reprt-title">Blood details</span></td>
-                                </tr>
-                                <tr>
-                                  <td>Monocyte</td>
-                                  <td>
-                                    mm/dl
-                                  </td>
-                                  <td>
-                                    50-60%
-                                  </td>
-                                  <td>
-                                    <div className="custom-frm-bx mb-0">
-                                      <input type="text" name="" id="" className="form-control" placeholder="50" />
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className="custom-frm-bx mb-0">
-                                      <select name="" id="" className="form-select">
-                                        <option value="">---Select status---</option>
-                                      </select>
-                                    </div>
-                                  </td>
-                                </tr>
-
-                                <tr>
-                                  <td>Monocyte</td>
-                                  <td>
-                                    mm/dl
-                                  </td>
-                                  <td>
-                                    50-60%
-                                  </td>
-                                  <td>
-                                    <div className="custom-frm-bx mb-0">
-                                      <input type="text" name="" id="" className="form-control" placeholder="50" />
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className="custom-frm-bx mb-0">
-                                      <select name="" id="" className="form-select">
-                                        <option value="">---Select status---</option>
-                                      </select>
-                                    </div>
-                                  </td>
-                                </tr>
-                              </tbody>
-
-
-                            </table>
-                            <div>
-                              <div className="custom-frm-bx cbc-commnt-bx">
-                                <textarea name="" id="" className="form-control" placeholder="Comment"></textarea>
+                              <div>
+                                <div className="custom-frm-bx cbc-commnt-bx">
+                                  <textarea
+                                    className="form-control"
+                                    placeholder="Comment"
+                                    id="comment"
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
+                                  ></textarea>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="text-end pe-3">
-                            <a href="javascript:void(0)" className="nw-thm-btn">Save</a>
+                            <div className="text-end pe-3">
+                              <button onClick={() => handleSave()} className="nw-thm-btn sub-nw-brd-tbn">Save</button>
+                            </div>
                           </div>
-
                         </div>
                       </div>
-                    </div>
-                  </div>
-
+                    ))}
                 </div>
               </div>
 
 
-               
+
+
 
             </div>
           </div>
@@ -370,9 +301,9 @@ function LabTestReports() {
                 <h6 className="lg_title mb-0">Print</h6>
               </div>
               <div>
-                 <button type="button" className="" data-bs-dismiss="modal" aria-label="Close" style={{color: "#00000040"}}>
-                                    <FontAwesomeIcon icon={faCircleXmark} />
-                                </button>
+                <button type="button" className="" data-bs-dismiss="modal" aria-label="Close" style={{ color: "#00000040" }}>
+                  <FontAwesomeIcon icon={faCircleXmark} />
+                </button>
               </div>
             </div>
             <div className="modal-body px-4">
