@@ -41,6 +41,7 @@ import ReportView from "./Pages/ReportView";
 import Notification from "./Pages/Notification";
 import EditTest from "./Pages/EditTest";
 import ProtectedRoute from "./ProtectedRoute";
+import Wating from "./Auth/Wating";
 
 
 function Router() {
@@ -156,11 +157,11 @@ function Router() {
           element: <ProtectedRoute component={TestReportsAppoiments} />,
         },
         {
-          path: "/new-invoice",
+          path: "/new-invoice/:id",
           element: <ProtectedRoute component={NewInvoice} />,
         },
         {
-          path: "/report-view",
+          path: "/report-view/:id",
           element: <ProtectedRoute component={ReportView} />,
         },
         {
@@ -170,6 +171,10 @@ function Router() {
         {
           path: "/edit-test/:id",
           element: <ProtectedRoute component={EditTest} />,
+        },
+        {
+          path: "/wating-for-approval",
+          element: <ProtectedRoute component={Wating} />,
         },
 
         // Public Routes (No Protection)

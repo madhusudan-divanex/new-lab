@@ -105,7 +105,7 @@ function LeftSidebar() {
               </li>
 
               <li className="nav-item">
-                <NavLink to={profiles?.status == 'pending' ? "/profile" : '/approve-profile'} className="nav-link ">
+                <NavLink to={profiles?.allowEdit ? "/approve-profile" : '/profile'} className="nav-link ">
                   <FontAwesomeIcon icon={faUserCircle} /> Profile
                 </NavLink>
               </li>

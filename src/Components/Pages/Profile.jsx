@@ -223,7 +223,7 @@ function Profile() {
                                   <input
                                     type="file"
                                     accept=""
-                                    className="lab-profile-file-input"
+                                    className="lab-profile-file-input d-none"
                                   />
                                 </div>
 
@@ -510,7 +510,7 @@ function Profile() {
                                 <input
                                   type="file"
                                   accept=""
-                                  className="lab-profile-file-input"
+                                  className="lab-profile-file-input d-none"
                                 />
                               </div>
 

@@ -14,6 +14,7 @@ import base_url from "../../../baseUrl";
 function ApproveProfile() {
   const navigate=useNavigate()
   const dispatch = useDispatch()
+  const userId=localStorage.getItem('userId')
   const { profiles, labPerson, labAddress, labImg,
     rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
   useEffect(() => {
@@ -95,7 +96,7 @@ function ApproveProfile() {
                     <h5><span className="approve-right-check"><FontAwesomeIcon icon={faCheck} /></span> Approved Edit Request</h5>
                   </div>
 
-                  <NavLink to="/edit-profile" type="submit" className="nw-filtr-thm-btn" >Save</NavLink>
+                  <NavLink to={`/edit-profile/${userId}`} type="submit" className="nw-filtr-thm-btn" >Edit</NavLink>
                 </div>
 
               </div>

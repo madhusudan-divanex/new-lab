@@ -1,8 +1,159 @@
 import { faDownload } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { getSecureApiData, securePostData } from "../../services/api";
+import { useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import html2pdf from "html2pdf.js";
+import html2canvas from "html2canvas";
 
 function ReportView() {
+  const params = useParams()
+  const reportRef = useRef()
+  const appointmentId = params.id
+  const [demoData, setDemoData] = useState()
+  const [testId, setTestId] = useState([]);
+  const [testData, setTestData] = useState([]);
+  const [allComponentResults, setAllComponentResults] = useState({});
+  const [allComments, setAllComments] = useState({});
+  const [reportMeta, setReportMeta] = useState({});
+
+  const { profiles, labPerson, labAddress, labImg,
+    rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
+  const [appointmentData, setAppointmentData] = useState({})
+  const fetchAppointmentData = async () => {
+    try {
+      const response = await getSecureApiData(`lab/appointment-data/${appointmentId}`)
+      if (response.success) {
+        setTestId(response.data.testId)
+        setAppointmentData(response.data)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (error) {
+
+    }
+  }
+  const fetchPtData = async () => {
+    if (!appointmentData?.patientId?._id) {
+      return
+    }
+    try {
+      const response = await getSecureApiData(`patient/demographic/${appointmentData?.patientId?._id}`)
+      if (response.success) {
+        setDemoData(response.data)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (error) {
+
+    }
+  }
+  useEffect(() => {
+    fetchAppointmentData()
+  }, [appointmentId])
+  useEffect(() => {
+    fetchPtData()
+  }, [appointmentData])
+  const fetchTestReport = async (testId) => {
+    try {
+      const payload = { testId, appointmentId };
+      const response = await securePostData('lab/test-report-data', payload);
+
+      if (response.success && response.data) {
+        setReportMeta(prev => ({
+                ...prev,
+                [testId]: {
+                  createdAt: response.data.createdAt
+                }
+              }));
+        return response.data;
+      } else {
+        return null;
+      }
+    } catch (err) {
+      console.error(`Error fetching report for test ${testId}:`, err);
+      return null;
+    }
+  };
+  useEffect(() => {
+    const fetchTestsOneByOne = async () => {
+      if (testId.length === 0) return;
+      const allTests = [];
+
+      for (const id of testId) {
+        try {
+          const response = await getSecureApiData(`lab/test-data/${id._id}`);
+          if (response.success) {
+            const test = response.data;
+
+            // Fetch report for this test
+            const report = await fetchTestReport(test._id);
+
+            if (report) {
+              const mergedResults = {};
+              test.component.forEach((c, i) => {
+                const comp = report.component.find(rc => rc.cmpId === c._id);
+                mergedResults[i] = {
+                  result: comp?.result || "",
+                  status: comp?.status || ""
+                };
+              });
+              // Set results and comments keyed by test._id
+              setAllComponentResults(prev => ({ ...prev, [test._id]: mergedResults }));
+              setAllComments(prev => ({ ...prev, [test._id]: report.comment || "" }));
+              
+
+            } else {
+              // If no report found, initialize empty for this test
+              setAllComponentResults(prev => ({ ...prev, [test._id]: {} }));
+              setAllComments(prev => ({ ...prev, [test._id]: "" }));
+            }
+
+            allTests.push(test);
+          } else {
+            toast.error(response.message);
+          }
+        } catch (err) {
+          console.error(`Error fetching test ${id}:`, err);
+        }
+      }
+
+      setTestData(allTests);
+      if (allTests.length > 0) setSelectedTab(allTests[0]._id);
+    };
+
+    fetchTestsOneByOne();
+  }, [testId]);
+  const handleDownload = () => {
+    const element = reportRef.current;
+
+    document.body.classList.add("hide-buttons");
+
+    const opt = {
+      margin: [0.2, 0.2, 0.2, 0.2],
+      filename: "report.pdf",
+      image: { type: "jpeg", quality: 1 },
+      html2canvas: { scale: 3, useCORS: true },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      }
+    };
+
+    html2pdf()
+      .from(element)
+      .set(opt)
+      .save()
+      .then(() => {
+        document.body.classList.remove("hide-buttons");
+      });
+  };
+console.log(reportMeta)
   return (
+
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
         <form action="">
@@ -33,194 +184,166 @@ function ReportView() {
         </form>
 
 
-         <div className="submega-main-bx">
-                    <div className="row">
-                        
-
-                        <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
-
-                       <div className="new-invoice-card h-100">
-                         <div className="">
-                        <ul className="appointment-booking-list">
-                            <li className="appoint-item"> Appointment Book Date : <span className="appoint-title">25-11-03</span></li>
-                            <li className="appoint-item"> Visited  date : <span className="appoint-title">25-11-03</span></li>
-                            <li className="appoint-item"> Appointment Completed date : <span className="appoint-title">25-11-03</span></li>
-                        </ul>
-                         </div>
-                        </div>
-                        </div>
+        <div className="submega-main-bx">
+          <div className="row">
 
 
-                        <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
-                       <div className="new-invoice-card">
-                             <div className="d-flex align-items-center justify-content-between mb-3">
-                        <div>
-                            <h5 className="first_para fw-700 fz-20 mb-0">Final Diagnostic Report</h5>
-                        </div>
-                        <div>
-                            <button className="print-btn"> <FontAwesomeIcon icon={faDownload}/> Download PDF</button>
-                        </div>
-                        </div>
+            <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
 
-                        <div className="laboratory-header mb-4">
-                            <div className="laboratory-name">
-                                    <h5>Advance Lab Tech</h5>
-                                    <p><span className="laboratory-title">GSTIN :</span> 09897886454</p>
-                            </div>
-                            <div className="invoice-details">
-                                <p><span className="laboratory-invoice">Invoice :</span> IN89767</p>
-                                <p><span className="laboratory-invoice">Date :</span> 03/11/2025</p>
-                            </div>
-                        </div>
-
-                          <div className="row">
-                                <div className="col-lg-6 mb-3">
-                                 <div className="laboratory-bill-bx laboratory-nw-box">
-                                <h6>Patient </h6>
-                                <h4>Aarav Mehta</h4>
-                                <p><span className="laboratory-phne">ID :</span> PID-7668</p>
-                                <p><span className="laboratory-phne">DOB:</span> 30 june, 2000</p>
-                                <p><span className="laboratory-phne">Gender:</span> Male</p>
-                            </div>
-                                </div>
-                                <div className="col-lg-6">
-                                  <div className="laboratory-bill-bx laboratory-sub-bx mb-2">
-                                <h6>Order </h6>
-                                <p><span className="laboratory-phne">Appointment ID :</span> OID-7C1B48  </p>
-                            </div>
-
-                            <div className="laboratory-bill-bx laboratory-sub-bx">
-                                <h6 className="my-0">Doctor</h6>
-                                <h4 >Aarav Mehta</h4>
-                                <p><span className="laboratory-phne">ID :</span> OID-7C1B48  </p>
-                            </div>
-
-                                </div>
-
-                            </div>
-
-                        {/* <div className="laboratory-bill-crd">
-                          
-
-                            <div className="laboratory-bill-bx">
-                                <h6>Patient </h6>
-                                <h4>Aarav Mehta</h4>
-                                <p><span className="laboratory-phne">ID :</span> PID-7668</p>
-                                <p><span className="laboratory-phne">DOB:</span> 30 june, 2000</p>
-                                <p><span className="laboratory-phne">Gender:</span> Male</p>
-                            </div>
-                           <div className="">
-                             <div className="laboratory-bill-bx">
-                                <h6>Order </h6>
-                                <p><span className="laboratory-phne">Appointment ID :</span> OID-7C1B48  </p>
-                            </div>
-
-                            <div className="laboratory-bill-bx">
-                                <h6 className="mb-0">Doctor </h6>
-                                <h5 className="fz-16">Dr. Ravi Kumar</h5>
-                                 
-                                <p><span className="laboratory-phne">ID :</span> DID-7668</p>
-                            </div>
-                           </div>
-                        </div> */}
-
-                        <div className="laboratory-report-table mt-3">
-                            <div className="table table-responsive mb-0 reprt-table">
-                                                        <table className="table mb-0">
-                                                          <thead>
-                                                            <tr>
-                                                              <th>Test</th>
-                                                              <th>Unit</th>
-                                                              <th>Reference</th>
-                                                              <th>Result</th>
-                                                              <th>Status</th>
-                                                            </tr>
-                                                          </thead>
-                                                          <tbody>
-
-                                                            <tr>
-                                                                <td>CBC - Lymphocyte</td>
-                                                                <td>mm/dl</td>
-                                                                <td>50-60%</td>
-                                                                <td>50</td>
-                                                                <td></td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>CBC - Lymphocyte</td>
-                                                                <td>mm/dl</td>
-                                                                <td>50-60%</td>
-                                                                <td>50</td>
-                                                                <td></td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>CBC - Lymphocyte</td>
-                                                                <td>mm/dl</td>
-                                                                <td>50-60%</td>
-                                                                <td>50</td>
-                                                                <td></td>
-                                                            </tr>
-                            
-                                                         
-                                                          </tbody>
-                                                        </table>
-                                                        
-                                                      </div>
-                        </div>
-
-                        <div className="report-remark mt-3">
-                            <h6>Remark</h6>
-                            <p>-</p>
-                        </div>
-
-                        <div className="reprt-barcd mt-3">
-                              <div className="barcd-scannr">
-                                <div className="barcd-content">
-                                    <h4 className="my-3">SP-9879</h4>
-                                    <ul className="qrcode-list">
-                                        <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
-                                        <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
-                                    </ul>
-
-                                    <img src="/barcode.png" alt="" />
-                                </div>
+              <div className="new-invoice-card h-100">
+                <div className="">
+                  <ul className="appointment-booking-list">
+                    <li className="appoint-item"> Appointment Book Date : <span className="appoint-title">{new Date(appointmentData?.date)?.toLocaleDateString()}</span></li>
+                    <li className="appoint-item"> Visited  date : <span className="appoint-title">25-11-03</span></li>
+                    <li className="appoint-item"> Appointment Completed date : <span className="appoint-title">25-11-03</span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
 
 
-                            </div>
-
-                              <div className="barcd-scannr">
-                                <div className="barcd-content">
-                                    <h4 className="my-3">SP-9879</h4>
-                                    <ul className="qrcode-list">
-                                        <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
-                                        <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
-                                    </ul>
-
-                                    <img src="/barcode.png" alt="" />
-                                </div>
-
-
-                            </div>
-                        </div>
-
-                        <div className="reprt-signature mt-5">
-                            <h6>Signature:</h6>
-                            <span className="reprt-mark"></span>
-                        </div>
-
-
-
-
-
-                   
-                            
-                       </div>
-                        </div>
-                        
-                        
-                    </div>
+            <div className="col-lg-6 col-md-6 col-sm-12 mb-3" ref={reportRef}>
+              <div className="new-invoice-card">
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                  <div>
+                    <h5 className="first_para fw-700 fz-20 mb-0">Final Diagnostic Report</h5>
+                  </div>
+                  <div>
+                    <button className="print-btn" onClick={handleDownload}> <FontAwesomeIcon icon={faDownload} /> Download PDF</button>
+                  </div>
                 </div>
 
-        
+                <div className="laboratory-header mb-4">
+                  <div className="laboratory-name">
+                    <h5>{profiles?.name || 'Advance Lab Tech'}</h5>
+                    <p><span className="laboratory-title">GSTIN :</span> {profiles?.gstNumber || '09897886454'}</p>
+                  </div>
+                  <div className="invoice-details">
+                    <p><span className="laboratory-invoice">Invoice :</span> {appointmentId?.slice(-10)}</p>
+                    <p><span className="laboratory-invoice">Date :</span> {new Date()?.toLocaleDateString()}</p>
+                  </div>
+                </div>
+
+                <div className="row">
+                  <div className="col-lg-6 mb-3">
+                    <div className="laboratory-bill-bx laboratory-nw-box">
+                      <h6>Patient </h6>
+                      <h4>{appointmentData?.patientId?.name}</h4>
+                      <p><span className="laboratory-phne">ID :</span> {appointmentData?.patientId?._id?.slice(-10)}</p>
+                      <p><span className="laboratory-phne">DOB:</span> {new Date(demoData?.dob)?.toLocaleDateString()}</p>
+                      <p><span className="laboratory-phne">Gender:</span> {appointmentData?.patientId?.gender?.toUpperCase()}</p>
+                    </div>
+                  </div>
+                  <div className="col-lg-6">
+                    <div className="laboratory-bill-bx laboratory-sub-bx mb-2">
+                      <h6>Order </h6>
+                      <p><span className="laboratory-phne">Appointment ID :</span> OID-{appointmentId?.slice(-10)}  </p>
+                    </div>
+
+                    {appointmentData?.doctorId && <div className="laboratory-bill-bx laboratory-sub-bx">
+                      <h6 className="my-0">Doctor</h6>
+                      <h4 >Aarav Mehta</h4>
+                      <p><span className="laboratory-phne">ID :</span> OID-7C1B48  </p>
+                    </div>}
+
+                  </div>
+
+                </div>
+
+
+
+                <div className="laboratory-report-table mt-3">
+                  <div className="table table-responsive mb-0 reprt-table">
+                    <table className="table mb-0">
+                      <thead>
+                        <tr>
+                          <th>Test</th>
+                          <th>Unit</th>
+                          <th>Reference</th>
+                          <th>Result</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+
+                        {testData.map((test) => (
+                          test.component.map((cmp, index) => {
+                            const resultObj = allComponentResults[test._id]?.[index] || {};
+                            return (
+                              <tr key={test._id + index}>
+                                <td>{test.shortName} - {cmp.name}</td>
+                                <td>{cmp.unit || "-"}</td>
+                                <td>{cmp.referenceRange || "-"}</td>
+                                <td>{resultObj.result || "-"}</td>
+                                <td className="text-capitalize">{resultObj.status || "-"}</td>
+                              </tr>
+                            );
+                          })
+                        ))}
+                        {/* <tr>
+                          <td>CBC - Lymphocyte</td>
+                          <td>mm/dl</td>
+                          <td>50-60%</td>
+                          <td>50</td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>CBC - Lymphocyte</td>
+                          <td>mm/dl</td>
+                          <td>50-60%</td>
+                          <td>50</td>
+                          <td></td>
+                        </tr> */}
+
+
+                      </tbody>
+                    </table>
+
+                  </div>
+                </div>
+
+                <div className="report-remark mt-3">
+                  <h6>Remark</h6>
+                  <p>-</p>
+                </div>
+
+                <div className="reprt-barcd flex-wrap mt-3">
+                  {testData?.map((item, key) =>
+                    <div className=" barcd-scannr" key={key}>
+                      <div className="barcd-content">
+                        <h4 className="my-3">SP-9879</h4>
+                        <ul className="qrcode-list">
+                          <li className="qrcode-item">Test  <span className="qrcode-title">: {item?.shortName}</span></li>
+                          <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(reportMeta[item._id]?.createdAt)?.toLocaleDateString()}</span> </li>
+                        </ul>
+
+                        <img src="/barcode.png" alt="" />
+                      </div>
+                    </div>)}
+
+                  {/* <div className="barcd-scannr">
+                    <div className="barcd-content">
+                      <h4 className="my-3">SP-9879</h4>
+                      <ul className="qrcode-list">
+                        <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
+                        <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
+                      </ul>
+                      <img src="/barcode.png" alt="" />
+                    </div>
+                  </div> */}
+                </div>
+                <div className="reprt-signature mt-5">
+                  <h6>Signature:</h6>
+                  <span className="reprt-mark"></span>
+                </div>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+
+
       </div>
     </>
   )

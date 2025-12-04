@@ -604,7 +604,7 @@ function EditProfile() {
                                                     </div>
 
                                                     <div className="d-flex justify-content-end gap-3">
-                                                        <button type="submit" className="nw-filtr-thm-btn outline">Cancel</button>
+                                                        <button onClick={()=>navigate('/approve-profile')} type="button" className="nw-filtr-thm-btn outline">Cancel</button>
                                                         <button type="submit" className="nw-filtr-thm-btn">Save</button>
                                                     </div>
 
@@ -753,7 +753,7 @@ function EditProfile() {
                                                     </div>
 
                                                     <div className="d-flex justify-content-end gap-3">
-                                                        <button type="submit" className="nw-filtr-thm-btn outline">Cancel</button>
+                                                        <button type="button" className="nw-filtr-thm-btn outline">Cancel</button>
                                                         <button type="submit" className="nw-filtr-thm-btn">Save</button>
                                                     </div>
 
@@ -839,7 +839,7 @@ function EditProfile() {
                                                         </div>
                                                     </div>
                                                     <div className="d-flex justify-content-end gap-3">
-                                                        <button type="submit" className="nw-filtr-thm-btn outline">Cancel</button>
+                                                        <button type="button" className="nw-filtr-thm-btn outline">Cancel</button>
                                                         <button type="submit" className="nw-filtr-thm-btn">Save</button>
                                                     </div>
                                                 </div>
@@ -1032,7 +1032,7 @@ function EditProfile() {
                                             </div>
 
                                             <div className="d-flex justify-content-end gap-3">
-                                                <button type="submit" className="nw-filtr-thm-btn outline">Cancel</button>
+                                                <button type="button" className="nw-filtr-thm-btn outline">Cancel</button>
                                                 <button type="button" onClick={(e) => licenseSubmit(e)} className="nw-filtr-thm-btn">Save</button>
                                             </div>
 
@@ -1143,7 +1143,7 @@ function EditProfile() {
                                                         </div>
                                                     </div>
                                                     <div className="d-flex justify-content-end gap-3">
-                                                        <button type="submit" className="nw-filtr-thm-btn outline">Cancel</button>
+                                                        <button type="button" className="nw-filtr-thm-btn outline">Cancel</button>
                                                         <button type="submit" className="nw-filtr-thm-btn">Save</button>
                                                     </div>
                                                 </div>

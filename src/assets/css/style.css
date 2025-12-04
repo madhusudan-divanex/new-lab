@@ -2438,6 +2438,7 @@ color: #052F59 !important;
     font-weight: 400;
     font-size: 18px;
     color: #4D667E;
+    overflow-wrap: anywhere;
 }
 
 .ovrview-bx p {
@@ -2557,8 +2558,8 @@ color: #052F59 !important;
 }
 
 .edit-modal-content {
-    background-color: #052F59;
-    border: 1px solid #999999;
+    background-color: #052F59 !important;
+    border: 1px solid #999999 !important;
 }
 
 .submit-document-bx {
@@ -3874,4 +3875,8 @@ color: #052F59 !important;
     background-size: 18px 22px;
     padding-right: 40px;
     cursor: pointer;
+}
+/* Hide elements during PDF/print */
+.hide-buttons .no-print {
+  display: none !important;
 }

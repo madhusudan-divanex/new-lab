@@ -8,7 +8,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, NavLink } from "react-router-dom";
 import { Nav } from "react-bootstrap";
-import { getSecureApiData } from "../../services/api";
+import { getSecureApiData, updateApiData } from "../../services/api";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import base_url from "../../../baseUrl";
@@ -16,6 +16,8 @@ import base_url from "../../../baseUrl";
 function TestReportsAppoiments() {
   const userId = localStorage.getItem('userId')
   const [allTest, setAllTest] = useState([])
+  const [payData, setPayData] = useState({ appointmentId: null, paymentStatus: 'due' })
+  const [actData, setActData] = useState({ appointmentId: null, status: '' })
   const fetchLabTest = async () => {
     try {
       const response = await getSecureApiData(`lab/test/${userId}`);
@@ -42,6 +44,26 @@ function TestReportsAppoiments() {
         // setCurrentPage(response.pagination.page)
         // setTotalPage(response.pagination.totalPages)
         setAppointments(response.data)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
+  const appointmentAction = async (e, type) => {
+    e.preventDefault()
+    let data = {}
+    if (type == 'status') {
+      data = { type, labId: userId, appointmentId: actData.appointmentId, status: actData?.status }
+    }
+    else if (type == 'payment') {
+      data = { type, labId: userId, appointmentId: payData.appointmentId, paymentStatus: payData.paymentStatus }
+    }
+    try {
+      const response = await updateApiData(`appointment/lab-action`, data);
+      if (response.success) {
+        fetchLabAppointment()
       } else {
         toast.error(response.message)
       }
@@ -223,8 +245,8 @@ function TestReportsAppoiments() {
                           </td>
                           <td>
                             <ul className="admin-test-list">
-                              {item?.testId?.map((item, key) =>
-                                <li className="admin-test-item" key={key}>{item?.shortName}</li>)}
+                              {item?.testId?.map((test, key) =>
+                                <li className="admin-test-item" key={key}>{test?.shortName}</li>)}
                               {/* <li className="admin-test-item">Haemoglobin</li> */}
                             </ul>
                           </td>
@@ -232,11 +254,12 @@ function TestReportsAppoiments() {
                             <ul className="admin-paid-list">
                               <li>
 
-                                <span className="paid">Paid</span>
+                                <span className="paid text-capitalize">{item?.paymentStatus}</span>
                               </li>
                               <li>
                                 <a
                                   href="javascript:void(0)"
+                                  onClick={() => setPayData({ appointmentId: item?._id, paymentStatus: item?.paymentStatus })}
                                   className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
                                 >
                                   <FontAwesomeIcon icon={faPen} />
@@ -255,6 +278,12 @@ function TestReportsAppoiments() {
                               <li>
                                 <a
                                   href="javascript:void(0)"
+                                  onClick={() => {
+
+
+
+                                    setActData({ appointmentId: item?._id, status: item?.status })
+                                  }}
                                   className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
                                 >
                                   <FontAwesomeIcon icon={faPen} />
@@ -324,7 +353,7 @@ function TestReportsAppoiments() {
                                 </li>
 
                                 <li className="drop-item">
-                                  <NavLink to="/report-view" className="nw-dropdown-item" href="#">
+                                  <NavLink to={`/report-view/${item?._id}`} className="nw-dropdown-item" href="#">
                                     <img src="/file.png" alt="" />
                                     Report  view
                                   </NavLink>
@@ -351,649 +380,6 @@ function TestReportsAppoiments() {
                             </div>
                           </td>
                         </tr>)}
-                    <tr>
-                      <td>01.</td>
-                      <td>
-                        <div className="admin-table-bx">
-                          <div className="admin-table-sub-bx">
-                            <img src="/table-avatar.jpg" alt="" />
-                            <div className="admin-table-sub-details">
-                              <h6>Sunil </h6>
-                              <p>ID: SUNIL3320</p>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <ul className="admin-appointment-list">
-                          <li className="admin-appoint-item">
-                            <span className="admin-appoint-id">
-                              Appointment ID : #0959595
-                            </span>
-                          </li>
-                          <li className="admin-appoint-item">
-                            Appointment Book Date : 20 jun 2025
-                          </li>
-                          <li className="admin-appoint-item">
-                            Total Amount : $25
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-test-list">
-                          <li className="admin-test-item">CBC</li>
-                          <li className="admin-test-item">Haemoglobin</li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-paid-list">
-                          <li>
-
-                            <span className="paid">Paid</span>
-                          </li>
-                          <li>
-                            <a
-                              href="javascript:void(0)"
-                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
-                            >
-                              <FontAwesomeIcon icon={faPen} />
-                            </a>
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-paid-list">
-                          <li>
-
-                            <span className="paid">
-                              Deliver Report
-                            </span>
-                          </li>
-                          <li>
-                            <a
-                              href="javascript:void(0)"
-                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
-                            >
-                              <FontAwesomeIcon icon={faPen} />
-                            </a>
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <a
-                          href="javascript:void(0)"
-                          className=" admin-sub-dropdown dropdown-toggle"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                        >
-
-                          <FontAwesomeIcon icon={faGear} /> Action
-                        </a>
-
-                        <div className="dropdown">
-                          <a
-                            href="javascript:void(0)"
-                            className="attendence-edit-btn"
-                            id="acticonMenu1"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                          >
-                            {/* <i className="fas fa-pen"></i> */}
-                          </a>
-                          <ul
-                            className="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
-                            aria-labelledby="acticonMenu1"
-                          >
-                            <li className="drop-item">
-                              <NavLink
-                                to="/lab-test-reports"
-                                className="nw-dropdown-item"
-                              >
-                                <img src="/flask-report.png" alt="" />
-                                Edit Report
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/patient-details" className="nw-dropdown-item" href="#">
-                                <img src="/add-user.png" alt="" />
-                                Patient Details
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/appointment-details" className="nw-dropdown-item" href="#">
-                                <img src="/flask-report.png" alt="" />
-                                Appointment Details
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/report-tabs" className="nw-dropdown-item" href="#">
-                                <img src="/reprt-icon.png" alt="" />
-                                Generate Report
-                              </NavLink>
-                            </li>
-
-                            <li className="drop-item">
-                              <NavLink to="/label" className="nw-dropdown-item" href="#">
-                                <img src="/barcd-icon.png" alt="" />
-                                Labels
-                              </NavLink>
-                            </li>
-
-                            <li className="drop-item">
-                              <NavLink to="/report-view" className="nw-dropdown-item" href="#">
-                                <img src="/file.png" alt="" />
-                                Report  view
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/new-invoice" className="nw-dropdown-item" href="#">
-                                <img src="/invoices.png" alt="" />
-                                Invoice
-                              </NavLink>
-                            </li>
-
-
-
-                            <li className="drop-item">
-                              <a className="nw-dropdown-item" href="#">
-                                <img src="/dc-usr.png" alt="" />
-                                Send  Report Doctor
-                              </a>
-                            </li>
-
-                            <li className="drop-item">
-                              <a className="nw-dropdown-item" href="#">
-                                <img src="/report-mail.png" alt="" />
-                                Send  Report Patient
-                              </a>
-                            </li>
-                          </ul>
-                        </div>
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td>02.</td>
-                      <td>
-                        <div className="admin-table-bx">
-                          <div className="admin-table-sub-bx">
-                            <img src="/table-avatar.jpg" alt="" />
-                            <div className="admin-table-sub-details">
-                              <h6>Sunil </h6>
-                              <p>ID: SUNIL3320</p>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <ul className="admin-appointment-list">
-                          <li className="admin-appoint-item">
-                            <span className="admin-appoint-id">
-                              Appointment ID : #0959595
-                            </span>
-                          </li>
-                          <li className="admin-appoint-item">
-                            Appointment Book Date : 20 jun 2025
-                          </li>
-                          <li className="admin-appoint-item">
-                            Total Amount : $25
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-test-list">
-                          <li className="admin-test-item">CBC</li>
-                          <li className="admin-test-item">Haemoglobin</li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-paid-list">
-                          <li>
-
-                            <span className="paid due">Due</span>
-                          </li>
-                          <li>
-                            <a
-                              href="javascript:void(0)"
-                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
-                            >
-                              <FontAwesomeIcon icon={faPen} />
-                            </a>
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-paid-list">
-                          <li>
-
-                            <span className="paid pending">
-                              Visit Pending
-                            </span>
-                          </li>
-                          <li>
-                            <a
-                              href="javascript:void(0)"
-                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
-                            >
-                              <FontAwesomeIcon icon={faPen} />
-                            </a>
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <a
-                          href="javascript:void(0)"
-                          className=" admin-sub-dropdown dropdown-toggle"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                        >
-
-                          <FontAwesomeIcon icon={faGear} /> Action
-                        </a>
-
-                        <div className="dropdown">
-                          <a
-                            href="javascript:void(0)"
-                            className="attendence-edit-btn"
-                            id="acticonMenu1"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                          >
-                            {/* <i className="fas fa-pen"></i> */}
-                          </a>
-                          <ul
-                            className="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
-                            aria-labelledby="acticonMenu1"
-                          >
-                            <li className="drop-item">
-                              <NavLink
-                                to="/lab-test-reports"
-                                className="nw-dropdown-item"
-                              >
-                                <img src="/flask-report.png" alt="" />
-                                Edit Report
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/patient-details" className="nw-dropdown-item" href="#">
-                                <img src="/add-user.png" alt="" />
-                                Patient Details
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/appointment-details" className="nw-dropdown-item" href="#">
-                                <img src="/flask-report.png" alt="" />
-                                Appointment Details
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/report-tabs" className="nw-dropdown-item" href="#">
-                                <img src="/reprt-icon.png" alt="" />
-                                Generate Report
-                              </NavLink>
-                            </li>
-
-                            <li className="drop-item">
-                              <NavLink to="/label" className="nw-dropdown-item" href="#">
-                                <img src="/barcd-icon.png" alt="" />
-                                Labels
-                              </NavLink>
-                            </li>
-
-                            <li className="drop-item">
-                              <NavLink to="/report-view" className="nw-dropdown-item" href="#">
-                                <img src="/file.png" alt="" />
-                                Report  view
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/new-invoice" className="nw-dropdown-item" href="#">
-                                <img src="/invoices.png" alt="" />
-                                Invoice
-                              </NavLink>
-                            </li>
-
-
-
-                            <li className="drop-item">
-                              <a className="nw-dropdown-item" href="#">
-                                <img src="/dc-usr.png" alt="" />
-                                Send  Report Doctor
-                              </a>
-                            </li>
-
-                            <li className="drop-item">
-                              <a className="nw-dropdown-item" href="#">
-                                <img src="/report-mail.png" alt="" />
-                                Send  Report Patient
-                              </a>
-                            </li>
-                          </ul>
-                        </div>
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td>03.</td>
-                      <td>
-                        <div className="admin-table-bx">
-                          <div className="admin-table-sub-bx">
-                            <img src="/table-avatar.jpg" alt="" />
-                            <div className="admin-table-sub-details">
-                              <h6>Sunil </h6>
-                              <p>ID: SUNIL3320</p>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <ul className="admin-appointment-list">
-                          <li className="admin-appoint-item">
-                            <span className="admin-appoint-id">
-                              Appointment ID : #0959595
-                            </span>
-                          </li>
-                          <li className="admin-appoint-item">
-                            Appointment Book Date : 20 jun 2025
-                          </li>
-                          <li className="admin-appoint-item">
-                            Total Amount : $25
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-test-list">
-                          <li className="admin-test-item">CBC</li>
-                          <li className="admin-test-item">Haemoglobin</li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-paid-list">
-                          <li>
-
-                            <span className="paid due">Due</span>
-                          </li>
-                          <li>
-                            <a
-                              href="javascript:void(0)"
-                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
-                            >
-                              <FontAwesomeIcon icon={faPen} />
-                            </a>
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-paid-list">
-                          <li>
-
-                            <span className="paid visited">
-                              Visited
-                            </span>
-                          </li>
-                          <li>
-                            <a
-                              href="javascript:void(0)"
-                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
-                            >
-                              <FontAwesomeIcon icon={faPen} />
-                            </a>
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <a
-                          href="javascript:void(0)"
-                          className=" admin-sub-dropdown dropdown-toggle"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                        >
-
-                          <FontAwesomeIcon icon={faGear} /> Action
-                        </a>
-
-                        <div className="dropdown">
-                          <a
-                            href="javascript:void(0)"
-                            className="attendence-edit-btn"
-                            id="acticonMenu1"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                          >
-                            {/* <i className="fas fa-pen"></i> */}
-                          </a>
-                          <ul
-                            className="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
-                            aria-labelledby="acticonMenu1"
-                          >
-                            <li className="drop-item">
-                              <NavLink
-                                to="/lab-test-reports"
-                                className="nw-dropdown-item"
-                              >
-                                <img src="/flask-report.png" alt="" />
-                                Edit Report
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/patient-details" className="nw-dropdown-item" href="#">
-                                <img src="/add-user.png" alt="" />
-                                Patient Details
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/appointment-details" className="nw-dropdown-item" href="#">
-                                <img src="/flask-report.png" alt="" />
-                                Appointment Details
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/report-tabs" className="nw-dropdown-item" href="#">
-                                <img src="/reprt-icon.png" alt="" />
-                                Generate Report
-                              </NavLink>
-                            </li>
-
-                            <li className="drop-item">
-                              <NavLink to="/label" className="nw-dropdown-item" href="#">
-                                <img src="/barcd-icon.png" alt="" />
-                                Labels
-                              </NavLink>
-                            </li>
-
-                            <li className="drop-item">
-                              <NavLink to="/report-view" className="nw-dropdown-item" href="#">
-                                <img src="/file.png" alt="" />
-                                Report  view
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/new-invoice" className="nw-dropdown-item" href="#">
-                                <img src="/invoices.png" alt="" />
-                                Invoice
-                              </NavLink>
-                            </li>
-
-
-
-                            <li className="drop-item">
-                              <a className="nw-dropdown-item" href="#">
-                                <img src="/dc-usr.png" alt="" />
-                                Send  Report Doctor
-                              </a>
-                            </li>
-
-                            <li className="drop-item">
-                              <a className="nw-dropdown-item" href="#">
-                                <img src="/report-mail.png" alt="" />
-                                Send  Report Patient
-                              </a>
-                            </li>
-                          </ul>
-                        </div>
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td>04.</td>
-                      <td>
-                        <div className="admin-table-bx">
-                          <div className="admin-table-sub-bx">
-                            <img src="/table-avatar.jpg" alt="" />
-                            <div className="admin-table-sub-details">
-                              <h6>Sunil </h6>
-                              <p>ID: SUNIL3320</p>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <ul className="admin-appointment-list">
-                          <li className="admin-appoint-item">
-                            <span className="admin-appoint-id">
-                              Appointment ID : #0959595
-                            </span>
-                          </li>
-                          <li className="admin-appoint-item">
-                            Appointment Book Date : 20 jun 2025
-                          </li>
-                          <li className="admin-appoint-item">
-                            Total Amount : $25
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-test-list">
-                          <li className="admin-test-item">CBC</li>
-                          <li className="admin-test-item">Haemoglobin</li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-paid-list">
-                          <li>
-
-                            <span className="paid due">Due</span>
-                          </li>
-                          <li>
-                            <a
-                              href="javascript:void(0)"
-                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
-                            >
-                              <FontAwesomeIcon icon={faPen} />
-                            </a>
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <ul className="admin-paid-list">
-                          <li>
-
-                            <span className="paid visited">
-                              Visited
-                            </span>
-                          </li>
-                          <li>
-                            <a
-                              href="javascript:void(0)"
-                              className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
-                            >
-                              <FontAwesomeIcon icon={faPen} />
-                            </a>
-                          </li>
-                        </ul>
-                      </td>
-                      <td>
-                        <a
-                          href="javascript:void(0)"
-                          className=" admin-sub-dropdown dropdown-toggle"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                        >
-
-                          <FontAwesomeIcon icon={faGear} /> Action
-                        </a>
-
-                        <div className="dropdown">
-                          <a
-                            href="javascript:void(0)"
-                            className="attendence-edit-btn"
-                            id="acticonMenu1"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                          >
-                            {/* <i className="fas fa-pen"></i> */}
-                          </a>
-                          <ul
-                            className="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
-                            aria-labelledby="acticonMenu1"
-                          >
-                            <li className="drop-item">
-                              <NavLink
-                                to="/lab-test-reports"
-                                className="nw-dropdown-item"
-                              >
-                                <img src="/flask-report.png" alt="" />
-                                Edit Report
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/patient-details" className="nw-dropdown-item" href="#">
-                                <img src="/add-user.png" alt="" />
-                                Patient Details
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/appointment-details" className="nw-dropdown-item" href="#">
-                                <img src="/flask-report.png" alt="" />
-                                Appointment Details
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/report-tabs" className="nw-dropdown-item" href="#">
-                                <img src="/reprt-icon.png" alt="" />
-                                Generate Report
-                              </NavLink>
-                            </li>
-
-                            <li className="drop-item">
-                              <NavLink to="/label" className="nw-dropdown-item" href="#">
-                                <img src="/barcd-icon.png" alt="" />
-                                Labels
-                              </NavLink>
-                            </li>
-
-                            <li className="drop-item">
-                              <NavLink to="/report-view" className="nw-dropdown-item" href="#">
-                                <img src="/file.png" alt="" />
-                                Report  view
-                              </NavLink>
-                            </li>
-                            <li className="drop-item">
-                              <NavLink to="/new-invoice" className="nw-dropdown-item" href="#">
-                                <img src="/invoices.png" alt="" />
-                                Invoice
-                              </NavLink>
-                            </li>
-
-
-
-                            <li className="drop-item">
-                              <a className="nw-dropdown-item" href="#">
-                                <img src="/dc-usr.png" alt="" />
-                                Send  Report Doctor
-                              </a>
-                            </li>
-
-                            <li className="drop-item">
-                              <a className="nw-dropdown-item" href="#">
-                                <img src="/report-mail.png" alt="" />
-                                Send  Report Patient
-                              </a>
-                            </li>
-                          </ul>
-                        </div>
-                      </td>
-                    </tr>
 
                   </tbody>
                 </table>
@@ -1022,19 +408,22 @@ function TestReportsAppoiments() {
             </div>
             <div className="modal-body p-0">
               <div className="row ">
-                <div className="col-lg-12 mt-5">
+                <form onSubmit={(e) => appointmentAction(e, 'payment')} className="col-lg-12 mt-5">
                   <div className="custom-frm-bx">
                     <label htmlFor="">Status</label>
-                    <select className="form-select nw-control-frm">
-                      <option>Due</option>
+                    <select name="paymentStatus" value={payData.paymentStatus}
+                      onChange={(e) => setPayData({ ...payData, paymentStatus: e.target.value })} className="form-select nw-control-frm">
+                      <option value="due">Due</option>
+                      <option value="paid">Paid</option>
+
                     </select>
                   </div>
 
                   <div>
-                    <button type="submit" className="nw-thm-btn w-100"> Submit</button>
+                    <button type="submit" className="nw-thm-btn w-100" data-bs-dismiss="modal"> Submit</button>
                   </div>
 
-                </div>
+                </form>
               </div>
             </div>
           </div>
@@ -1059,13 +448,18 @@ function TestReportsAppoiments() {
                 </button>
               </div>
             </div>
-            <div className="modal-body p-0">
+            <form onSubmit={(e) => appointmentAction(e, 'status')} className="modal-body p-0">
               <div className="row ">
                 <div className="col-lg-12 mt-3">
                   <div className="custom-frm-bx">
                     <label htmlFor="">Status</label>
-                    <select className="form-select nw-control-frm">
-                      <option>Visit Pending</option>
+                    <select name="status" value={actData.status} onChange={(e) => setActData({ ...actData, status: e.target.value })} className="form-select nw-control-frm">
+                      <option value="pending" disabled>Pending</option>
+                      <option value="cancel" disabled>Cancel</option>
+                      <option value="approved" disabled>Approved</option>
+                      <option value="rejected" disabled>Rejected</option>
+                      <option value="report-pending">Pending Report</option>
+                      <option value="deliver-report">Deliver Report</option>
                     </select>
                   </div>
 
@@ -1081,12 +475,12 @@ function TestReportsAppoiments() {
                   </div>
 
                   <div>
-                    <button type="submit" className="nw-thm-btn w-100"> Submit</button>
+                    <button type="submit" data-bs-dismiss="modal" className="nw-thm-btn w-100"> Submit</button>
                   </div>
 
                 </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>

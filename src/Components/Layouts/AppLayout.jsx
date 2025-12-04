@@ -5,7 +5,7 @@ import TopHeader from "./TopHeader"
 function AppLayout() {
   const location = useLocation();
   const path = location.pathname;
-  const staticRoute = ['/login', '/forgot-password', '/otp', '/set-password', '/create-account','/create-account-image','/create-account-address', '/create-account-person', '/create-account-upload']
+  const staticRoute = ['/login','/wating-for-approval', '/forgot-password', '/otp', '/set-password', '/create-account','/create-account-image','/create-account-address', '/create-account-person', '/create-account-upload']
 
   return (
     <>

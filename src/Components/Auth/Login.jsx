@@ -22,7 +22,13 @@ function Login() {
         localStorage.setItem('token', response.token)
         localStorage.setItem('userId', response.userId)
         toast.success('Login successfully')
-        navigate('/')
+        if(response.user.status=='pending'){
+          navigate('/wating-for-approval')
+          return
+        }else{
+
+          navigate('/')
+        }
       } else {
         toast.error(response.message)
       }
