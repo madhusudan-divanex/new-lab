@@ -8,7 +8,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserDetail } from "../../redux/features/userSlice";
 import base_url from "../../../baseUrl";
-
+import { BarcodeScanner } from 'react-barcode-scanner'
 function TopHeader() {
   const dispatch = useDispatch()
   const { profiles, labPerson, labAddress, labImg,
@@ -177,6 +177,7 @@ function TopHeader() {
                 <div className="col-lg-12">
 
                   <Scanner onDetected={handleDetected} />
+                  {/* <BarcodeScanner /> */}
                 </div>
               </div>
             </div>

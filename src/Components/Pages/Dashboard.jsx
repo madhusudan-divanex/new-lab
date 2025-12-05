@@ -3,17 +3,20 @@ import Chart from "react-apexcharts";
 import { faClose, faGear, faPen } from "@fortawesome/free-solid-svg-icons";
 import { Link, NavLink } from "react-router-dom";
 import { toast } from "react-toastify";
-import { getSecureApiData, updateApiData } from "../../services/api";
+import { getSecureApiData, securePostData, updateApiData } from "../../services/api";
 import { useEffect, useState } from "react";
 import base_url from "../../../baseUrl";
 function Dashboard() {
+  const [rpData, setRpData] = useState({})
+  const [totalTest,setTotalTest]=useState(0)
+  const [testReport,setTestReport]=useState()
   const labReports = {
-    series: [45, 30, 25], // Delivered, Pending, Visited
+    series: [rpData?.deliverRequest ||0,rpData?.pendingTestRequest|| 0, rpData?.pendingReport ||0], 
     options: {
       chart: {
         type: "donut",
       },
-      labels: ["Delivered", "Pending", "Visited"],
+      labels: ["Delivered", "Report Pending", "Approval Pending"],
       colors: ["#34A853", "#FEB052", "#4285F4"],
       legend: {
         position: "right",
@@ -26,7 +29,7 @@ function Dashboard() {
 
   // Test Request chart data
   const testRequest = {
-    series: [70, 30], // Total Request, Pending
+    series: [testReport?.totalTestRequest || 0, rpData?.pendingReport || 0], // Total Request, Pending
     options: {
       chart: {
         type: "donut",
@@ -61,6 +64,7 @@ function Dashboard() {
   }
   useEffect(() => {
     fetchLabTest()
+    labDashboard()
     fetchLabAppointment()
   }, [userId])
   const [appointments, setAppointments] = useState([])
@@ -98,7 +102,33 @@ function Dashboard() {
       console.error("Error creating lab:", err);
     }
   }
-
+  const sendReport = async (appointmentId, email, type) => {
+    const data = { appointmentId, email, type }
+    try {
+      const response = await securePostData(`lab/send-report`, data);
+      if (response.success) {
+        toast.success("Report sent")
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
+  const labDashboard = async () => {
+    try {
+      const response = await getSecureApiData(`lab/dashboard/${userId}`);
+      if (response.success) {
+        setRpData(response.labReports)
+        setTestReport(response.testRequests)
+        setTotalTest(response.totalTest)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -115,7 +145,7 @@ function Dashboard() {
                     <img src="/admin-check.png" alt="" />
                   </div>
                   <div>
-                    <h6 className="">68</h6>
+                    <h6 className="">{testReport?.totalTestRequest}</h6>
                     <p>Test Request</p>
                   </div>
                 </div>
@@ -131,7 +161,7 @@ function Dashboard() {
                     <img src="/admin-lab.png" alt="" />
                   </div>
                   <div>
-                    <h6 className="">20</h6>
+                    <h6 className="">{totalTest}</h6>
                     <p>Tests </p>
                   </div>
                 </div>
@@ -147,7 +177,7 @@ function Dashboard() {
                     <img src="/admin-test-yellow.png" alt="" />
                   </div>
                   <div>
-                    <h6 className="">20</h6>
+                    <h6 className="">{rpData?.pendingReport}</h6>
                     <p>Pending Report </p>
                   </div>
                 </div>
@@ -163,7 +193,7 @@ function Dashboard() {
                     <img src="/admin-test-green.png" alt="" />
                   </div>
                   <div>
-                    <h6 className="">3456</h6>
+                    <h6 className="">{rpData?.deliverRequest}</h6>
                     <p>Delivered Report</p>
                   </div>
                 </div>
@@ -295,7 +325,7 @@ function Dashboard() {
                                   <li>
                                     <a
                                       href="javascript:void(0)"
-                                      onClick={()=>setPayData({appointmentId:item?._id,paymentStatus:item?.paymentStatus})}
+                                      onClick={() => setPayData({ appointmentId: item?._id, paymentStatus: item?.paymentStatus })}
                                       className="edit-btn" data-bs-toggle="modal" data-bs-target="#payment-Status"
                                     >
                                       <FontAwesomeIcon icon={faPen} />
@@ -314,7 +344,7 @@ function Dashboard() {
                                   <li>
                                     <a
                                       href="javascript:void(0)"
-                                      onClick={()=>setActData({appointmentId:item?._id,status:item?.status})}
+                                      onClick={() => setActData({ appointmentId: item?._id, status: item?.status })}
 
                                       className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
                                     >
@@ -378,7 +408,7 @@ function Dashboard() {
                                     </li>
 
                                     <li className="drop-item">
-                                      <NavLink to="/label" className="nw-dropdown-item" href="#">
+                                      <NavLink to={`/label/${item?._id}`} className="nw-dropdown-item" href="#">
                                         <img src="/barcd-icon.png" alt="" />
                                         Labels
                                       </NavLink>
@@ -403,17 +433,17 @@ function Dashboard() {
                                       </a>
                                     </li>
                                     <li className="drop-item">
-                                      <a className="nw-dropdown-item" href="#">
+                                      <button className="nw-dropdown-item" onClick={() => sendReport(item?._id, item?.patientId?.email, 'patient')}>
                                         <img src="/report-mail.png" alt="" />
                                         Send  Report Patient
-                                      </a>
+                                      </button>
                                     </li>
                                   </ul>
                                 </div>
                               </td>
                             </tr>)}
 
-                        
+
 
 
                       </tbody>

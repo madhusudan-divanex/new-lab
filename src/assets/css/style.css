@@ -3880,3 +3880,13 @@ color: #052F59 !important;
 .hide-buttons .no-print {
   display: none !important;
 }
+.page-break {
+  page-break-before: always;
+  break-before: page;
+}
+@media print {
+  .row, .col-lg-3, .col-md-4, .col-sm-12 {
+    display: block !important;
+    float: none !important;
+  }
+}

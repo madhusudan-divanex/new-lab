@@ -3,28 +3,53 @@ import { faCircleXmark, faPen } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { getSecureApiData } from "../../services/api"
+import { getSecureApiData, updateApiData } from "../../services/api"
 import { toast } from "react-toastify"
+import { useSelector } from "react-redux"
 
 function AppointmentDetails() {
-  const params=useParams()
-  const appointmentId=params.id
-  const [appointmentData,setAppointmentData]=useState({})
-  const fetchAppointmentData=async()=>{
+  const params = useParams()
+  const userId=localStorage.getItem('userId')
+  const appointmentId = params.id
+  const [appointmentData, setAppointmentData] = useState({})
+  const { labPerson } = useSelector(state => state.user)
+  const [payData, setPayData] = useState({ appointmentId, paymentStatus: 'due' })
+  const [actData, setActData] = useState({ appointmentId,  status: '' })
+  const fetchAppointmentData = async () => {
     try {
-      const response=await getSecureApiData(`lab/appointment-data/${appointmentId}`)
-      if(response.success){
+      const response = await getSecureApiData(`lab/appointment-data/${appointmentId}`)
+      if (response.success) {
         setAppointmentData(response.data)
-      }else{
+      } else {
         toast.error(response.message)
       }
     } catch (error) {
-      
+
     }
   }
-  useEffect(()=>{
+  useEffect(() => {
     fetchAppointmentData()
-  },[appointmentId])
+  }, [appointmentId])
+  const appointmentAction = async (e, type) => {
+    e.preventDefault()
+    let data = {}
+    if (type == 'status') {
+      data = { type, labId: userId, appointmentId, status: actData?.status }
+    }
+    else if (type == 'payment') {
+      data = { type, labId: userId, appointmentId: payData.appointmentId, paymentStatus: payData.paymentStatus }
+    }
+    try {
+      const response = await updateApiData(`appointment/lab-action`, data);
+      if (response.success) {
+        fetchAppointmentData()
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -135,14 +160,14 @@ function AppointmentDetails() {
 
               <div className="laboratory-bill-bx mt-lg-5 mt-sm-3 mb-3">
                 <h6 className="my-0">Lab Doctor </h6>
-                <h4>Dr. Ravi Kumar</h4>
-                <p><span className="laboratory-phne"> ID :</span> DO-7668</p>
+                <h4>Dr. {labPerson?.name}</h4>
+                <p><span className="laboratory-phne"> ID :</span> DO-{labPerson?._id?.slice(-10)}</p>
               </div>
-              <div className="laboratory-bill-bx mb-3">
+              {appointmentData?.doctorId && <div className="laboratory-bill-bx mb-3">
                 <h6 className="my-0">Lab tests prescribed by the doctor</h6>
                 <h4>Dr.James Harris</h4>
                 <p><span className="laboratory-phne"> ID :</span> DO-7668</p>
-              </div>
+              </div>}
             </div>
           </div>
         </div>
@@ -168,19 +193,21 @@ function AppointmentDetails() {
             </div>
             <div className="modal-body px-4">
               <div className="row ">
-                <div className="col-lg-12 ">
+                <form onSubmit={(e) => appointmentAction(e, 'payment')} className="col-lg-12 ">
                   <div className="custom-frm-bx">
                     <label htmlFor="">Status</label>
-                    <select className="form-select patient-frm-control">
-                      <option>Due</option>
+                    <select name="paymentStatus" value={payData.paymentStatus}
+                      onChange={(e) => setPayData({ ...payData, paymentStatus: e.target.value })} className="form-select nw-control-frm">
+                      <option value="due">Due</option>
+                      <option value="paid">Paid</option>
                     </select>
                   </div>
 
                   <div>
-                    <button type="submit" className="nw-thm-btn w-100"> Submit</button>
+                    <button type="submit" className="nw-thm-btn w-100" data-bs-dismiss="modal"> Submit</button>
                   </div>
 
-                </div>
+                </form>
               </div>
             </div>
           </div>
@@ -207,11 +234,16 @@ function AppointmentDetails() {
             </div>
             <div className="modal-body px-4">
               <div className="row ">
-                <div className="col-lg-12 ">
+                <form onSubmit={(e) => appointmentAction(e, 'status')} className="col-lg-12 ">
                   <div className="custom-frm-bx">
                     <label htmlFor="">Status</label>
-                    <select className="form-select patient-frm-control">
-                      <option>Visit Pending</option>
+                    <select name="status" value={actData.status} onChange={(e) => setActData({ ...actData, status: e.target.value })} className="form-select nw-control-frm">
+                      <option value="pending" disabled>Pending</option>
+                      <option value="cancel" disabled>Cancel</option>
+                      <option value="approved" disabled>Approved</option>
+                      <option value="rejected" disabled>Rejected</option>
+                      <option value="report-pending">Pending Report</option>
+                      <option value="deliver-report">Deliver Report</option>
                     </select>
                   </div>
 
@@ -223,10 +255,10 @@ function AppointmentDetails() {
                   </div>
 
                   <div>
-                    <button type="submit" className="nw-thm-btn w-100"> Submit</button>
+                    <button type="submit" className="nw-thm-btn w-100" data-bs-dismiss="modal"> Submit</button>
                   </div>
 
-                </div>
+                </form>
               </div>
             </div>
           </div>

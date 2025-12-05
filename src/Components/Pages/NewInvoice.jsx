@@ -132,18 +132,10 @@ function NewInvoice() {
                       <li className="lab-amount-item">Total :  <span className="price-title">{total}</span></li>
                     </ul>
                   </div>
-
                   <div className="text-end mt-5" >
                     <button className="nw-thm-btn rounded-3 py-2 no-print">Collect payment</button>
                   </div>
-
                 </div>
-
-
-
-
-
-
               </div>
             </div>
 

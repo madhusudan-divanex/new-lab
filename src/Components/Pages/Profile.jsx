@@ -14,13 +14,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchUserDetail, fetchUserProfile } from "../../redux/features/userSlice";
 import base_url from "../../../baseUrl";
 import html2canvas from "html2canvas";
+import QRCode from "react-qr-code";
 function Profile() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const userId = localStorage.getItem("userId")
   const { profiles, labPerson, labAddress, labImg,
-    rating, avgRating, labLicense, isRequest} = useSelector(state => state.user)
-  const [message,setMessage]=useState('')
+    rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
+  const [message, setMessage] = useState('')
 
   const fetchLabDetail = async (e) => {
     try {
@@ -70,9 +71,9 @@ function Profile() {
   };
   const sendEditRequest = async (e) => {
     e.preventDefault()
-    const data={labId:userId,message}
+    const data = { labId: userId, message }
     try {
-      const response = await securePostData(`lab/edit-request`,data);
+      const response = await securePostData(`lab/edit-request`, data);
       if (response.success) {
         setMessage('')
         toast.success("You request was sent!")
@@ -122,7 +123,7 @@ function Profile() {
                 </nav>
               </div>
             </div>
-            {!isRequest &&<div className="add-nw-bx">
+            {!isRequest && <div className="add-nw-bx">
               <a href="javascript:void(0)" className="add-nw-btn nw-thm-btn sub-nw-brd-tbn" data-bs-toggle="modal" data-bs-target="#edit-Request" >
                 Send Profile Edit Request
               </a>
@@ -245,9 +246,16 @@ function Profile() {
                                   <div className="patient-card-details">
                                     <h4>{labPerson?.name}</h4>
                                     <p>Laboratory ID</p>
-                                    <h6>Lab{profiles?._id?.slice(-10)}</h6>
+                                    <h6>{profiles?._id?.slice(-10)}</h6>
                                   </div>
                                   <div className="qr-code-generate"></div>
+                                  {/* <QRCode
+                                    size={5}
+                                    style={{ height: "auto", maxWidth: "100%", width: "20%" }}
+                                    value={profiles?._id}
+                                    viewBox={`0 0 256 256`}
+                                    className="qr-code-generate"
+                                  /> */}
 
                                 </div>
 
@@ -612,7 +620,7 @@ function Profile() {
 
                   <div className="custom-frm-bx">
                     <label htmlFor="">Note</label>
-                    <textarea name="" value={message} required onChange={(e)=>setMessage(e.target.value)} id="" className="form-control"></textarea>
+                    <textarea name="" value={message} required onChange={(e) => setMessage(e.target.value)} id="" className="form-control"></textarea>
 
                   </div>
 

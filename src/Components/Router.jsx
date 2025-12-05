@@ -141,7 +141,7 @@ function Router() {
           element: <ProtectedRoute component={PatientsView} />,
         },
         {
-          path: "/label",
+          path: "/label/:id",
           element: <ProtectedRoute component={Labels} />,
         },
         {

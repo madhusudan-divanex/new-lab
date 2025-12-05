@@ -8,7 +8,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, NavLink } from "react-router-dom";
 import { Nav } from "react-bootstrap";
-import { getSecureApiData, updateApiData } from "../../services/api";
+import { getSecureApiData, securePostData, updateApiData } from "../../services/api";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import base_url from "../../../baseUrl";
@@ -64,6 +64,19 @@ function TestReportsAppoiments() {
       const response = await updateApiData(`appointment/lab-action`, data);
       if (response.success) {
         fetchLabAppointment()
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
+   const sendReport = async (appointmentId,email,type) => {
+    const data={appointmentId,email,type}
+    try {
+      const response = await securePostData(`lab/send-report`,data);
+      if (response.success) {
+        toast.success("Report sent")
       } else {
         toast.error(response.message)
       }
@@ -251,7 +264,7 @@ function TestReportsAppoiments() {
                             </ul>
                           </td>
                           <td>
-                            <ul className="admin-paid-list">
+                            <ul className="admin-paid-list ">
                               <li>
 
                                 <span className="paid text-capitalize">{item?.paymentStatus}</span>
@@ -313,7 +326,7 @@ function TestReportsAppoiments() {
                                 {/* <i class="fas fa-pen"></i> */}
                               </a>
                               <ul
-                                class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
+                                class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu "
                                 aria-labelledby="acticonMenu1"
                               >
                                 <li className="drop-item">
@@ -346,7 +359,7 @@ function TestReportsAppoiments() {
                                 </li>
 
                                 <li className="drop-item">
-                                  <NavLink to="/label" className="nw-dropdown-item" href="#">
+                                  <NavLink to={`/label/${item?._id}`} className="nw-dropdown-item" href="#">
                                     <img src="/barcd-icon.png" alt="" />
                                     Labels
                                   </NavLink>
@@ -359,7 +372,7 @@ function TestReportsAppoiments() {
                                   </NavLink>
                                 </li>
                                 <li className="drop-item">
-                                  <NavLink to="/new-invoice" className="nw-dropdown-item" href="#">
+                                  <NavLink to={`/new-invoice/${item?._id}`} className="nw-dropdown-item" href="#">
                                     <img src="/invoices.png" alt="" />
                                     Invoice
                                   </NavLink>
@@ -371,10 +384,10 @@ function TestReportsAppoiments() {
                                   </a>
                                 </li>
                                 <li className="drop-item">
-                                  <a className="nw-dropdown-item" href="#">
+                                  <button className="nw-dropdown-item" onClick={()=>sendReport(item?._id,item?.patientId?.email,'patient')}>
                                     <img src="/report-mail.png" alt="" />
                                     Send  Report Patient
-                                  </a>
+                                  </button>
                                 </li>
                               </ul>
                             </div>

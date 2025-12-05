@@ -7,6 +7,7 @@ import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import html2pdf from "html2pdf.js";
 import html2canvas from "html2canvas";
+import Barcode from "react-barcode";
 
 function ReportView() {
   const params = useParams()
@@ -63,11 +64,12 @@ function ReportView() {
 
       if (response.success && response.data) {
         setReportMeta(prev => ({
-                ...prev,
-                [testId]: {
-                  createdAt: response.data.createdAt
-                }
-              }));
+          ...prev,
+          [testId]: {
+            id: response.data?._id,
+            createdAt: response.data.createdAt
+          }
+        }));
         return response.data;
       } else {
         return null;
@@ -97,13 +99,13 @@ function ReportView() {
                 const comp = report.component.find(rc => rc.cmpId === c._id);
                 mergedResults[i] = {
                   result: comp?.result || "",
-                  status: comp?.status || ""
+                  status: comp?.status || "",
                 };
               });
               // Set results and comments keyed by test._id
               setAllComponentResults(prev => ({ ...prev, [test._id]: mergedResults }));
               setAllComments(prev => ({ ...prev, [test._id]: report.comment || "" }));
-              
+
 
             } else {
               // If no report found, initialize empty for this test
@@ -121,7 +123,6 @@ function ReportView() {
       }
 
       setTestData(allTests);
-      if (allTests.length > 0) setSelectedTab(allTests[0]._id);
     };
 
     fetchTestsOneByOne();
@@ -151,7 +152,6 @@ function ReportView() {
         document.body.classList.remove("hide-buttons");
       });
   };
-console.log(reportMeta)
   return (
 
     <>
@@ -280,20 +280,7 @@ console.log(reportMeta)
                             );
                           })
                         ))}
-                        {/* <tr>
-                          <td>CBC - Lymphocyte</td>
-                          <td>mm/dl</td>
-                          <td>50-60%</td>
-                          <td>50</td>
-                          <td></td>
-                        </tr>
-                        <tr>
-                          <td>CBC - Lymphocyte</td>
-                          <td>mm/dl</td>
-                          <td>50-60%</td>
-                          <td>50</td>
-                          <td></td>
-                        </tr> */}
+
 
 
                       </tbody>
@@ -304,33 +291,28 @@ console.log(reportMeta)
 
                 <div className="report-remark mt-3">
                   <h6>Remark</h6>
-                  <p>-</p>
+                  {testData.map((test) => (
+                    <p key={test._id}>{allComments[test._id] || "-"}</p>
+                  ))}
                 </div>
-
+                <div className="page-break"></div>
                 <div className="reprt-barcd flex-wrap mt-3">
                   {testData?.map((item, key) =>
                     <div className=" barcd-scannr" key={key}>
                       <div className="barcd-content">
-                        <h4 className="my-3">SP-9879</h4>
+                        <h4 className="my-3">SP-{item?._id?.slice(-5)}</h4>
                         <ul className="qrcode-list">
                           <li className="qrcode-item">Test  <span className="qrcode-title">: {item?.shortName}</span></li>
                           <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(reportMeta[item._id]?.createdAt)?.toLocaleDateString()}</span> </li>
                         </ul>
 
-                        <img src="/barcode.png" alt="" />
+                        {/* <img src="/barcode.png" alt="" /> */}
+                        {/* {console.log(reportMeta[item._id]?.id)} */}
+                        <Barcode value={reportMeta[item._id]?.id} width={1} displayValue={false}
+                          height={60} />
+
                       </div>
                     </div>)}
-
-                  {/* <div className="barcd-scannr">
-                    <div className="barcd-content">
-                      <h4 className="my-3">SP-9879</h4>
-                      <ul className="qrcode-list">
-                        <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
-                        <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
-                      </ul>
-                      <img src="/barcode.png" alt="" />
-                    </div>
-                  </div> */}
                 </div>
                 <div className="reprt-signature mt-5">
                   <h6>Signature:</h6>
