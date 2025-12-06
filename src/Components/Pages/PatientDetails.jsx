@@ -74,7 +74,7 @@ function PatientDetails() {
                                 <img src={item?.profileImage? `${base_url}/${item?.profileImage}` :"/table-avatar.jpg"} alt="" />
                                 <div className="admin-table-sub-details patient-bio-content">
                                   <h6>{item?.patientId?.name}</h6>
-                                  <p>ID: {item?.patientId?._id?.slice(-10)}</p>
+                                  <p>ID: {item?.patientId?.customId}</p>
                                 </div>
                               </div>
 

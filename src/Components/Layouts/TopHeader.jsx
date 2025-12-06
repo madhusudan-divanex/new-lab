@@ -4,13 +4,16 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { IoMdQrScanner } from "react-icons/io";
 import Scanner from "../Pages/Scanner";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserDetail } from "../../redux/features/userSlice";
 import base_url from "../../../baseUrl";
 import { BarcodeScanner } from 'react-barcode-scanner'
+import { toast } from "react-toastify";
 function TopHeader() {
+  const navigate=useNavigate()
   const dispatch = useDispatch()
+  const [ptId,setPtId]=useState(null)
   const { profiles, labPerson, labAddress, labImg,
     rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
   useEffect(() => {
@@ -73,9 +76,10 @@ function TopHeader() {
             <div className="d-flex align-items-center gap-2">
               <div className="custom-frm-bx mb-0 position-relative">
                 <input
-                  type="email"
+                  type="text"
                   className="form-control px-5"
                   id="email"
+                  onChange={(e)=>setPtId(e.target.value)}
                   placeholder="Search Patient id"
                   required
                 />
@@ -87,9 +91,18 @@ function TopHeader() {
               </div>
 
               <div className="add-patient-bx">
-                <a href="javascript:void(0)" className="add-patient-btn">
+                <button onClick={()=>{
+                  if(ptId?.length<4){
+                    toast.error('Please enter full id ')
+                    return
+                  }else{
+
+                    navigate(`/patient-view/${ptId}`)}
+                    setPtId(null)
+                  }
+                  } className="add-patient-btn">
                   <img src="/white-plus.png" alt="" />
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -111,9 +124,6 @@ function TopHeader() {
               </NavLink>
             </div>
             <div className="header-user dropdown tp-right-admin-details d-flex align-items-center">
-
-
-
               <a
                 href="#"
                 className="user-toggle d-flex align-items-center"
@@ -125,7 +135,6 @@ function TopHeader() {
                   <img src={profiles?.logo?`${base_url}/${profiles.logo}` :"/user-avatar.png"} alt="" />
                 </div>
               </a>
-
               <ul
                 className="dropdown-menu dropdown-menu-end user-dropdown sallr-drop-box"
                 aria-labelledby="userMenu"
@@ -140,7 +149,7 @@ function TopHeader() {
                     <div className="profile-info">
                       {/* <span className="profile-role">Admin</span> */}
                       <h4 className="profile-name">{labPerson?.name}</h4>
-                      <p className="profile-id">ID : {profiles?._id?.slice(-10)}</p>
+                      <p className="profile-id">ID : {profiles?.customId}</p>
                     </div>
                   </div>
                   <div className="profile-logout-box">

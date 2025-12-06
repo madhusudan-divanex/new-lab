@@ -1,16 +1,52 @@
-import React, { useRef, useEffect, useState } from "react";
-import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from "@zxing/library";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  BrowserMultiFormatReader,
+  BarcodeFormat,
+  DecodeHintType,
+} from "@zxing/library";
 
 export default function Scanner({ onDetected }) {
   const videoRef = useRef(null);
-  const codeReader = useRef(null);
-  const [scanning, setScanning] = useState(false);
-  const [result, setResult] = useState("");
+  const streamRef = useRef(null);
+  const readerRef = useRef(null);
+
   const [error, setError] = useState("");
+  const [result, setResult] = useState("");
 
   useEffect(() => {
+    startScanner();
+    return () => stopScanner();
+  }, []);
+
+  const startScanner = async () => {
+    setError("");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+
+      streamRef.current = stream;
+      videoRef.current.srcObject = stream;
+
+      await videoRef.current.play();
+
+      startDecoding();
+    } catch (err) {
+      console.error("Camera Start Error:", err);
+      setError("Camera cannot start.");
+    }
+  };
+
+  const startDecoding = () => {
     const hints = new Map();
-    const formats = [
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.QR_CODE,
       BarcodeFormat.CODE_128,
       BarcodeFormat.CODE_39,
       BarcodeFormat.EAN_13,
@@ -18,122 +54,91 @@ export default function Scanner({ onDetected }) {
       BarcodeFormat.UPC_A,
       BarcodeFormat.UPC_E,
       BarcodeFormat.ITF,
-    ];
-    hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
-    codeReader.current = new BrowserMultiFormatReader(hints);
+      BarcodeFormat.AZTEC,
+      BarcodeFormat.DATA_MATRIX,
+      BarcodeFormat.PDF_417,
+    ]);
 
-    return () => stopScanner();
-  }, []);
+    readerRef.current = new BrowserMultiFormatReader(hints);
 
-  const startScanner = async () => {
-    setError("");
-    try {
-      const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-      if (!devices.length) {
-        setError("No camera found.");
-        return;
+    const scanLoop = async () => {
+      if (!videoRef.current) return;
+
+      try {
+        // BEST METHOD FOR QR CODES
+        const result = await readerRef.current.decodeFromImage(videoRef.current);
+
+        if (result) {
+          const text = result.getText();
+          setResult(text);
+          onDetected?.(text);
+
+          window.location.href = `https://devphaneo.divanex.in/patient-view/${text}`;
+
+          return;
+        }
+      } catch (err) {
+        // ignore NotFoundException
       }
 
-      const selectedDeviceId = devices[0].deviceId;
-      setScanning(true);
+      requestAnimationFrame(scanLoop);
+    };
 
-      codeReader.current.decodeFromVideoDevice(
-        selectedDeviceId,
-        videoRef.current,
-        (res, err) => {
-          if (res) {
-            const text = res.getText();
-            setResult(text);
-            onDetected?.(text);
-          }
-          if (err && !(err.name === "NotFoundException")) {
-            console.warn("Scan error:", err);
-          }
-        }
-      );
-    } catch (err) {
-      console.error(err);
-      setError("Camera access failed.");
-    }
+    requestAnimationFrame(scanLoop);
   };
 
   const stopScanner = () => {
     try {
-      codeReader.current?.reset();
-      setScanning(false);
+      readerRef.current?.reset();
+      streamRef.current?.getTracks().forEach((track) => track.stop());
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleFileScan = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const img = URL.createObjectURL(file);
-      const result = await codeReader.current.decodeFromImageUrl(img);
-      if (result) {
-        const text = result.getText();
-        setResult(text);
-        onDetected?.(text);
-      } else setError("No barcode found in image.");
-    } catch (error) {
-      setError("Failed to scan image.");
-    }
-    e.target.value = "";
-  };
-
   return (
-    <div
-      style={{
-        maxWidth: 400,
-        margin: "0 auto",
-        textAlign: "center",
-        fontFamily: "sans-serif",
-      }}
-    >
-
+    <div style={{ maxWidth: 400, margin: "0 auto", textAlign: "center" }}>
       <div
         style={{
           position: "relative",
-          border: "2px solid transparent",
-          borderRadius: "12px",
+          height: 320,
           overflow: "hidden",
-          margin: "10px 0",
+          borderRadius: 12,
         }}
       >
         <video
           ref={videoRef}
-          style={{
-            width: "100%",
-            height: "320px",
-            objectFit: "cover",
-          }}
+          autoPlay
+          playsInline
+          muted
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
 
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            border: "2px solid rgba(0,255,0,0.6)",
+            pointerEvents: "none",
+          }}
+        ></div>
 
-        <div className="scanner-frame"></div>
-        <div className="scan-line"></div>
+        {/* <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            width: "100%",
+            height: "3px",
+            background: "rgba(255,0,0,0.7)",
+            pointerEvents: "none",
+          }}
+        ></div> */}
       </div>
 
-      {/* <div style={{ marginTop: "10px" }}>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileScan}
-            style={{ marginLeft: "8px" }}
-          />
-      </div> */}
-
+      {error && <p style={{ color: "red", marginTop: 10 }}>⚠ {error}</p>}
       {result && (
-        <p style={{ marginTop: "10px", fontWeight: "bold" }}>
-          ✅ Barcode: {result}
-        </p>
+        <p style={{ marginTop: 10, fontWeight: "bold" }}>✅ Scanned: {result}</p>
       )}
-      {error && (
-        <p style={{ color: "red", marginTop: "10px" }}>⚠ {error}</p>
-      )}
-
     </div>
   );
 }

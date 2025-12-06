@@ -527,7 +527,7 @@ function EditProfile() {
 
                                                             <div>
                                                                 <h4 className="lg_title ">{profiles?.name}</h4>
-                                                                <p className="first_para">ID : #{profiles?._id?.slice(-10)}</p>
+                                                                <p className="first_para">ID : #{profiles?.customId}</p>
                                                             </div>
 
 

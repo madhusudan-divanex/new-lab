@@ -91,7 +91,7 @@ function ViewEmployee() {
                                     <div className="view-avatr-bio-bx text-center">
                                         <img src={empData?.profileImage ? `${base_url}/${empData?.profileImage}` : "/view-avatr.png"} alt="" />
                                         <h4>{empData?.name}</h4>
-                                        <p><span className="vw-id">ID:</span> {empData?._id?.slice(-10)}</p>
+                                        <p><span className="vw-id">ID:</span> {empData?.customId}</p>
                                         <h6 className="vw-activ text-capitalize">{empData?.status}</h6>
 
                                     </div>

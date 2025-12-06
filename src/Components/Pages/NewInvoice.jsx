@@ -100,7 +100,7 @@ function NewInvoice() {
                     <p><span className="laboratory-title">GSTIN :</span> {profiles?.gstNumber || '09897886454'}</p>
                   </div>
                   <div className="invoice-details">
-                    <p><span className="laboratory-invoice">Invoice :</span> {appointmentId?.slice(-10)}</p>
+                    <p><span className="laboratory-invoice">Invoice :</span> {appointmentData?.customId}</p>
                     <p><span className="laboratory-invoice">Date :</span>{"  "}{new Date().toLocaleDateString()}</p>
                   </div>
                 </div>

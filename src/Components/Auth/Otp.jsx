@@ -95,14 +95,11 @@ function Otp() {
       <section className="admin-login-section ">
         <div className="container-fluid ">
           <div className="row">
-
             <div className="col-lg-6 col-md-12 col-sm-12 px-0 mb-sm-3 mb-lg-0">
               <div className="admin-pisture-bx">
                 <img src="login-bnnr.png" alt="" />
               </div>
             </div>
-
-
             <div className="col-lg-6 col-md-12 col-sm-12 d-flex flex-column justify-content-center">
               <div>
                 <div className="admin-frm-vendor-bx">
@@ -111,13 +108,11 @@ function Otp() {
                       <img src="/logo.png" alt="" />
                     </a></h4>
                   </div>
-
                   <div className="admin-vendor-login">
                     <div className="admin-vndr-login">
                       <h3>Verify OTP</h3>
                       <p>We’ve sent a 6-digit code to your email. Please enter it below to reset your password.</p>
                     </div>
-
                     <form onSubmit={handleVerify}>
                       <div className="custom-frm-bx admin-frm-bx lab-login-frm-bx" onPaste={handlePaste}>
                         {otp.map((digit, index) => (
@@ -135,13 +130,11 @@ function Otp() {
                           />
                         ))}
                       </div>
-
                       <div className='mt-3'>
                         <button type="submit" className="admin-lg-btn">
                           Verify
                         </button>
                       </div>
-
                       <div className='text-center mt-5'>
                         <p className='do-account-title text-black'>Didn’t receive any code?</p>
                         <p className='do-account-title py-4'>
@@ -155,12 +148,9 @@ function Otp() {
                         >
                           Resend
                         </button>
-
                       </div>
-
                     </form>
                   </div>
-
                 </div>
               </div>
             </div>

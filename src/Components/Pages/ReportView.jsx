@@ -219,7 +219,7 @@ function ReportView() {
                     <p><span className="laboratory-title">GSTIN :</span> {profiles?.gstNumber || '09897886454'}</p>
                   </div>
                   <div className="invoice-details">
-                    <p><span className="laboratory-invoice">Invoice :</span> {appointmentId?.slice(-10)}</p>
+                    <p><span className="laboratory-invoice">Invoice :</span> {appointmentData?.customId}</p>
                     <p><span className="laboratory-invoice">Date :</span> {new Date()?.toLocaleDateString()}</p>
                   </div>
                 </div>
@@ -229,7 +229,7 @@ function ReportView() {
                     <div className="laboratory-bill-bx laboratory-nw-box">
                       <h6>Patient </h6>
                       <h4>{appointmentData?.patientId?.name}</h4>
-                      <p><span className="laboratory-phne">ID :</span> {appointmentData?.patientId?._id?.slice(-10)}</p>
+                      <p><span className="laboratory-phne">ID :</span> {appointmentData?.patientId?.customId}</p>
                       <p><span className="laboratory-phne">DOB:</span> {new Date(demoData?.dob)?.toLocaleDateString()}</p>
                       <p><span className="laboratory-phne">Gender:</span> {appointmentData?.patientId?.gender?.toUpperCase()}</p>
                     </div>
@@ -237,7 +237,7 @@ function ReportView() {
                   <div className="col-lg-6">
                     <div className="laboratory-bill-bx laboratory-sub-bx mb-2">
                       <h6>Order </h6>
-                      <p><span className="laboratory-phne">Appointment ID :</span> OID-{appointmentId?.slice(-10)}  </p>
+                      <p><span className="laboratory-phne">Appointment ID :</span> OID-{appointmentData?.customId}  </p>
                     </div>
 
                     {appointmentData?.doctorId && <div className="laboratory-bill-bx laboratory-sub-bx">

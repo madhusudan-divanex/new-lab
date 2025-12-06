@@ -8,10 +8,16 @@ import base_url from "../../../baseUrl";
 function AppointmentRequest() {
     const userId = localStorage.getItem('userId')
     const [appointments, setAppointments] = useState([])
-    const [allTest,setAllTest]=useState([])
+    const [totalPages, setTotalPage] = useState(1)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [allTest, setAllTest] = useState([])
+    const [filter, setFilter] = useState({
+        status: 'approved', paymentStatus: '', dateFrom: null,
+        dateTo: null, test: null, patientName: ''
+    })
     const fetchLabAppointment = async () => {
         try {
-            const response = await getSecureApiData(`lab/appointment/${userId}`);
+            const response = await getSecureApiData(`lab/appointment/${userId}?page=${currentPage}`);
             if (response.success) {
                 // setCurrentPage(response.pagination.page)
                 // setTotalPage(response.pagination.totalPages)
@@ -23,10 +29,10 @@ function AppointmentRequest() {
             console.error("Error creating lab:", err);
         }
     }
-     const appointmentAction = async (id,status) => {
-        const data={labId:userId,appointmentId:id,status}
+    const appointmentAction = async (id, status) => {
+        const data = { labId: userId, appointmentId: id, status }
         try {
-            const response = await updateApiData(`appointment/lab-action`,data);
+            const response = await updateApiData(`appointment/lab-action`, data);
             if (response.success) {
                 // setCurrentPage(response.pagination.page)
                 // setTotalPage(response.pagination.totalPages)
@@ -45,6 +51,7 @@ function AppointmentRequest() {
                 // setCurrentPage(response.pagination.page)
                 // setTotalPage(response.pagination.totalPages)
                 setAllTest(response.data)
+                setTotalPage(response.totalPages)
             } else {
                 toast.error(response.message)
             }
@@ -56,6 +63,31 @@ function AppointmentRequest() {
         fetchLabAppointment()
         fetchLabTest()
     }, [])
+    const filterSubmit = (e) => {
+        e.preventDefault()
+        const query = new URLSearchParams({
+            status: filter.status,
+            paymentStatus: filter.paymentStatus,
+            dateFrom: filter.dateFrom || '',
+            dateTo: filter.dateTo || '',
+            test: filter.test || '',
+            patientName: filter.patientName || '',
+            currentPage,
+        });
+
+        getSecureApiData(`lab/appointment/${userId}?${query.toString()}`)
+            .then(response => {
+                if (response.success) {
+                    setAppointments(response.data);
+                    setTotalPage(response.totalPages)
+                } else {
+                    toast.error(response.message);
+                }
+            });
+    }
+    useEffect(() => {
+        fetchLabAppointment()
+    }, [currentPage])
     return (
         <>
             <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -116,35 +148,35 @@ function AppointmentRequest() {
                         <div className="filters">
                             <div className="field custom-frm-bx mb-0">
                                 <label className="label">Status:</label>
-                                <select>
-                                    <option>All</option>
-                                    <option>Active</option>
-                                    <option>Inactive</option>
+                                <select name="status" value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}>
+                                    <option value='approved'>Approve</option>
+                                    <option value='pending-report'>Report Pending</option>
+                                    <option value='deliver-report'>Deliver Report</option>
                                 </select>
                             </div>
 
                             <div className="field custom-frm-bx mb-0">
                                 <label className="label">Test:</label>
-                                <select>
-                                    <option>All</option>
-                                    {allTest?.length>0 && 
-                                    allTest?.map((item,key)=><option value={item._id} key={key}>{item?.shortName}</option>)}
-                                    
+                                <select name="test" value={filter.test} onChange={(e) => setFilter({ ...filter, test: e.target.value })}>
+                                    <option value=''>All</option>
+                                    {allTest?.map((item, key) =>
+                                        <option value={item?._id}>{item?.shortName}</option>)}
                                 </select>
                             </div>
 
                             <div className="field custom-frm-bx mb-0">
                                 <label className="label">Date from:</label>
-                                <input type="date" className="" />
+                                <input type="date" className="" name="dateFrom" value={filter.dateFrom} onChange={(e) => setFilter({ ...filter, dateFrom: e.target.value })} />
                             </div>
 
                             <div className="field custom-frm-bx mb-0">
                                 <label className="label">Date to:</label>
-                                <input type="date" />
+                                <input type="date" name="dateTo" value={filter.dateTo} onChange={(e) => setFilter({ ...filter, dateTo: e.target.value })} />
                             </div>
 
                             <div>
-                                <a href="javascript:void(0)" className="nw-thm-btn" >Filter</a>
+                                <button onClick={filterSubmit} className="nw-thm-btn" >Filter</button>
+
                             </div>
 
                         </div>
@@ -156,10 +188,11 @@ function AppointmentRequest() {
                 <div className="row justify-content-between">
                     <div className="d-flex align-items-center justify-content-between">
                         <div className="custom-frm-bx">
-                            <input type="text" className="form-control pe-5" placeholder="Search " />
+                            <input type="text" className="form-control pe-5" placeholder="Search "
+                                name="name" value={filter.name} onChange={(e) => setFilter({ ...filter, name: e.target.value })} />
 
                             <div className="search-item-bx">
-                                <button className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
+                                <button onClick={filterSubmit} className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
                             </div>
 
                         </div>
@@ -168,9 +201,15 @@ function AppointmentRequest() {
                             <div className="page-selector d-flex align-items-center">
 
                                 <div className="custom-frm-bx">
-                                    <select className="form-select custom-page-dropdown nw-custom-page ">
-                                        <option value="1" selected>1</option>
-                                        <option value="2">2</option>
+                                    <select
+                                        className="form-select custom-page-dropdown nw-custom-page"
+                                        name="currentPage"
+                                        value={currentPage}
+                                        onChange={(e) => setCurrentPage(e.target.value)}
+                                    >
+                                        {Array.from({ length: totalPages }, (_, i) => (
+                                            <option key={i + 1} value={i + 1}>{i + 1}</option>
+                                        ))}
                                     </select>
                                 </div>
 
@@ -204,10 +243,10 @@ function AppointmentRequest() {
                                                     <td>
                                                         <div className="admin-table-bx">
                                                             <div className="admin-table-sub-bx">
-                                                                <img src={item?.patientId?.profileImage? `${base_url}/${item?.patientId?.profileImage}`:"/table-avatar.jpg"} alt="" />
+                                                                <img src={item?.patientId?.profileImage ? `${base_url}/${item?.patientId?.profileImage}` : "/table-avatar.jpg"} alt="" />
                                                                 <div className="admin-table-sub-details">
                                                                     <h6>{item?.patientId?.name} </h6>
-                                                                    <p>ID: {item?.patientId?._id?.slice(-10)}</p>
+                                                                    <p>ID: {item?.patientId?.customId}</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -218,16 +257,24 @@ function AppointmentRequest() {
                                                         year: "numeric"
                                                     })}
                                                     </td>
-                                                    <td>{item?.testId?.map((item)=>item?.shortName+',')}</td>
                                                     <td>
-                                                        {item?.status=='rejected'&& <span className="approved reject">Reject</span>}
-                                                        {(item?.status!=='rejected' && item?.status!=='pending')&& 
-                                                        <span className="text-capitalize">{item?.status}</span>}
+                                                        {/* {item?.testId?.map((item) => item?.shortName + ',')} */}
+                                                        <ul className="admin-test-list">
+                                                            {item?.testId?.map((test, key) =>
+                                                                <li className="admin-test-item" key={key}>{test?.shortName}</li>)}
+                                                            {/* <li className="admin-test-item">Haemoglobin</li> */}
+                                                        </ul>
 
-                                                        {item?.status=='pending' &&<ul className="test-action-list">
+                                                    </td>
+                                                    <td>
+                                                        {item?.status == 'rejected' && <span className="approved reject">Reject</span>}
+                                                        {(item?.status !== 'rejected' && item?.status !== 'pending') &&
+                                                            <span className={`text-capitalize paid`}>{item?.status}</span>}
+
+                                                        {item?.status == 'pending' && <ul className="test-action-list">
                                                             <li className="test-action-item">
                                                                 <button
-                                                                    onClick={()=>appointmentAction(item._id,'approved')}
+                                                                    onClick={() => appointmentAction(item._id, 'approved')}
                                                                     className="test-right-btn"
                                                                 >
                                                                     <FontAwesomeIcon icon={faCheck} />
@@ -235,7 +282,7 @@ function AppointmentRequest() {
                                                             </li>
                                                             <li className="test-action-item">
                                                                 <button
-                                                                    onClick={()=>appointmentAction(item._id,'rejected')}
+                                                                    onClick={() => appointmentAction(item._id, 'rejected')}
                                                                     className="test-right-btn test-close-btn"
                                                                 >
                                                                     <FontAwesomeIcon icon={faClose} />

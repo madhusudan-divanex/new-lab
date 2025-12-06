@@ -89,7 +89,12 @@ function Profile() {
   const handleCardDownload = (e) => {
     e.preventDefault()
     if (cardRef.current) {
-      html2canvas(cardRef.current).then((canvas) => {
+      html2canvas(cardRef.current, {
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        scale: 2, // better quality
+      }).then((canvas) => {
         const link = document.createElement("a");
         link.download = `${labPerson?.name || "lab-card"}.png`;
         link.href = canvas.toDataURL("image/png");
@@ -230,7 +235,7 @@ function Profile() {
 
                                 <div>
                                   <h4 className="lg_title ">{profiles?.name}</h4>
-                                  <p className="first_para">ID : #{profiles?._id}</p>
+                                  <p className="first_para">ID : #{profiles?.customId}</p>
                                 </div>
 
 
@@ -246,16 +251,21 @@ function Profile() {
                                   <div className="patient-card-details">
                                     <h4>{labPerson?.name}</h4>
                                     <p>Laboratory ID</p>
-                                    <h6>{profiles?._id?.slice(-10)}</h6>
+                                    <h6>LAB{profiles?.customId}</h6>
                                   </div>
-                                  <div className="qr-code-generate"></div>
                                   {/* <QRCode
-                                    size={5}
-                                    style={{ height: "auto", maxWidth: "100%", width: "20%" }}
-                                    value={profiles?._id}
-                                    viewBox={`0 0 256 256`}
-                                    className="qr-code-generate"
+                                    value="691ee677c18c1233339c9e2a"
+                                    size={256}
+                                    style={{ width: "200px", height: "200px" }}
                                   /> */}
+
+                                  <QRCode
+                                    size={256}
+                                    style={{ height: "auto", maxWidth: "100%", width: "20%" }}
+                                    viewBox={`0 0 256 256`}
+                                    className="qr-code"
+                                    value={profiles?._id || ""}
+                                  />
 
                                 </div>
 

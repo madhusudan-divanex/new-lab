@@ -285,7 +285,7 @@ function Dashboard() {
                                     <img src={item?.patientId?.profileImage ? `${base_url}/${item?.patientId?.profileImage}` : "/table-avatar.jpg"} alt="" />
                                     <div className="admin-table-sub-details">
                                       <h6>{item?.patientId?.name} </h6>
-                                      <p>ID: {item?.patientId?._id?.slice(-10)}</p>
+                                      <p>ID: {item?.patientId?.customId}</p>
                                     </div>
                                   </div>
                                 </div>
@@ -294,7 +294,7 @@ function Dashboard() {
                                 <ul className="admin-appointment-list">
                                   <li className="admin-appoint-item">
                                     <span className="admin-appoint-id">
-                                      Appointment ID : #{item?._id?.slice(-10)}
+                                      Appointment ID : #{item?.customId}
                                     </span>
                                   </li>
                                   <li className="admin-appoint-item">

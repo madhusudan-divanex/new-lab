@@ -16,8 +16,14 @@ import base_url from "../../../baseUrl";
 function TestReportsAppoiments() {
   const userId = localStorage.getItem('userId')
   const [allTest, setAllTest] = useState([])
+  const [totalPages, setTotalPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(1)
   const [payData, setPayData] = useState({ appointmentId: null, paymentStatus: 'due' })
   const [actData, setActData] = useState({ appointmentId: null, status: '' })
+  const [filter, setFilter] = useState({
+    status: 'approved', paymentStatus: '', dateFrom: null,
+    dateTo: null, test: null, patientName: ''
+  })
   const fetchLabTest = async () => {
     try {
       const response = await getSecureApiData(`lab/test/${userId}`);
@@ -39,11 +45,12 @@ function TestReportsAppoiments() {
   const [appointments, setAppointments] = useState([])
   const fetchLabAppointment = async () => {
     try {
-      const response = await getSecureApiData(`lab/appointment/${userId}?type=approved`);
+      const response = await getSecureApiData(`lab/appointment/${userId}?status=approved&page=${currentPage}`);
       if (response.success) {
         // setCurrentPage(response.pagination.page)
         // setTotalPage(response.pagination.totalPages)
         setAppointments(response.data)
+        setTotalPage(response.totalPages)
       } else {
         toast.error(response.message)
       }
@@ -71,10 +78,10 @@ function TestReportsAppoiments() {
       console.error("Error creating lab:", err);
     }
   }
-   const sendReport = async (appointmentId,email,type) => {
-    const data={appointmentId,email,type}
+  const sendReport = async (appointmentId, email, type) => {
+    const data = { appointmentId, email, type }
     try {
-      const response = await securePostData(`lab/send-report`,data);
+      const response = await securePostData(`lab/send-report`, data);
       if (response.success) {
         toast.success("Report sent")
       } else {
@@ -84,6 +91,31 @@ function TestReportsAppoiments() {
       console.error("Error creating lab:", err);
     }
   }
+  const filterSubmit = (e) => {
+    e.preventDefault()
+    const query = new URLSearchParams({
+      status: filter.status,
+      paymentStatus: filter.paymentStatus,
+      dateFrom: filter.dateFrom || '',
+      dateTo: filter.dateTo || '',
+      test: filter.test || '',
+      patientName: filter.patientName || '',
+      currentPage,
+    });
+
+    getSecureApiData(`lab/appointment/${userId}?${query.toString()}`)
+      .then(response => {
+        if (response.success) {
+          setAppointments(response.data);
+          setTotalPage(response.totalPages)
+        } else {
+          toast.error(response.message);
+        }
+      });
+  }
+  useEffect(()=>{
+    fetchLabAppointment()
+  },[currentPage])
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -131,43 +163,44 @@ function TestReportsAppoiments() {
             <div className="filters">
               <div className="field custom-frm-bx mb-0">
                 <label className="label">A. Status:</label>
-                <select>
-                  <option>All</option>
-                  <option>Active</option>
-                  <option>Inactive</option>
+                <select name="status" value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}>
+                  <option value='approved'>Approve</option>
+                  <option value='pending-report'>Report Pending</option>
+                  <option value='deliver-report'>Deliver Report</option>
+
                 </select>
               </div>
 
               <div className="field custom-frm-bx mb-0">
                 <label className="label">Payment Status :</label>
-                <select>
-                  <option>All</option>
-                  <option>Test 1</option>
-                  <option>Test 2</option>
+                <select name="paymentStatus" value={filter.paymentStatus} onChange={(e) => setFilter({ ...filter, paymentStatus: e.target.value })}>
+                  <option value=''>All</option>
+                  <option value='paid'>Paid</option>
+                  <option value='due'>Due</option>
                 </select>
               </div>
 
               <div className="field custom-frm-bx mb-0">
                 <label className="label">Test :</label>
-                <select>
-                  <option>All</option>
-                  <option>Test 1</option>
-                  <option>Test 2</option>
+                <select name="test" value={filter.test} onChange={(e) => setFilter({ ...filter, test: e.target.value })}>
+                  <option value=''>All</option>
+                  {allTest?.map((item, key) =>
+                    <option value={item?._id}>{item?.shortName}</option>)}
                 </select>
               </div>
 
               <div className="field custom-frm-bx mb-0">
                 <label className="label">Date from:</label>
-                <input type="date" className="" />
+                <input type="date" className="" name="dateFrom" value={filter.dateFrom} onChange={(e) => setFilter({ ...filter, dateFrom: e.target.value })} />
               </div>
 
               <div className="field custom-frm-bx mb-0">
                 <label className="label">Date to:</label>
-                <input type="date" />
+                <input type="date" name="dateTo" value={filter.dateTo} onChange={(e) => setFilter({ ...filter, dateTo: e.target.value })} />
               </div>
 
               <div>
-                <a href="javascript:void(0)" className="nw-thm-btn" >Filter</a>
+                <button onClick={filterSubmit} className="nw-thm-btn" >Filter</button>
               </div>
 
             </div>
@@ -178,22 +211,29 @@ function TestReportsAppoiments() {
         <div className="row ">
           <div className="d-flex align-items-center justify-content-between">
             <div className="custom-frm-bx">
-              <input type="text" className="form-control pe-5" placeholder="Search " />
+              <input type="text" className="form-control pe-5" placeholder="Search "
+                name="name" value={filter.name} onChange={(e) => setFilter({ ...filter, name: e.target.value })} />
 
               <div className="search-item-bx">
-                <button className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
+                <button onClick={filterSubmit} className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
               </div>
 
             </div>
 
             <div>
               <div className="page-selector d-flex align-items-center">
-
                 <div className="custom-frm-bx">
-                  <select className="form-select custom-page-dropdown nw-custom-page ">
-                    <option value="1" selected>1</option>
-                    <option value="2">2</option>
+                  <select
+                    className="form-select custom-page-dropdown nw-custom-page"
+                    name="currentPage"
+                    value={currentPage}
+                    onChange={(e) => setCurrentPage(e.target.value)}
+                  >
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <option key={i + 1} value={i + 1}>{i + 1}</option>
+                    ))}
                   </select>
+
                 </div>
 
               </div>
@@ -232,7 +272,7 @@ function TestReportsAppoiments() {
                                 <img src={item?.patientId?.profileImage ? `${base_url}/${item?.patientId?.profileImage}` : "/table-avatar.jpg"} alt="" />
                                 <div className="admin-table-sub-details">
                                   <h6>{item?.patientId?.name} </h6>
-                                  <p>ID: {item?.patientId?._id?.slice(-10)}</p>
+                                  <p>ID: {item?.patientId?.customId}</p>
                                 </div>
                               </div>
                             </div>
@@ -241,7 +281,7 @@ function TestReportsAppoiments() {
                             <ul className="admin-appointment-list">
                               <li className="admin-appoint-item">
                                 <span className="admin-appoint-id">
-                                  Appointment ID : #{item?._id?.slice(-10)}
+                                  Appointment ID : #{item?.customId}
                                 </span>
                               </li>
                               <li className="admin-appoint-item">
@@ -266,8 +306,7 @@ function TestReportsAppoiments() {
                           <td>
                             <ul className="admin-paid-list ">
                               <li>
-
-                                <span className="paid text-capitalize">{item?.paymentStatus}</span>
+                                <span className={`paid text-capitalize ${item?.paymentStatus==='due'&&'due'}`}>{item?.paymentStatus}</span>
                               </li>
                               <li>
                                 <a
@@ -283,7 +322,6 @@ function TestReportsAppoiments() {
                           <td>
                             <ul className="admin-paid-list">
                               <li>
-
                                 <span className="paid text-capitalize">
                                   {item?.status}
                                 </span>
@@ -384,7 +422,7 @@ function TestReportsAppoiments() {
                                   </a>
                                 </li>
                                 <li className="drop-item">
-                                  <button className="nw-dropdown-item" onClick={()=>sendReport(item?._id,item?.patientId?.email,'patient')}>
+                                  <button className="nw-dropdown-item" onClick={() => sendReport(item?._id, item?.patientId?.email, 'patient')}>
                                     <img src="/report-mail.png" alt="" />
                                     Send  Report Patient
                                   </button>

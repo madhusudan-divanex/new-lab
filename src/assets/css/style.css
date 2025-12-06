@@ -575,17 +575,14 @@ input[type=number] {
 }
 
 
-/* .left-navigation .nav-active {
+.left-navigation .nav-active {
     background-color: #00B4B5;
-    color: #fff;
-} */
+    color: #fff !important;
+}
 
-/* .left-navigation .nav-active:hover {
+.left-navigation .nav-active:hover {
     background-color: #12c7c8 !important;
-
-} */
-
-
+}
 
 .seller-submenu .left-navigation .nav-link {
     padding-left: 25px !important;
@@ -2874,9 +2871,7 @@ color: #052F59 !important;
 
 }
 
-.chat-usr-avatr-bx {
-    position: relative;
-}
+
 
 .chat-usr-avatr-bx img {
     width: 55px;
@@ -2886,7 +2881,12 @@ color: #052F59 !important;
     position: relative;
 }
 
-.chat-usr-avatr-bx::after {
+.nw-chat-add-live{
+    position: relative;
+}
+ 
+ 
+.nw-chat-add-live::after {
     content: "";
     position: absolute;
     bottom: 0;
@@ -2896,12 +2896,10 @@ color: #052F59 !important;
     height: 15px;
     border-radius: 50%;
     border: 2px solid #fff;
-
+ 
 }
 
-.new-chat-usr-avatr-bx {
-    position: static;
-}
+
 
 .chat-usr-avatr-crd {
     display: flex;
@@ -3147,7 +3145,7 @@ color: #052F59 !important;
     border-top: none;
 }
 
-.scan-line {
+/* .scan-line {
     position: absolute;
     top: 10%;
     left: 10%;
@@ -3165,7 +3163,7 @@ color: #052F59 !important;
     100% {
         top: 70%;
     }
-}
+} */
 
 .patient-view-bx {
     background: #FFFFFF !important;
@@ -3709,6 +3707,13 @@ color: #052F59 !important;
     background-image: url(/qr-code.png);
     background-repeat: no-repeat;
     background-size: contain;
+    width: 60px;
+    height: 60px;
+}
+.qr-code {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
     width: 60px;
     height: 60px;
 }

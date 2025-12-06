@@ -94,7 +94,7 @@ function PatientsView() {
                                     <div className="view-avatr-bio-bx text-center">
                                         <img src={ptData?.profileImage ? `${base_url}/${ptData?.profileImage}` : "/view-avatr.png"} alt="" />
                                         <h4>{ptData?.name}</h4>
-                                        <p><span className="vw-id">ID:</span> {ptData?._id?.slice(-10)}</p>
+                                        <p><span className="vw-id">ID:</span> {ptData?.customId}</p>
                                         <h6 className="vw-activ text-capitalize">{ptData?.status}</h6>
 
                                     </div>
@@ -236,21 +236,21 @@ function PatientsView() {
                                                                             labAppointments?.map((item, key) =>
                                                                                 <tr key={key}>
                                                                                     <td>{key + 1}</td>
-                                                                                    <td>  #{item?._id?.slice(-10)}</td>
+                                                                                    <td>  #{item?.customId}</td>
                                                                                     <td>
                                                                                         <div className="admin-table-bx">
                                                                                             <div className="admin-table-sub-bx">
                                                                                                 <img src={ptData?.profileImage ? `${base_url}/${ptData?.profileImage}` : "/admin-tb-logo.png"} alt="" />
                                                                                                 <div className="admin-table-sub-details">
                                                                                                     <h6>{ptData?.name}</h6>
-                                                                                                    <p>ID: {ptData?._id?.slice(-10)}</p>
+                                                                                                    <p>ID: {ptData?.customId}</p>
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
                                                                                     </td>
                                                                                     <td>
                                                                                         <ul className="ad-info-list">
-                                                                                            <li className="ad-info-item patient-report-item"><span className="ad-info-title"></span>Appointment ID : #{item?._id?.slice(-10)}</li>
+                                                                                            <li className="ad-info-item patient-report-item"><span className="ad-info-title"></span>Appointment ID : #{item?.customId}</li>
                                                                                             <li className="ad-info-item"><span className="ad-info-title">Appointment Book Date : {item?.date && new Date(item?.date)?.toLocaleDateString("en-GB", {
                                                                                                 day: "2-digit",
                                                                                                 month: "short",

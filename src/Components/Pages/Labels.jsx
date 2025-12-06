@@ -115,8 +115,6 @@ function Labels() {
     }, [testId]);
     const handleDownload = () => {
         const element = componentRef.current;
-
-
         const opt = {
             margin: [0.2, 0.2, 0.2, 0.2],
             filename: "label.pdf",
@@ -128,7 +126,6 @@ function Labels() {
                 orientation: "portrait"
             }
         };
-
         html2pdf()
             .from(element)
             .set(opt)
@@ -185,7 +182,7 @@ function Labels() {
                             </div>
                         </div>
                         <div ref={componentRef} className="row">
-                            {testData?.map((item, key) =>
+                            {Object.keys(reportMeta)?.length>0 && testData?.map((item, key) =>
                                 <div className="col-lg-3 col-md-4 col-sm-12 mb-3" key={key}>
                                     <div className=" barcd-scannr" >
                                         <div className="barcd-content">
@@ -202,13 +199,13 @@ function Labels() {
                                         <div className="barcode-id-details">
                                             <div>
                                                 <h6>Patient Id </h6>
-                                                <p>PS-{appointmentData?.patientId?._id?.slice(-10)}</p>
+                                                <p>PS-{appointmentData?.patientId?.customId}</p>
                                             </div>
 
 
                                             <div>
                                                 <h6>Appointment ID </h6>
-                                                <p>OID-{appointmentData?._id?.slice(-10)}</p>
+                                                <p>OID-{appointmentData?.customId}</p>
                                             </div>
                                         </div>
                                     </div>
