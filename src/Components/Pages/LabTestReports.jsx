@@ -8,6 +8,7 @@ import { NavLink, useParams } from "react-router-dom";
 import { getSecureApiData, securePostData } from "../../services/api";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { useSelector } from "react-redux";
 
 function LabTestReports() {
   const params = useParams();
@@ -16,6 +17,7 @@ function LabTestReports() {
   const [selectedTab, setSelectedTab] = useState(null);
   const [appointmentData, setAppointmentData] = useState(null);
   const [testId, setTestId] = useState([]);
+   const {isOwner,permissions}=useSelector(state=>state.user)
   const [testData, setTestData] = useState([]);
   const [allComponentResults, setAllComponentResults] = useState({});
   const [allComments, setAllComments] = useState({});
@@ -90,8 +92,11 @@ function LabTestReports() {
 
     fetchTestsOneByOne();
   }, [testId]);
-
   const handleSave = async () => {
+     if(!isOwner && !permissions?.editReport){
+      toast.error('You do not have permission to edit a report ')
+      return
+    }
     const item = testData.find(t => t._id === selectedTab);
     if (!item) return;
 

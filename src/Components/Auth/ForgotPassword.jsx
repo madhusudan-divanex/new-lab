@@ -45,9 +45,8 @@ function ForgotPassword() {
               <div className="admin-vendor-login">
                 <div className="admin-vndr-login">
                   <h3>Forgot Password</h3>
-                  <p>Please enter email   address below</p>
+                  <p>Please enter email address below</p>
                 </div>
-
                 <form onSubmit={handleSubmit}>
                   <div className="custom-frm-bx admin-frm-bx">
                     <label htmlFor="">Email Address</label>

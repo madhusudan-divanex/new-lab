@@ -8,6 +8,7 @@ import { useSelector } from "react-redux"
 import html2canvas from "html2canvas"
 import html2pdf from "html2pdf.js"
 import Barcode from "react-barcode"
+import Loader from "../Layouts/Loader"
 
 function Labels() {
     const params = useParams()
@@ -113,28 +114,26 @@ function Labels() {
 
         fetchTestsOneByOne();
     }, [testId]);
-    const handleDownload = () => {
-        const element = componentRef.current;
-        const opt = {
-            margin: [0.2, 0.2, 0.2, 0.2],
-            filename: "label.pdf",
-            image: { type: "jpeg", quality: 1 },
-            html2canvas: { scale: 3, useCORS: true },
-            jsPDF: {
-                unit: "mm",
-                format: "a4",
-                orientation: "portrait"
-            }
-        };
-        html2pdf()
-            .from(element)
-            .set(opt)
-            .save()
-    };
+    
+  const printDiv = () => {
+    if (!componentRef.current) {
+      console.error('print area not found');
+      return;
+    }
+
+    const printContents = componentRef.current.innerHTML;
+    const originalContents = document.body.innerHTML;
+
+    document.body.innerHTML = printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+    window.location.reload(); // optional if needed
+  };
+
 
     return (
         <>
-            <div className="main-content flex-grow-1 p-3 overflow-auto">
+            {isLoading ?<Loader/> :<div className="main-content flex-grow-1 p-3 overflow-auto">
                 <form action="">
                     <div className="row mb-3">
                         <div className="d-flex align-items-center justify-content-between">
@@ -177,11 +176,13 @@ function Labels() {
                                 <h5 className="first_para fw-700 fz-20 mb-0">Preview</h5>
                             </div>
                             <div>
-                                <button disabled={testData?.length == 0} className="print-btn" onClick={handleDownload}>
+                                <button disabled={testData?.length == 0} className="print-btn" 
+                                onClick={()=>printDiv()}
+                                >
                                     <FontAwesomeIcon icon={faPrint} /> {isLoading ? 'Loading...' : 'Print'}</button>
                             </div>
                         </div>
-                        <div ref={componentRef} className="row">
+                        <div ref={componentRef} className="row" >
                             {Object.keys(reportMeta)?.length>0 && testData?.map((item, key) =>
                                 <div className="col-lg-3 col-md-4 col-sm-12 mb-3" key={key}>
                                     <div className=" barcd-scannr" >
@@ -214,7 +215,7 @@ function Labels() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>}
         </>
     )
 }

@@ -11,15 +11,17 @@ import base_url from "../../../baseUrl";
 import { BarcodeScanner } from 'react-barcode-scanner'
 import { toast } from "react-toastify";
 function TopHeader() {
-  const navigate=useNavigate()
+  const navigate = useNavigate()
   const dispatch = useDispatch()
-  const [ptId,setPtId]=useState(null)
+  const [ptId, setPtId] = useState(null)
+  const [scannerOpen, setScannerOpen] = useState(false)
   const { profiles, labPerson, labAddress, labImg,
     rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
   useEffect(() => {
     dispatch(fetchUserDetail())
   }, [dispatch])
-
+  const openScanner = () => setScannerOpen(true);
+  const closeScanner = () => setScannerOpen(false);
   useEffect(() => {
     let overlay = document.querySelector('.mobile-overlay');
     if (!overlay) {
@@ -59,11 +61,14 @@ function TopHeader() {
   }, []);
 
 
-  const handleDetected = (code) => {
-    alert("Scanned barcode: " + code);
+  const handleDetected = (code, err) => {
+    if (err) {
+      alert(err);
+      setScannerOpen(false);   // close modal
+      return;
+    }
+    setScannerOpen(false);
   };
-
-
   return (
     <>
       <div className="tp-header-section d-flex align-items-center justify-content-between w-100 py-2 px-3">
@@ -79,7 +84,7 @@ function TopHeader() {
                   type="text"
                   className="form-control px-5"
                   id="email"
-                  onChange={(e)=>setPtId(e.target.value)}
+                  onChange={(e) => setPtId(e.target.value)}
                   placeholder="Search Patient id"
                   required
                 />
@@ -91,16 +96,17 @@ function TopHeader() {
               </div>
 
               <div className="add-patient-bx">
-                <button onClick={()=>{
-                  if(ptId?.length<4){
+                <button onClick={() => {
+                  if (ptId?.length < 4) {
                     toast.error('Please enter full id ')
                     return
-                  }else{
+                  } else {
 
-                    navigate(`/patient-view/${ptId}`)}
-                    setPtId(null)
+                    navigate(`/patient-view/${ptId}`)
                   }
-                  } className="add-patient-btn">
+                  setPtId(null)
+                }
+                } className="add-patient-btn">
                   <img src="/white-plus.png" alt="" />
                 </button>
               </div>
@@ -112,7 +118,8 @@ function TopHeader() {
           <div className="tp-right-admin-bx d-flex align-items-center">
 
             <div>
-              <button className="rq-scan-btn" data-bs-toggle="modal" data-bs-target="#scanner-Request" ><IoMdQrScanner className="fz-18" /> SCAN</button>
+              <button className="rq-scan-btn" onClick={() => setScannerOpen(true)} >
+                <IoMdQrScanner className="fz-18" /> SCAN</button>
             </div>
 
             <div className="position-relative">
@@ -132,7 +139,7 @@ function TopHeader() {
                 aria-expanded="false"
               >
                 <div className="admn-icon me-2">
-                  <img src={profiles?.logo?`${base_url}/${profiles.logo}` :"/user-avatar.png"} alt="" />
+                  <img src={profiles?.logo ? `${base_url}/${profiles.logo}` : "/user-avatar.png"} alt="" />
                 </div>
               </a>
               <ul
@@ -142,7 +149,7 @@ function TopHeader() {
                 <div className="profile-card-box">
                   <div className="profile-top-section">
                     <img
-                      src={profiles?.logo?`${base_url}/${profiles.logo}` :"/user-avatar.png"}
+                      src={profiles?.logo ? `${base_url}/${profiles.logo}` : "/user-avatar.png"}
                       alt="Profile"
                       className="profile-image"
                     />
@@ -167,32 +174,37 @@ function TopHeader() {
 
       {/*Payment Status Popup Start  */}
       {/* data-bs-toggle="modal" data-bs-target="#scanner-Request" */}
-      <div className="modal step-modal" id="scanner-Request" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1"
-        aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered modal-md">
-          <div className="modal-content rounded-5">
-            <div className="d-flex align-items-center justify-content-between popup-nw-brd px-4 py-3">
-              <div>
-                <h6 className="lg_title mb-0">Scan </h6>
-              </div>
-              <div>
-                <button type="button" className="fz-18" data-bs-dismiss="modal" aria-label="Close" style={{ color: "#00000040" }}>
+      {scannerOpen && (
+        <div className="modal fade show step-modal"
+          id="scanner-Request"
+          style={{ display: "block", background: "#00000080" }}
+          data-bs-backdrop="static"
+          data-bs-keyboard="false">
+
+          <div className="modal-dialog modal-dialog-centered modal-md">
+            <div className="modal-content rounded-5">
+
+              <div className="d-flex align-items-center justify-content-between popup-nw-brd px-4 py-3">
+                <h6 className="lg_title mb-0">Scan</h6>
+
+                <button
+                  className="fz-18"
+                  onClick={closeScanner}     // <-- closes modal
+                  aria-label="Close"
+                  style={{ color: "#00000040" }}>
                   <FontAwesomeIcon icon={faCircleXmark} />
                 </button>
               </div>
-            </div>
-            <div className="modal-body px-4">
-              <div className="row ">
-                <div className="col-lg-12">
 
-                  <Scanner onDetected={handleDetected} />
-                  {/* <BarcodeScanner /> */}
-                </div>
+              <div className="modal-body px-4">
+                <Scanner open={scannerOpen} onDetected={handleDetected} />
               </div>
+
             </div>
           </div>
         </div>
-      </div>
+      )}
+
       {/*  Payment Status Popup End */}
 
     </>

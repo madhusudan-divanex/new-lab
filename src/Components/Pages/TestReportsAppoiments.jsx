@@ -12,12 +12,14 @@ import { getSecureApiData, securePostData, updateApiData } from "../../services/
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import base_url from "../../../baseUrl";
+import { useSelector } from "react-redux";
 
 function TestReportsAppoiments() {
   const userId = localStorage.getItem('userId')
   const [allTest, setAllTest] = useState([])
   const [totalPages, setTotalPage] = useState(1)
   const [currentPage, setCurrentPage] = useState(1)
+  const { isOwner, permissions } = useSelector(state => state.user)
   const [payData, setPayData] = useState({ appointmentId: null, paymentStatus: 'due' })
   const [actData, setActData] = useState({ appointmentId: null, status: '' })
   const [filter, setFilter] = useState({
@@ -62,9 +64,17 @@ function TestReportsAppoiments() {
     e.preventDefault()
     let data = {}
     if (type == 'status') {
+      if (!isOwner && !permissions.appointmentStatus) {
+        toast.error('You do not have permission to update appointment status ')
+        return
+      }
       data = { type, labId: userId, appointmentId: actData.appointmentId, status: actData?.status }
     }
     else if (type == 'payment') {
+      if (!isOwner && !permissions.paymentStatus) {
+        toast.error('You do not have permission to update payment status ')
+        return
+      }
       data = { type, labId: userId, appointmentId: payData.appointmentId, paymentStatus: payData.paymentStatus }
     }
     try {
@@ -113,9 +123,9 @@ function TestReportsAppoiments() {
         }
       });
   }
-  useEffect(()=>{
+  useEffect(() => {
     fetchLabAppointment()
-  },[currentPage])
+  }, [currentPage])
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -306,7 +316,7 @@ function TestReportsAppoiments() {
                           <td>
                             <ul className="admin-paid-list ">
                               <li>
-                                <span className={`paid text-capitalize ${item?.paymentStatus==='due'&&'due'}`}>{item?.paymentStatus}</span>
+                                <span className={`paid text-capitalize ${item?.paymentStatus === 'due' && 'due'}`}>{item?.paymentStatus}</span>
                               </li>
                               <li>
                                 <a

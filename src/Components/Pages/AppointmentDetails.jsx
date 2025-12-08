@@ -2,16 +2,18 @@
 import { faCircleXmark, faPen } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { getSecureApiData, updateApiData } from "../../services/api"
 import { toast } from "react-toastify"
 import { useSelector } from "react-redux"
 
 function AppointmentDetails() {
   const params = useParams()
+  const navigate=useNavigate()
   const userId=localStorage.getItem('userId')
   const appointmentId = params.id
   const [appointmentData, setAppointmentData] = useState({})
+   const {isOwner,permissions}=useSelector(state=>state.user)
   const { labPerson } = useSelector(state => state.user)
   const [payData, setPayData] = useState({ appointmentId, paymentStatus: 'due' })
   const [actData, setActData] = useState({ appointmentId,  status: '' })
@@ -50,6 +52,12 @@ function AppointmentDetails() {
       console.error("Error creating lab:", err);
     }
   }
+  useEffect(()=>{
+        if(!isOwner && !permissions?.appointmentDetails){
+      toast.error('You do not have permission to see appointment deatails ')
+      navigate(-1)
+    }
+    },[isOwner,permissions])
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">

@@ -6,10 +6,13 @@ import { toast } from "react-toastify";
 import { getSecureApiData, securePostData, updateApiData } from "../../services/api";
 import { useEffect, useState } from "react";
 import base_url from "../../../baseUrl";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUserDetail } from "../../redux/features/userSlice";
 function Dashboard() {
   const [rpData, setRpData] = useState({})
   const [totalTest,setTotalTest]=useState(0)
   const [testReport,setTestReport]=useState()
+  const {isOwner,permissions}=useSelector(state=>state.user)
   const labReports = {
     series: [rpData?.deliverRequest ||0,rpData?.pendingTestRequest|| 0, rpData?.pendingReport ||0], 
     options: {
@@ -70,7 +73,7 @@ function Dashboard() {
   const [appointments, setAppointments] = useState([])
   const fetchLabAppointment = async () => {
     try {
-      const response = await getSecureApiData(`lab/appointment/${userId}?type=approved&page=1`);
+      const response = await getSecureApiData(`lab/appointment/${userId}?status=approved&page=1`);
       if (response.success) {
         // setCurrentPage(response.pagination.page)
         // setTotalPage(response.pagination.totalPages)
@@ -82,13 +85,22 @@ function Dashboard() {
       console.error("Error creating lab:", err);
     }
   }
+  console.log(isOwner,permissions)
   const appointmentAction = async (e, type) => {
     e.preventDefault()
     let data = {}
     if (type == 'status') {
+      if (!isOwner && !permissions.appointmentStatus) {
+        toast.error('You do not have permission to update appointment status ')
+        return
+      }
       data = { type, labId: userId, appointmentId: actData.appointmentId, status: actData?.status }
     }
     else if (type == 'payment') {
+      if (!isOwner && !permissions.paymentStatus) {
+        toast.error('You do not have permission to update payment status ')
+        return
+      }
       data = { type, labId: userId, appointmentId: payData.appointmentId, paymentStatus: payData.paymentStatus }
     }
     try {

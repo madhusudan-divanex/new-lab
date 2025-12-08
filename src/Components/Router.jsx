@@ -42,6 +42,7 @@ import Notification from "./Pages/Notification";
 import EditTest from "./Pages/EditTest";
 import ProtectedRoute from "./ProtectedRoute";
 import Wating from "./Auth/Wating";
+import AddAppointment from "./Pages/AddAppointment";
 
 
 function Router() {
@@ -175,6 +176,10 @@ function Router() {
         {
           path: "/wating-for-approval",
           element: <ProtectedRoute component={Wating} />,
+        },
+        {
+          path: "/add-appointment",
+          element: <ProtectedRoute component={AddAppointment} />,
         },
 
         // Public Routes (No Protection)

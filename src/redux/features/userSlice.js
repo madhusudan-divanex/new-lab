@@ -40,9 +40,11 @@ const userSlice = createSlice({
         rating: null,
         avgRating: null,
         labLicense: null,
-        isRequest:null,
+        isRequest: null,
         loading: false,
         error: null,
+        isOwner: localStorage.getItem('isOwner') === 'true' ?true:false, // <-- read from localStorage
+        permissions: JSON.parse(localStorage.getItem('permissions')) || null,
     },
     reducers: {
         clearProfiles: (state) => {
@@ -72,13 +74,13 @@ const userSlice = createSlice({
             .addCase(fetchUserDetail.fulfilled, (state, action) => {
                 state.loading = false;
                 console.log(action)
-                state.profiles=action.payload.user
+                state.profiles = action.payload.user
                 state.labAddress = action.payload.labAddress;
                 state.labImg = action.payload.labImg;
                 state.rating = action.payload.rating;
                 state.avgRating = action.payload.avgRating;
                 state.labPerson = action.payload.labPerson;
-                state.isRequest=action.payload.isRequest
+                state.isRequest = action.payload.isRequest
                 state.labLicense = action.payload.labLicense;
             })
             .addCase(fetchUserDetail.rejected, (state, action) => {
@@ -88,5 +90,5 @@ const userSlice = createSlice({
     },
 });
 
-export const { clearProfiles } = userSlice.actions;
+export const { clearProfiles, setOwner, setPermissions } = userSlice.actions;
 export default userSlice.reducer;

@@ -4,19 +4,30 @@ import { TbGridDots } from "react-icons/tb";
 import { useEffect, useState } from "react";
 import { getSecureApiData } from "../../services/api";
 import { toast } from "react-toastify";
-import { useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import base_url from "../../../baseUrl";
+import { useDispatch, useSelector } from "react-redux";
+import Barcode from "react-barcode";
+import Loader from "../Layouts/Loader";
 
 function PatientsView() {
     const params = useParams()
     const patientId = params.id
+    const navigate = useNavigate()
     const userId = localStorage.getItem('userId')
     const [appointments, setAppointments] = useState([])
     const [ptData, setPtData] = useState()
+    const [isLoading,setIsLoading]=useState(true)
+    const dispatch = useDispatch()
+    const { isOwner, permissions } = useSelector(state => state.user)
+    useDispatch(() => {
+        dispatch(fetchUserDetail())
+    }, [dispatch])
     const [medicalHistory, setMedicalHistory] = useState()
     const [demographicData, setDemographicData] = useState()
     const [prescriptionData, setPrescriptionData] = useState()
     const [labAppointments, setLabAppointments] = useState([])
+    const [labReports, setLabReports] = useState([])
     const fetchPatient = async () => {
         try {
             const response = await getSecureApiData(`patient/detail/${patientId}`);
@@ -24,8 +35,9 @@ function PatientsView() {
                 setPtData(response.user)
                 setMedicalHistory(response.medicalHistory)
                 setDemographicData(response.demographic)
-                setPrescriptionData(response.prescription)
+                setPrescriptionData(response.prescription?.prescriptions)
                 setLabAppointments(response.labAppointment)
+                setIsLoading(false)
             } else {
                 toast.error(response.message)
             }
@@ -34,7 +46,11 @@ function PatientsView() {
         }
     }
     useEffect(() => {
-        fetchPatient()
+        if(userId){
+
+            fetchPatient()
+            fetchPatientReport()
+        }
     }, [userId])
     const calculateAge = (dob) => {
         if (!dob) return "";
@@ -45,17 +61,34 @@ function PatientsView() {
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
         const dayDiff = today.getDate() - birthDate.getDate();
-
         if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
             age--; // haven't had birthday yet this year
         }
-
         return age;
     };
+    useEffect(() => {
+        if (!isOwner && !permissions?.patientDetails) {
+            toast.error('You do not have permission to see patient deatails ')
+            navigate(-1)
+        }
+    }, [isOwner, permissions])
+    const fetchPatientReport = async () => {
+        try {
+            const response = await getSecureApiData(`patient/lab-report/${patientId}?page=1`);
+            if (response.success) {
+                setLabReports(response.data)
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
 
     return (
         <>
-            <div className="main-content flex-grow-1 p-3 overflow-auto">
+            {isLoading? 
+            <Loader/>:<div className="main-content flex-grow-1 p-3 overflow-auto">
                 <div className="row mb-3">
                     <div className="d-flex align-items-center justify-content-between">
                         <div>
@@ -270,98 +303,100 @@ function PatientsView() {
                                                                                 </a>
                                                                             </td> */}
 
-                                                                                    <td>
-                                                                                        <a
-                                                                                            href="javascript:void(0)"
-                                                                                            className="grid-dots-btn "
-                                                                                            data-bs-toggle="dropdown"
-                                                                                            aria-expanded="false"
-                                                                                        >
-
-                                                                                            <TbGridDots />
-                                                                                        </a>
-
-                                                                                        <div class="dropdown">
+                                                                                    {(item?.status !== 'rejected' && item?.status !== 'pending' && item?.status !== 'cancel'
+                                                                                        && item?.labId?._id !== userId
+                                                                                    ) && <td>
                                                                                             <a
                                                                                                 href="javascript:void(0)"
-                                                                                                class="attendence-edit-btn"
-                                                                                                id="acticonMenu1"
+                                                                                                className="grid-dots-btn "
                                                                                                 data-bs-toggle="dropdown"
                                                                                                 aria-expanded="false"
                                                                                             >
+
+                                                                                                <TbGridDots />
                                                                                             </a>
-                                                                                            <ul
-                                                                                                class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
-                                                                                                aria-labelledby="acticonMenu1"
-                                                                                            >
-                                                                                                <li className="drop-item">
-                                                                                                    <a
-                                                                                                        class="nw-dropdown-item"
-                                                                                                        href="#"
-                                                                                                        data-bs-toggle="modal"
-                                                                                                        data-bs-target="#attendance-edit"
-                                                                                                    >
-                                                                                                        <img src="/flask-report.png" alt="" />
-                                                                                                        Edit Report
-                                                                                                    </a>
-                                                                                                </li>
-                                                                                                <li className="drop-item">
-                                                                                                    <a class="nw-dropdown-item" href="#">
-                                                                                                        <img src="/add-user.png" alt="" />
-                                                                                                        Patient Details
-                                                                                                    </a>
-                                                                                                </li>
-                                                                                                <li className="drop-item">
-                                                                                                    <a class="nw-dropdown-item" href="#">
-                                                                                                        <img src="/flask-report.png" alt="" />
-                                                                                                        Appointment Details
-                                                                                                    </a>
-                                                                                                </li>
 
-                                                                                                <li className="drop-item">
-                                                                                                    <a class="nw-dropdown-item" href="#">
-                                                                                                        <img src="/reprt-icon.png" alt="" />
-                                                                                                        Generate Report
-                                                                                                    </a>
-                                                                                                </li>
+                                                                                            <div class="dropdown">
+                                                                                                <a
+                                                                                                    href="javascript:void(0)"
+                                                                                                    class="attendence-edit-btn"
+                                                                                                    id="acticonMenu1"
+                                                                                                    data-bs-toggle="dropdown"
+                                                                                                    aria-expanded="false"
+                                                                                                >
+                                                                                                </a>
+                                                                                                <ul
+                                                                                                    class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
+                                                                                                    aria-labelledby="acticonMenu1"
+                                                                                                >
+                                                                                                    <li className="drop-item">
+                                                                                                        <a
+                                                                                                            class="nw-dropdown-item"
+                                                                                                            href="#"
+                                                                                                            data-bs-toggle="modal"
+                                                                                                            data-bs-target="#attendance-edit"
+                                                                                                        >
+                                                                                                            <img src="/flask-report.png" alt="" />
+                                                                                                            Edit Report
+                                                                                                        </a>
+                                                                                                    </li>
+                                                                                                    <li className="drop-item">
+                                                                                                        <a class="nw-dropdown-item" href="#">
+                                                                                                            <img src="/add-user.png" alt="" />
+                                                                                                            Patient Details
+                                                                                                        </a>
+                                                                                                    </li>
+                                                                                                    <li className="drop-item">
+                                                                                                        <a class="nw-dropdown-item" href="#">
+                                                                                                            <img src="/flask-report.png" alt="" />
+                                                                                                            Appointment Details
+                                                                                                        </a>
+                                                                                                    </li>
 
-                                                                                                <li className="drop-item">
-                                                                                                    <a class="nw-dropdown-item" href="#">
-                                                                                                        <img src="/barcd-icon.png" alt="" />
-                                                                                                        Labels
-                                                                                                    </a>
-                                                                                                </li>
+                                                                                                    <li className="drop-item">
+                                                                                                        <a class="nw-dropdown-item" href="#">
+                                                                                                            <img src="/reprt-icon.png" alt="" />
+                                                                                                            Generate Report
+                                                                                                        </a>
+                                                                                                    </li>
 
-                                                                                                <li className="drop-item">
-                                                                                                    <a class="nw-dropdown-item" href="#">
-                                                                                                        <img src="/file.png" alt="" />
-                                                                                                        Report  view
-                                                                                                    </a>
-                                                                                                </li>
-                                                                                                <li className="drop-item">
-                                                                                                    <a class="nw-dropdown-item" href="#">
-                                                                                                        <img src="/file.png" alt="" />
-                                                                                                        Invoice
-                                                                                                    </a>
-                                                                                                </li>
-                                                                                                <li className="drop-item">
-                                                                                                    <a class="nw-dropdown-item" href="#">
-                                                                                                        <img src="/dc-usr.png" alt="" />
-                                                                                                        Send  Report Doctor
-                                                                                                    </a>
-                                                                                                </li>
+                                                                                                    <li className="drop-item">
+                                                                                                        <a class="nw-dropdown-item" href="#">
+                                                                                                            <img src="/barcd-icon.png" alt="" />
+                                                                                                            Labels
+                                                                                                        </a>
+                                                                                                    </li>
+
+                                                                                                    <li className="drop-item">
+                                                                                                        <a class="nw-dropdown-item" href="#">
+                                                                                                            <img src="/file.png" alt="" />
+                                                                                                            Report  view
+                                                                                                        </a>
+                                                                                                    </li>
+                                                                                                    <li className="drop-item">
+                                                                                                        <a class="nw-dropdown-item" href="#">
+                                                                                                            <img src="/file.png" alt="" />
+                                                                                                            Invoice
+                                                                                                        </a>
+                                                                                                    </li>
+                                                                                                    <li className="drop-item">
+                                                                                                        <a class="nw-dropdown-item" href="#">
+                                                                                                            <img src="/dc-usr.png" alt="" />
+                                                                                                            Send  Report Doctor
+                                                                                                        </a>
+                                                                                                    </li>
 
 
 
-                                                                                                <li className="drop-item">
-                                                                                                    <a class="nw-dropdown-item" href="#">
-                                                                                                        <img src="/add-user.png" alt="" />
-                                                                                                        Send  Report Patient
-                                                                                                    </a>
-                                                                                                </li>
-                                                                                            </ul>
-                                                                                        </div>
-                                                                                    </td>
+                                                                                                    <li className="drop-item">
+                                                                                                        <a class="nw-dropdown-item" href="#">
+                                                                                                            <img src="/add-user.png" alt="" />
+                                                                                                            Send  Report Patient
+                                                                                                        </a>
+                                                                                                    </li>
+                                                                                                </ul>
+                                                                                            </div>
+                                                                                        </td>}
                                                                                 </tr>)}
 
                                                                         {/* <tr>
@@ -500,146 +535,84 @@ function PatientsView() {
                                             <div className="tab-pane fade" id="profile" role="tabpanel">
                                                 <div className="row">
 
-                                                    <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
-                                                        <div className="qrcode-prescriptions-bx">
-                                                            <div className="admin-table-bx d-flex align-items-center justify-content-between qr-cd-headr">
-                                                                <div className="admin-table-sub-details final-reprt d-flex align-items-center gap-2">
-                                                                    <img src="/reprt-plus.png" alt="" className="rounded-0" />
-                                                                    <div>
-                                                                        <h6 className="fs-16 fw-600 text-black">Final Diagnostic Report</h6>
-                                                                        <p>RE-89767</p>
+                                                    {labReports?.length > 0 &&
+                                                        labReports?.map((item, key) =>
+                                                            <div className="col-lg-6 col-md-6 col-sm-12 mb-3" key={key}>
+                                                                <div className="qrcode-prescriptions-bx">
+                                                                    <div className="admin-table-bx d-flex align-items-center justify-content-between qr-cd-headr">
+                                                                        <div className="admin-table-sub-details final-reprt d-flex align-items-center gap-2">
+                                                                            <img src="/reprt-plus.png" alt="" className="rounded-0" />
+                                                                            <div>
+                                                                                <h6 className="fs-16 fw-600 text-black">{item?.testId?.shortName} Report</h6>
+                                                                                <p>RE-{item?._id?.slice(-10)}</p>
+
+                                                                            </div>
+                                                                        </div>
 
                                                                     </div>
-                                                                </div>
 
-                                                            </div>
+                                                                    <div className="barcode-active-bx">
+                                                                        <div className="d-flex align-items-center justify-content-between mb-3">
+                                                                            <div className="admin-table-bx">
+                                                                                <div className="">
+                                                                                    <div className="admin-table-sub-details d-flex align-items-center gap-2 doctor-title ">
+                                                                                        <div>
+                                                                                            <h6 className="reprting-name">{item?.labId?.name}</h6>
+                                                                                            <p className="fs-14 fw-500">LAB-{item?.labId?.customId}</p>
+                                                                                        </div>
+                                                                                    </div>
 
-                                                            <div className="barcode-active-bx">
-                                                                <div className="d-flex align-items-center justify-content-between mb-3">
-                                                                    <div className="admin-table-bx">
-                                                                        <div className="">
-                                                                            <div className="admin-table-sub-details d-flex align-items-center gap-2 doctor-title ">
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div className="d-flex align-items gap-2">
+                                                                                <button type="button" className="card-sw-btn"><FontAwesomeIcon icon={faPrint} /></button>
+                                                                                <Link to={`/report-view/${item?.appointmentId?._id}`} type="button" className="card-sw-btn"><FontAwesomeIcon icon={faEye} /></Link>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="barcd-scannr barcde-scnnr-card">
+                                                                            <div className="barcd-content">
+                                                                                <h4 className="fw-700 mb-2">SP-{item?.testId?.customId}</h4>
+                                                                                <ul className="qrcode-list mb-2">
+                                                                                    <li className="qrcode-item">Test  <span className="qrcode-title">: {item?.testId?.shortName}</span></li>
+                                                                                    <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(item?.createdAt)?.toLocaleString()}</span> </li>
+                                                                                </ul>
+
+
+                                                                                {/* <img src="/barcode.png" alt="" /> */}
+                                                                                <Barcode value={item?.appointmentId?._id} width={1} displayValue={false}
+                                                                                    height={60} />
+                                                                            </div>
+
+                                                                            <div className="barcode-id-details mt-2">
                                                                                 <div>
-                                                                                    <h6 className="reprting-name">Advance Lab Tech</h6>
-                                                                                    <p className="fs-14 fw-500">DO-4001</p>
+                                                                                    <h6>Patient Id </h6>
+                                                                                    <p>PS-{ptData?.customId}</p>
+                                                                                </div>
+
+
+                                                                                <div>
+                                                                                    <h6>Appointment ID </h6>
+                                                                                    <p>OID-{item?.appointmentId?.customId}</p>
                                                                                 </div>
                                                                             </div>
 
                                                                         </div>
-                                                                    </div>
 
-                                                                    <div className="d-flex align-items gap-2">
-                                                                        <button type="button" className="card-sw-btn"><FontAwesomeIcon icon={faPrint} /></button>
-                                                                        <button type="button" className="card-sw-btn"><FontAwesomeIcon icon={faEye} /></button>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="barcd-scannr barcde-scnnr-card">
-                                                                    <div className="barcd-content">
-                                                                        <h4 className="fw-700 mb-2">SP-9879</h4>
-                                                                        <ul className="qrcode-list mb-2">
-                                                                            <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
-                                                                            <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
-                                                                        </ul>
-
-
-                                                                        <img src="/barcode.png" alt="" />
-                                                                    </div>
-
-                                                                    <div className="barcode-id-details mt-2">
-                                                                        <div>
-                                                                            <h6>Patient Id </h6>
-                                                                            <p>PS-9001</p>
-                                                                        </div>
-
-
-                                                                        <div>
-                                                                            <h6>Appointment ID </h6>
-                                                                            <p>OID-8876</p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                </div>
-
-                                                                <div className="text-start mt-3">
-                                                                    <button className="pdf-download-tbn py-2"><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} /> Download Report</button>
-
-                                                                </div>
-
-                                                            </div>
-
-                                                        </div>
-
-                                                    </div>
-                                                    <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
-                                                        <div className="qrcode-prescriptions-bx">
-                                                            <div className="admin-table-bx d-flex align-items-center justify-content-between qr-cd-headr">
-                                                                <div className="admin-table-sub-details final-reprt d-flex align-items-center gap-2">
-                                                                    <img src="/reprt-plus.png" alt="" className="rounded-0" />
-                                                                    <div>
-                                                                        <h6 className="fs-16 fw-600 text-black">Final Diagnostic Report</h6>
-                                                                        <p>RE-89767</p>
-
-                                                                    </div>
-                                                                </div>
-
-                                                            </div>
-
-                                                            <div className="barcode-active-bx">
-                                                                <div className="d-flex align-items-center justify-content-between mb-3">
-                                                                    <div className="admin-table-bx">
-                                                                        <div className="">
-                                                                            <div className="admin-table-sub-details d-flex align-items-center gap-2 doctor-title ">
-                                                                                <div>
-                                                                                    <h6 className="reprting-name">Advance Lab Tech</h6>
-                                                                                    <p className="fs-14 fw-500">DO-4001</p>
-                                                                                </div>
-                                                                            </div>
+                                                                        <div className="text-start mt-3">
+                                                                            <Link to={`/report-view/${item?.appointmentId?._id}`} className="pdf-download-tbn py-2">
+                                                                                <FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} />
+                                                                                 Download Report</Link>
 
                                                                         </div>
-                                                                    </div>
 
-
-                                                                </div>
-
-                                                                <div className="barcd-scannr barcde-scnnr-card">
-                                                                    <div className="barcd-content">
-                                                                        <h4 className="fw-700 mb-2">SP-9879</h4>
-                                                                        <ul className="qrcode-list mb-2">
-                                                                            <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
-                                                                            <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
-                                                                        </ul>
-
-
-                                                                        <img src="/barcode.png" alt="" />
-                                                                    </div>
-
-                                                                    <div className="barcode-id-details mt-2">
-                                                                        <div>
-                                                                            <h6>Patient Id </h6>
-                                                                            <p>PS-9001</p>
-                                                                        </div>
-
-
-                                                                        <div>
-                                                                            <h6>Appointment ID </h6>
-                                                                            <p>OID-8876</p>
-                                                                        </div>
                                                                     </div>
 
                                                                 </div>
 
-                                                                <div className="text-start mt-3">
-                                                                    <button className="pdf-download-tbn py-2"><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} /> Download Report</button>
-
-                                                                </div>
-
-                                                            </div>
-
-                                                        </div>
-
-                                                    </div>
-                                                    <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
+                                                            </div>)}
+                                                    {/* <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
                                                         <div className="qrcode-prescriptions-bx">
                                                             <div className="admin-table-bx d-flex align-items-center justify-content-between qr-cd-headr">
                                                                 <div className="admin-table-sub-details final-reprt d-flex align-items-center gap-2">
@@ -775,6 +748,74 @@ function PatientsView() {
                                                         </div>
 
                                                     </div>
+                                                    <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
+                                                        <div className="qrcode-prescriptions-bx">
+                                                            <div className="admin-table-bx d-flex align-items-center justify-content-between qr-cd-headr">
+                                                                <div className="admin-table-sub-details final-reprt d-flex align-items-center gap-2">
+                                                                    <img src="/reprt-plus.png" alt="" className="rounded-0" />
+                                                                    <div>
+                                                                        <h6 className="fs-16 fw-600 text-black">Final Diagnostic Report</h6>
+                                                                        <p>RE-89767</p>
+
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+
+                                                            <div className="barcode-active-bx">
+                                                                <div className="d-flex align-items-center justify-content-between mb-3">
+                                                                    <div className="admin-table-bx">
+                                                                        <div className="">
+                                                                            <div className="admin-table-sub-details d-flex align-items-center gap-2 doctor-title ">
+                                                                                <div>
+                                                                                    <h6 className="reprting-name">Advance Lab Tech</h6>
+                                                                                    <p className="fs-14 fw-500">DO-4001</p>
+                                                                                </div>
+                                                                            </div>
+
+                                                                        </div>
+                                                                    </div>
+
+
+                                                                </div>
+
+                                                                <div className="barcd-scannr barcde-scnnr-card">
+                                                                    <div className="barcd-content">
+                                                                        <h4 className="fw-700 mb-2">SP-9879</h4>
+                                                                        <ul className="qrcode-list mb-2">
+                                                                            <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
+                                                                            <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
+                                                                        </ul>
+
+
+                                                                        <img src="/barcode.png" alt="" />
+                                                                    </div>
+
+                                                                    <div className="barcode-id-details mt-2">
+                                                                        <div>
+                                                                            <h6>Patient Id </h6>
+                                                                            <p>PS-9001</p>
+                                                                        </div>
+
+
+                                                                        <div>
+                                                                            <h6>Appointment ID </h6>
+                                                                            <p>OID-8876</p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                </div>
+
+                                                                <div className="text-start mt-3">
+                                                                    <button className="pdf-download-tbn py-2"><FontAwesomeIcon icon={faFilePdf} style={{ color: "#EF5350" }} /> Download Report</button>
+
+                                                                </div>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div> */}
 
 
 
@@ -843,15 +884,19 @@ function PatientsView() {
                                                             </div>
 
                                                             <div className="row">
-                                                                <div className="col-lg-6 mb-3">
+                                                                {prescriptionData?.length>0 && 
+                                                                prescriptionData?.map((item,key)=>
+                                                                <div className="col-lg-6 mb-3" key={key}>
                                                                     <div className="prescription-patients-card">
                                                                         <div className="prescription-patients-picture">
-                                                                            <img src="/patient-card-one.png" alt="" />
+                                                                            <img src={item?.fileUrl ? 
+                                                                                `${base_url}/${item?.fileUrl}`:'/patient-card-two.png'} alt="" 
+                                                                                style={{width:'600px',height:'200px',objectFit:'cover'}}/>
                                                                         </div>
                                                                         <div className="card-details-bx">
                                                                             <div className="card-info-title">
-                                                                                <h3>CBC Report 8/21/2025</h3>
-                                                                                <p>8/21/2025</p>
+                                                                                <h3>{item?.diagnosticName}</h3>
+                                                                                <p>{item?.name}</p>
                                                                             </div>
 
                                                                             <div className="">
@@ -860,8 +905,8 @@ function PatientsView() {
                                                                         </div>
                                                                     </div>
 
-                                                                </div>
-
+                                                                </div>)}
+{/* 
                                                                 <div className="col-lg-6">
                                                                     <div className="prescription-patients-card">
                                                                         <div className="prescription-patients-picture">
@@ -879,7 +924,7 @@ function PatientsView() {
                                                                         </div>
                                                                     </div>
 
-                                                                </div>
+                                                                </div> */}
                                                             </div>
 
 
@@ -896,8 +941,113 @@ function PatientsView() {
                         </div>
                     </div>
                 </div>
+                {/* <div className="col-lg-6 col-md-6 col-sm-12 mb-3 d-none" ref={reportRef}>
+                    <div className="new-invoice-card">
+                        <div className="d-flex align-items-center justify-content-between mb-3">
+                            <div>
+                                <h5 className="first_para fw-700 fz-20 mb-0">Final Diagnostic Report</h5>
+                            </div>
+                        </div>
 
-            </div>
+                        <div className="laboratory-header mb-4">
+                            <div className="laboratory-name">
+                                <h5>{profiles?.name || 'Advance Lab Tech'}</h5>
+                                <p><span className="laboratory-title">GSTIN :</span> {profiles?.gstNumber || '09897886454'}</p>
+                            </div>
+                            <div className="invoice-details">
+                                <p><span className="laboratory-invoice">Invoice :</span> {appointmentData?.customId}</p>
+                                <p><span className="laboratory-invoice">Date :</span> {new Date()?.toLocaleDateString()}</p>
+                            </div>
+                        </div>
+
+                        <div className="row">
+                            <div className="col-lg-6 mb-3">
+                                <div className="laboratory-bill-bx laboratory-nw-box">
+                                    <h6>Patient </h6>
+                                    <h4>{ptData?.name}</h4>
+                                    <p><span className="laboratory-phne">ID :</span> {ptData.customId}</p>
+                                    <p><span className="laboratory-phne">DOB:</span> {new Date(demoData?.dob)?.toLocaleDateString()}</p>
+                                    <p><span className="laboratory-phne">Gender:</span> {ptData.gender?.toUpperCase()}</p>
+                                </div>
+                            </div>
+                            <div className="col-lg-6">
+                                <div className="laboratory-bill-bx laboratory-sub-bx mb-2">
+                                    <h6>Order </h6>
+                                    <p><span className="laboratory-phne">Appointment ID :</span> OID-{appointmentData?.customId}  </p>
+                                </div>
+                                {appointmentData?.doctorId && <div className="laboratory-bill-bx laboratory-sub-bx">
+                                    <h6 className="my-0">Doctor</h6>
+                                    <h4 >Aarav Mehta</h4>
+                                    <p><span className="laboratory-phne">ID :</span> OID-7C1B48  </p>
+                                </div>}
+                            </div>
+                        </div>
+                        <div className="laboratory-report-table mt-3">
+                            <div className="table table-responsive mb-0 reprt-table">
+                                <table className="table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Test</th>
+                                            <th>Unit</th>
+                                            <th>Reference</th>
+                                            <th>Result</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        {testData.map((test) => (
+                                            test.component.map((cmp, index) => {
+                                                const resultObj = allComponentResults[test._id]?.[index] || {};
+                                                return (
+                                                    <tr key={test._id + index}>
+                                                        <td>{test.shortName} - {cmp.name}</td>
+                                                        <td>{cmp.unit || "-"}</td>
+                                                        <td>{cmp.referenceRange || "-"}</td>
+                                                        <td>{resultObj.result || "-"}</td>
+                                                        <td className="text-capitalize">{resultObj.status || "-"}</td>
+                                                    </tr>
+                                                );
+                                            })
+                                        ))}
+
+
+
+                                    </tbody>
+                                </table>
+
+                            </div>
+                        </div>
+
+                        <div className="report-remark mt-3">
+                            <h6>Remark</h6>
+                            {testData.map((test) => (
+                                <p key={test._id}>{allComments[test._id] || "-"}</p>
+                            ))}
+                        </div>
+                        <div className="page-break"></div>
+                        <div className="reprt-barcd flex-wrap mt-3">
+                            {testData?.map((item, key) =>
+                                <div className=" barcd-scannr" key={key}>
+                                    <div className="barcd-content">
+                                        <h4 className="my-3">SP-{item?._id?.slice(-5)}</h4>
+                                        <ul className="qrcode-list">
+                                            <li className="qrcode-item">Test  <span className="qrcode-title">: {item?.shortName}</span></li>
+                                            <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(reportMeta[item._id]?.createdAt)?.toLocaleDateString()}</span> </li>
+                                        </ul>
+                                        <Barcode value={reportMeta[item._id]?.id} width={1} displayValue={false}
+                                            height={60} />
+
+                                    </div>
+                                </div>)}
+                        </div>
+                        <div className="reprt-signature mt-5">
+                            <h6>Signature:</h6>
+                            <span className="reprt-mark"></span>
+                        </div>
+                    </div>
+                </div> */}
+            </div>}
         </>
     )
 }

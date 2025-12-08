@@ -1,15 +1,18 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGear, faPen, faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { deleteApiData, getSecureApiData, securePostData } from "../../services/api";
+import { useSelector } from "react-redux";
 
 function Tests() {
+    const navigate= useNavigate()
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const userId = localStorage.getItem('userId')
     const [name, setName] = useState('')
+    const { isOwner, permissions } = useSelector(state => state.user)
     const [allTest, setAllTest] = useState([])
     const fetchLabTest = async () => {
         try {
@@ -187,13 +190,21 @@ function Tests() {
                                                                 aria-labelledby="acticonMenu1"
                                                             >
                                                                 <li className="drop-item">
-                                                                    <NavLink to={`/edit-test/${item?._id}`} className="nw-dropdown-item" href="#">
+                                                                    <button onClick={() => {
+                                                                        if (!isOwner && !permissions.viewTest) {
+                                                                            toast.error('You do not have permission to view test ')
+                                                                            return
+                                                                        }else{
+
+                                                                            navigate(`/edit-test/${item?._id}`)
+                                                                        }
+                                                                    }} className="nw-dropdown-item" href="#">
                                                                         <FontAwesomeIcon
                                                                             icon={faPen}
                                                                             className=""
                                                                         />
                                                                         View / Edit
-                                                                    </NavLink>
+                                                                    </button>
                                                                 </li>
 
 

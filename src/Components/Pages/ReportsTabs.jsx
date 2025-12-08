@@ -17,6 +17,7 @@ import { useSelector } from "react-redux";
 import html2pdf from "html2pdf.js";
 import html2canvas from "html2canvas";
 import Barcode from "react-barcode";
+import { Tab } from "bootstrap/dist/js/bootstrap.bundle.min";
 
 function ReportsTabs() {
     const [hasLRx, setHasLRx] = useState(false);
@@ -37,6 +38,7 @@ function ReportsTabs() {
     const [reportMeta, setReportMeta] = useState({});
     const [selectedTest, setSelectedTest] = useState([''])
     const [allTest, setAllTest] = useState([])
+    const { isOwner, permissions } = useSelector(state => state.user)
     const { profiles, labPerson, labAddress, labImg,
         rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
     const fetchAppointmentData = async (e) => {
@@ -46,6 +48,7 @@ function ReportsTabs() {
             if (response.success) {
                 toast.success("Appointment Fetched successfully")
                 setTestId(response.data.testId)
+                handleBack(e, "#profile-tab");
                 setAppointmentData(response.data)
             } else {
                 toast.error(response.message)
@@ -204,22 +207,19 @@ function ReportsTabs() {
             });
     };
     const labelDownload = () => {
-        const element = compenentRef.current;
-        const opt = {
-            margin: [0.2, 0.2, 0.2, 0.2],
-            filename: "label.pdf",
-            image: { type: "jpeg", quality: 1 },
-            html2canvas: { scale: 3, useCORS: true },
-            jsPDF: {
-                unit: "mm",
-                format: "a4",
-                orientation: "portrait"
-            }
-        };
-        html2pdf()
-            .from(element)
-            .set(opt)
-            .save()
+        if (!compenentRef.current) {
+            console.error('print area not found');
+            return;
+        }
+
+        const printContents = compenentRef.current.innerHTML;
+        const originalContents = document.body.innerHTML;
+
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+        window.location.reload(); // optional if needed
+
     };
     const appointmentAction = async (e, type, status) => {
         e.preventDefault()
@@ -233,7 +233,19 @@ function ReportsTabs() {
         try {
             const response = await updateApiData(`appointment/lab-action`, data);
             if (response.success) {
-                fetchAppointmentData()
+                const res = await getSecureApiData(`lab/appointment-data/${appointmentId}`)
+                if (res.success) {
+                    setTestId(res.data.testId)
+                    setAppointmentData(res.data)
+                } else {
+                    toast.error(res.message)
+                }
+                if(type==='payment'){
+                    handleBack(e, "#upload-tab");
+                }
+                if(type==='status'){
+                    handleBack(e, "#contact-tab");
+                }
             } else {
                 toast.error(response.message)
             }
@@ -245,12 +257,13 @@ function ReportsTabs() {
         if (inputPtId?.length < 4) {
             return
         }
-        if(patData && inputPtId?.length>4){
+        if (patData && inputPtId?.length > 4) {
             return
         }
         try {
             const response = await getSecureApiData(`patient/${inputPtId}`)
             if (response.success) {
+
                 setPatData(response.data)
             } else {
                 toast.error(response.message)
@@ -273,18 +286,19 @@ function ReportsTabs() {
             selectedTest.includes(test._id)
         );
         const totalFee = selectedTestsDetails.reduce(
-            (acc, item) => acc + Number(item?.price) ,
+            (acc, item) => acc + Number(item?.price),
             0
         );
         const data = {
             patientId: patData?._id, status: 'approved',
             testId: selectedTest,
-            date: new Date(), labId: userId,fees:totalFee
+            date: new Date(), labId: userId, fees: totalFee
         }
         try {
             const response = await securePostData(`appointment/lab`, data)
             if (response.success) {
 
+                handleBack(e, "#profile-tab");
                 // setTestId(response.data.testId)
                 // setAppointmentData(response.data)
             } else {
@@ -294,6 +308,63 @@ function ReportsTabs() {
 
         }
     }
+    const handleSave = async (e) => {
+        e.preventDefault();
+        if (!isOwner && !permissions?.addReport) {
+            toast.error('You do not have permission to add a report ')
+            return
+        }
+        // Loop through each test (key is testId)
+        for (const testId in allComponentResults) {
+            // Find the test details (component titles, units, etc.)
+            const testItem = testData.find(t => t._id === testId);
+            if (!testItem) continue;
+
+            // Build components array for API
+            const components = testItem.component.map((comp, index) => ({
+                cmpId: comp._id,
+                result: allComponentResults[testId]?.[index]?.result || "",
+                status: allComponentResults[testId]?.[index]?.status || ""
+            }));
+            const payload = {
+                labId: userId,
+                patientId: appointmentData.patientId,
+                testId,
+                appointmentId: appointmentData._id,
+                component: components,
+                comment: allComments?.[testId] || ""
+            };
+            try {
+                const response = await securePostData("lab/test-report", payload);
+
+                if (response.success) {
+
+                    // toast.success(`Report saved for test ID: ${testId}`);
+                } else {
+                    toast.error(response.message);
+                }
+            } catch (err) {
+                console.error("Error saving report:", err);
+                toast.error("Failed to save report.");
+            }
+        }
+        handleBack(e, "#person-tab");
+        toast.success('Report saved') // refresh data
+    };
+    const sendReport = async (appointmentId, email, type) => {
+        const data = { appointmentId, email, type }
+        try {
+            const response = await securePostData(`lab/send-report`, data);
+            if (response.success) {
+                toast.success("Report sent")
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+
     const handleAddTest = () => {
         setSelectedTest([...selectedTest, ""]);
     };
@@ -305,6 +376,12 @@ function ReportsTabs() {
         const updatedTests = [...selectedTest];
         updatedTests[index] = value;
         setSelectedTest(updatedTests);
+    };
+    const handleBack = (e, name) => {
+        e.preventDefault(); // prevent page reload
+        const tabTrigger = document.querySelector(name); // the tab button for "contact"
+        const tab = new Tab(tabTrigger);
+        tab.show();
     };
     return (
         <>
@@ -364,7 +441,7 @@ function ReportsTabs() {
 
                                     <li className="nav-item" role="presentation">
                                         <a
-                                            className={`nav-link ${Object.keys(appointmentData).length===0 ? "disabled" : ""}`}
+                                            className={`nav-link ${Object.keys(appointmentData).length === 0 ? "disabled" : ""}`}
                                             id="profile-tab"
                                             data-bs-toggle="tab"
                                             href="#profile"
@@ -376,7 +453,7 @@ function ReportsTabs() {
 
                                     <li className="nav-item" role="presentation">
                                         <a
-                                            className={`nav-link ${Object.keys(appointmentData).length===0 ? "disabled" : ""}`}
+                                            className={`nav-link ${Object.keys(appointmentData).length === 0 ? "disabled" : ""}`}
                                             id="upload-tab"
                                             data-bs-toggle="tab"
                                             href="#upload"
@@ -388,7 +465,7 @@ function ReportsTabs() {
 
                                     <li className="nav-item" role="presentation">
                                         <a
-                                            className={`nav-link ${Object.keys(appointmentData).length===0 ? "disabled" : ""}`}
+                                            className={`nav-link ${Object.keys(appointmentData).length === 0 ? "disabled" : ""}`}
                                             id="collection-tab"
                                             data-bs-toggle="tab"
                                             href="#collection"
@@ -400,7 +477,7 @@ function ReportsTabs() {
 
                                     <li className="nav-item" role="presentation">
                                         <a
-                                            className={`nav-link ${Object.keys(appointmentData).length===0 ? "disabled" : ""}`}
+                                            className={`nav-link ${Object.keys(appointmentData).length === 0 ? "disabled" : ""}`}
                                             id="contact-tab"
                                             data-bs-toggle="tab"
                                             href="#contact"
@@ -413,7 +490,7 @@ function ReportsTabs() {
 
                                     <li className="nav-item" role="presentation">
                                         <a
-                                            className={`nav-link ${Object.keys(appointmentData).length===0 ? "disabled" : ""}`}
+                                            className={`nav-link ${Object.keys(appointmentData).length === 0 ? "disabled" : ""}`}
                                             id="person-tab"
                                             data-bs-toggle="tab"
                                             href="#person"
@@ -639,7 +716,7 @@ function ReportsTabs() {
                                         <div className="sub-tab-brd">
                                             <div className="row">
                                                 <div className="col-lg-6 col-md-12 col-sm-12 mb-3">
-                                                    {appointmentData &&<div className="new-invoice-card">
+                                                    {appointmentData && <div className="new-invoice-card">
                                                         <div className="d-flex align-items-center justify-content-between mb-3">
                                                             <div>
                                                                 <h5 className="first_para fw-700 fz-20 mb-0">Invoice</h5>
@@ -686,9 +763,9 @@ function ReportsTabs() {
                                                                     <li className="lab-amount-item">Total :  <span className="price-title">{total}</span></li>
                                                                 </ul>
                                                             </div>
-                                                            <div className="text-end mt-5" >
-                                                                <button className="nw-thm-btn rounded-4">Collect payment</button>
-                                                            </div>
+                                                            {appointmentData?.paymentStatus ==='due' &&<div className="text-end mt-5" >
+                                                                <button className="nw-thm-btn rounded-4" onClick={()=>appointmentAction(appointmentData?._id,'paid','payment')}>Collect payment</button>
+                                                            </div>}
                                                         </div>
                                                     </div>}
                                                 </div>
@@ -698,7 +775,7 @@ function ReportsTabs() {
 
                                     <div className="tab-pane fade" id="upload" role="tabpanel">
                                         <div className="sub-tab-brd ">
-                                            {appointmentData &&<div className="new-invoice-card">
+                                            {appointmentData && <div className="new-invoice-card">
                                                 <div className="row">
                                                     <div className="d-flex align-items-center justify-content-between mb-3">
                                                         <div>
@@ -742,13 +819,13 @@ function ReportsTabs() {
                                                     </div>
                                                 </div>
                                                 <div className="text-end mt-3" >
-                                                    <button className="nw-thm-btn rounded-4">Pressed</button>
+                                                    <button className="nw-thm-btn rounded-4" onClick={(e)=>handleBack(e, "#collection-tab")}>Pressed</button>
                                                 </div>
                                             </div>}
                                         </div>
                                     </div>
 
-                                    {appointmentData &&<div className="tab-pane fade" id="collection" role="tabpanel">
+                                    {appointmentData && <div className="tab-pane fade" id="collection" role="tabpanel">
                                         <div className="sub-tab-brd">
                                             <div className="">
                                                 <div className="row">
@@ -767,7 +844,7 @@ function ReportsTabs() {
                                                                 </ul>
 
                                                                 {appointmentData?.status == 'approved' && <div className="mt-3" >
-                                                                    <button onClick={(e) => appointmentAction(e,'status', 'pending-report')} className="collected-btn">Mark Collected</button>
+                                                                    <button onClick={(e) => appointmentAction(e, 'status', 'pending-report')} className="collected-btn">Mark Collected</button>
                                                                 </div>}
                                                             </div>
                                                         </div>
@@ -794,257 +871,280 @@ function ReportsTabs() {
                                                                         <p><span className="laboratory-phne">Tube :</span> SST</p>
                                                                     </div>
                                                                 </div> */}
-                                                            </div>                                                            
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="text-end mt-3" >
-                                            <button className="nw-thm-btn rounded-4">Pressed</button>
+                                            <button className="nw-thm-btn rounded-4" onClick={(e)=>handleBack(e, "#contact-tab")}>Pressed</button>
                                         </div>
                                     </div>}
-                                    {appointmentData &&<div className="tab-pane fade" id="contact" role="tabpanel">
-                                        <div className="sub-tab-brd">
-                                            <div className="row">
-                                                <div className="col-lg-6">
-                                                    <div className="new-invoice-card mb-3">
-                                                        <div className="">
-                                                            <ul className="appointment-booking-list">
-                                                                <li className="appoint-item"> Appointment Book Date : <span className="appoint-title">25-11-03</span></li>
-                                                                <li className="appoint-item"> Visited  date : <span className="appoint-title">25-11-03</span></li>
-                                                                <li className="appoint-item"> Appointment Completed date : <span className="appoint-title">25-11-03</span></li>
-                                                            </ul>
+                                    {appointmentData &&
+                                        <form onSubmit={handleSave} className="tab-pane fade" id="contact" role="tabpanel">
+                                            <div className="sub-tab-brd">
+                                                <div className="row">
+                                                    <div className="col-lg-6">
+                                                        <div className="new-invoice-card mb-3">
+                                                            <div className="">
+                                                                <ul className="appointment-booking-list">
+                                                                    <li className="appoint-item"> Appointment Book Date : <span className="appoint-title">25-11-03</span></li>
+                                                                    <li className="appoint-item"> Visited  date : <span className="appoint-title">25-11-03</span></li>
+                                                                    <li className="appoint-item"> Appointment Completed date : <span className="appoint-title">25-11-03</span></li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                        <div className="new-invoice-card">
+                                                            {testData.map((item, key) =>
+                                                                <div className="sub-tab-brd mb-3" key={key}>
+                                                                    <div className="custom-frm-bx">
+                                                                        <label htmlFor="">{item?.shortName}</label>
+                                                                        <input type="text" className="form-control" placeholder={item?.shortName} />
+                                                                    </div>
+                                                                    <div className="custom-frm-bx">
+                                                                        <label htmlFor="">Upload certificate</label>
+                                                                        <div className="upload-box p-3 nw-upload-bx   justify-content-center ">
+                                                                            <div className="upload-icon mb-2">
+                                                                                <IoCloudUploadOutline />
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="fw-semibold mb-1">
+                                                                                    <label htmlFor="fileInput1" className="file-label file-select-label">
+                                                                                        Choose a file or drag & drop here
+                                                                                    </label>
+                                                                                </p>
+                                                                                <small className="format-title">JPEG Format</small>
+                                                                                <div className="mt-3">
+                                                                                    <label htmlFor="fileInput1" className="browse-btn">
+                                                                                        Browse File
+                                                                                    </label>
+                                                                                </div>
+                                                                                <input
+                                                                                    type="file"
+                                                                                    className="d-none"
+                                                                                    id="fileInput1"
+                                                                                    accept=".png,.jpg,.jpeg"
+                                                                                />
+                                                                                <div id="filePreviewWrapper" className="d-none mt-3">
+                                                                                    <img src="" alt="Preview" className="img-thumbnail" />
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="custom-frm-bx">
+                                                                        <label htmlFor="">  Note
+                                                                        </label>
+                                                                        <textarea value={allComments[item?._id]}
+                                                                            onChange={(e) =>
+                                                                                setAllComments(prev => ({
+                                                                                    ...prev,
+                                                                                    [item?._id]: e.target.value
+                                                                                }))
+                                                                            }
+                                                                            name="comment" id="" className="form-control"></textarea>
+                                                                    </div>
+                                                                </div>)}
+                                                            {/* <div className="sub-tab-brd mb-3">
+                                                                <div className="custom-frm-bx">
+                                                                    <label htmlFor="">Test Name</label>
+                                                                    <input type="text" className="form-control" placeholder="LFT" />
+                                                                </div>
+                                                                <div className="custom-frm-bx">
+                                                                    <label htmlFor="">Upload certificate</label>
+                                                                    <div className="upload-box p-3 nw-upload-bx   justify-content-center ">
+                                                                        <div className="upload-icon mb-2">
+                                                                            <IoCloudUploadOutline />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="fw-semibold mb-1">
+                                                                                <label htmlFor="fileInput1" className="file-label file-select-label">
+                                                                                    Choose a file or drag & drop here
+                                                                                </label>
+                                                                            </p>
+                                                                            <small className="format-title">JPEG Format</small>
+                                                                            <div className="mt-3">
+                                                                                <label htmlFor="fileInput1" className="browse-btn">
+                                                                                    Browse File
+                                                                                </label>
+                                                                            </div>
+                                                                            <input
+                                                                                type="file"
+                                                                                className="d-none"
+                                                                                id="fileInput1"
+                                                                                accept=".png,.jpg,.jpeg"
+                                                                            />
+                                                                            <div id="filePreviewWrapper" className="d-none mt-3">
+                                                                                <img src="" alt="Preview" className="img-thumbnail" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="custom-frm-bx">
+                                                                    <label htmlFor="">  Note
+                                                                    </label>
+                                                                    <textarea name="" id="" className="form-control"></textarea>
+                                                                </div>
+                                                            </div> */}
                                                         </div>
                                                     </div>
-                                                    <div className="new-invoice-card">
-                                                        <div className="sub-tab-brd mb-3">
-                                                            <div className="custom-frm-bx">
-                                                                <label htmlFor="">Test Name</label>
-                                                                <input type="text" className="form-control" placeholder="CBC" />
-                                                            </div>
-                                                            <div className="custom-frm-bx">
-                                                                <label htmlFor="">Upload certificate</label>
-                                                                <div className="upload-box p-3 nw-upload-bx   justify-content-center ">
-                                                                    <div className="upload-icon mb-2">
-                                                                        <IoCloudUploadOutline />
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="fw-semibold mb-1">
-                                                                            <label htmlFor="fileInput1" className="file-label file-select-label">
-                                                                                Choose a file or drag & drop here
-                                                                            </label>
-                                                                        </p>
-                                                                        <small className="format-title">JPEG Format</small>
-                                                                        <div className="mt-3">
-                                                                            <label htmlFor="fileInput1" className="browse-btn">
-                                                                                Browse File
-                                                                            </label>
-                                                                        </div>
-                                                                        <input
-                                                                            type="file"
-                                                                            className="d-none"
-                                                                            id="fileInput1"
-                                                                            accept=".png,.jpg,.jpeg"
-                                                                        />
-                                                                        <div id="filePreviewWrapper" className="d-none mt-3">
-                                                                            <img src="" alt="Preview" className="img-thumbnail" />
-                                                                        </div>
-                                                                    </div>
+                                                    <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
+                                                        <div className="new-invoice-card">
+                                                            <div className="d-flex align-items-center justify-content-between mb-3">
+                                                                <div>
+                                                                    <h5 className="first_para fw-700 fz-20 mb-0">Final Diagnostic Report</h5>
                                                                 </div>
                                                             </div>
-                                                            <div className="custom-frm-bx">
-                                                                <label htmlFor="">  Note
-                                                                </label>
-                                                                <textarea name="" id="" className="form-control"></textarea>
+                                                            <div className="laboratory-header mb-4">
+                                                                <div className="laboratory-name">
+                                                                    <h5>Advance Lab Tech</h5>
+                                                                    <p><span className="laboratory-title">GSTIN :</span> 09897886454</p>
+                                                                </div>
+                                                                <div className="invoice-details">
+                                                                    <p className="text-end"><span className="laboratory-invoice">Report ID :</span> RE-89767</p>
+                                                                    <p className="text-end"><span className="laboratory-invoice">Generated ID :</span> 25-11-03  08:07</p>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        <div className="sub-tab-brd mb-3">
-                                                            <div className="custom-frm-bx">
-                                                                <label htmlFor="">Test Name</label>
-                                                                <input type="text" className="form-control" placeholder="LFT" />
-                                                            </div>
-                                                            <div className="custom-frm-bx">
-                                                                <label htmlFor="">Upload certificate</label>
-                                                                <div className="upload-box p-3 nw-upload-bx   justify-content-center ">
-                                                                    <div className="upload-icon mb-2">
-                                                                        <IoCloudUploadOutline />
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="fw-semibold mb-1">
-                                                                            <label htmlFor="fileInput1" className="file-label file-select-label">
-                                                                                Choose a file or drag & drop here
-                                                                            </label>
-                                                                        </p>
-                                                                        <small className="format-title">JPEG Format</small>
-                                                                        <div className="mt-3">
-                                                                            <label htmlFor="fileInput1" className="browse-btn">
-                                                                                Browse File
-                                                                            </label>
-                                                                        </div>
-                                                                        <input
-                                                                            type="file"
-                                                                            className="d-none"
-                                                                            id="fileInput1"
-                                                                            accept=".png,.jpg,.jpeg"
-                                                                        />
-                                                                        <div id="filePreviewWrapper" className="d-none mt-3">
-                                                                            <img src="" alt="Preview" className="img-thumbnail" />
-                                                                        </div>
+                                                            <div className="row">
+                                                                <div className="col-lg-6 mb-3">
+                                                                    <div className="laboratory-bill-bx laboratory-nw-box">
+                                                                        <h6>Patient </h6>
+                                                                        <h4>Aarav Mehta</h4>
+                                                                        <p><span className="laboratory-phne">ID :</span> PID-7668</p>
+                                                                        <p><span className="laboratory-phne">DOB:</span> 30 june, 2000</p>
+                                                                        <p><span className="laboratory-phne">Gender:</span> Male</p>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                            <div className="custom-frm-bx">
-                                                                <label htmlFor="">  Note
-                                                                </label>
-                                                                <textarea name="" id="" className="form-control"></textarea>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
-                                                    <div className="new-invoice-card">
-                                                        <div className="d-flex align-items-center justify-content-between mb-3">
-                                                            <div>
-                                                                <h5 className="first_para fw-700 fz-20 mb-0">Final Diagnostic Report</h5>
-                                                            </div>
-                                                        </div>
-                                                        <div className="laboratory-header mb-4">
-                                                            <div className="laboratory-name">
-                                                                <h5>Advance Lab Tech</h5>
-                                                                <p><span className="laboratory-title">GSTIN :</span> 09897886454</p>
-                                                            </div>
-                                                            <div className="invoice-details">
-                                                                <p className="text-end"><span className="laboratory-invoice">Report ID :</span> RE-89767</p>
-                                                                <p className="text-end"><span className="laboratory-invoice">Generated ID :</span> 25-11-03  08:07</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="row">
-                                                            <div className="col-lg-6 mb-3">
-                                                                <div className="laboratory-bill-bx laboratory-nw-box">
-                                                                    <h6>Patient </h6>
-                                                                    <h4>Aarav Mehta</h4>
-                                                                    <p><span className="laboratory-phne">ID :</span> PID-7668</p>
-                                                                    <p><span className="laboratory-phne">DOB:</span> 30 june, 2000</p>
-                                                                    <p><span className="laboratory-phne">Gender:</span> Male</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="col-lg-6">
-                                                                <div className="laboratory-bill-bx laboratory-sub-bx mb-2">
-                                                                    <h6>Order </h6>
-                                                                    <p><span className="laboratory-phne">Appointment ID :</span> OID-7C1B48  </p>
-                                                                </div>
+                                                                <div className="col-lg-6">
+                                                                    <div className="laboratory-bill-bx laboratory-sub-bx mb-2">
+                                                                        <h6>Order </h6>
+                                                                        <p><span className="laboratory-phne">Appointment ID :</span> OID-7C1B48  </p>
+                                                                    </div>
 
-                                                                <div className="laboratory-bill-bx laboratory-sub-bx">
-                                                                    <h6 className="my-0">Doctor </h6>
-                                                                    <h4>Dr. Ravi Kumar</h4>
-                                                                    <p><span className="laboratory-phne"> ID :</span> OID-7C1B48  </p>
+                                                                    {appointmentData?.doctorId && <div className="laboratory-bill-bx laboratory-sub-bx">
+                                                                        <h6 className="my-0">Doctor </h6>
+                                                                        <h4>Dr. Ravi Kumar</h4>
+                                                                        <p><span className="laboratory-phne"> ID :</span> OID-7C1B48  </p>
+                                                                    </div>}
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div className="laboratory-report-table mt-3">
-                                                            <div className="table table-responsive mb-0 reprt-table">
-                                                                <table className="table mb-0">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th>Test</th>
-                                                                            <th>Unit</th>
-                                                                            <th>Reference</th>
-                                                                            <th>Result</th>
-                                                                            <th>Status</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        {testData.map((item) =>
-                                                                            item.component.map((c, i) => (
-                                                                                <tr key={i}>
-                                                                                    <td>{item?.shortName} - {c?.title}</td>
-                                                                                    <td>{c?.unit}</td>
-                                                                                    <td>{c?.referenceRange}</td>
-                                                                                    <td >
-                                                                                        <div className="custom-frm-bx mb-0">
-                                                                                            <input type="text" name="" id=""
-                                                                                                className="form-control"
-                                                                                                value={allComponentResults[item?.shortName]?.[i]?.result || ""}
-                                                                                                onChange={(e) =>
-                                                                                                    setAllComponentResults(prev => ({
-                                                                                                        ...prev,
-                                                                                                        [item?.shortName]: {
-                                                                                                            ...prev[item?.shortName],
-                                                                                                            [i]: {
-                                                                                                                ...prev[item?.shortName]?.[i],
-                                                                                                                result: e.target.value
+                                                            <div className="laboratory-report-table mt-3">
+                                                                <div className="table table-responsive mb-0 reprt-table">
+                                                                    <table className="table mb-0">
+                                                                        <thead>
+                                                                            <tr>
+                                                                                <th>Test</th>
+                                                                                <th>Unit</th>
+                                                                                <th>Reference</th>
+                                                                                <th>Result</th>
+                                                                                <th>Status</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            {testData.map((item) =>
+                                                                                item.component.map((c, i) => (
+                                                                                    <tr key={i}>
+                                                                                        <td>{item?.shortName} - {c?.title}</td>
+                                                                                        <td>{c?.unit}</td>
+                                                                                        <td>{c?.referenceRange}</td>
+                                                                                        <td >
+                                                                                            <div className="custom-frm-bx mb-0">
+                                                                                                <input type="text" name="" id=""
+                                                                                                    className="form-control"
+                                                                                                    value={allComponentResults[item?._id]?.[i]?.result || ""}
+                                                                                                    onChange={(e) =>
+                                                                                                        setAllComponentResults(prev => ({
+                                                                                                            ...prev,
+                                                                                                            [item?._id]: {
+                                                                                                                ...prev[item?._id],
+                                                                                                                [i]: {
+                                                                                                                    ...prev[item?._id]?.[i],
+                                                                                                                    result: e.target.value
+                                                                                                                }
                                                                                                             }
-                                                                                                        }
-                                                                                                    }))
-                                                                                                }
-                                                                                                placeholder="Enter" />
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <div className="custom-frm-bx ms-2 mb-0">
-                                                                                            <select name="" id="" className="form-select">
-                                                                                                <option value="">Select</option>
-                                                                                                <option value="pass">Pass</option>
-                                                                                                <option value="fail">Fail</option>
-                                                                                            </select>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                </tr>)))}
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-                                                        </div>
-                                                        <div className="report-remark mt-3">
-                                                            <h6>Remark <a href="javascript:void(0)" className="edit-btn text-black"><FontAwesomeIcon icon={faPen} /></a></h6>
-                                                            <p>-</p>
-                                                        </div>
-
-                                                        {appointmentData?.doctorId && <div className="laboratory-bill-bx">
-                                                            <h6>Lab tests prescribed by the doctor</h6>
-                                                            <h4>Dr.James Harris</h4>
-                                                            <p><span className="laboratory-phne">ID :</span>DO-7668</p>
-                                                        </div>}
-                                                        <div className="reprt-barcd mt-3">
-                                                            <div className="barcd-scannr">
-                                                                <div className="barcd-content">
-                                                                    <h4 className="my-3">SP-9879</h4>
-                                                                    <ul className="qrcode-list">
-                                                                        <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
-                                                                        <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
-                                                                    </ul>
-                                                                    <img src="/barcode.png" alt="" />
+                                                                                                        }))
+                                                                                                    }
+                                                                                                    placeholder="Enter" />
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <div className="custom-frm-bx ms-2 mb-0">
+                                                                                                <select name="" id="" className="form-select"
+                                                                                                    value={allComponentResults[item?._id]?.[i]?.status || ""}
+                                                                                                    onChange={(e) =>
+                                                                                                        setAllComponentResults(prev => ({
+                                                                                                            ...prev,
+                                                                                                            [item?._id]: {
+                                                                                                                ...prev[item?._id],
+                                                                                                                [i]: {
+                                                                                                                    ...prev[item?._id]?.[i],
+                                                                                                                    status: e.target.value
+                                                                                                                }
+                                                                                                            }
+                                                                                                        }))
+                                                                                                    }>
+                                                                                                    <option value="">Select</option>
+                                                                                                    <option value="pass">Pass</option>
+                                                                                                    <option value="fail">Fail</option>
+                                                                                                </select>
+                                                                                            </div>
+                                                                                        </td>
+                                                                                    </tr>)))}
+                                                                        </tbody>
+                                                                    </table>
                                                                 </div>
                                                             </div>
-                                                            <div className="barcd-scannr">
-                                                                <div className="barcd-content">
-                                                                    <h4 className="my-3">SP-9879</h4>
-                                                                    <ul className="qrcode-list">
-                                                                        <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
-                                                                        <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
-                                                                    </ul>
-                                                                    <img src="/barcode.png" alt="" />
+                                                            <div className="report-remark mt-3">
+                                                                <h6>Remark <a href="javascript:void(0)" className="edit-btn text-black"><FontAwesomeIcon icon={faPen} /></a></h6>
+                                                                {/* <textarea rows={5} /> */}
+                                                                <p>-</p>
+                                                            </div>
+
+                                                            {appointmentData?.doctorId && <div className="laboratory-bill-bx">
+                                                                <h6>Lab tests prescribed by the doctor</h6>
+                                                                <h4>Dr.James Harris</h4>
+                                                                <p><span className="laboratory-phne">ID :</span>DO-7668</p>
+                                                            </div>}
+                                                            <div className="reprt-barcd mt-3">
+                                                                <div className="barcd-scannr">
+                                                                    <div className="barcd-content">
+                                                                        <h4 className="my-3">SP-9879</h4>
+                                                                        <ul className="qrcode-list">
+                                                                            <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
+                                                                            <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
+                                                                        </ul>
+                                                                        <img src="/barcode.png" alt="" />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="barcd-scannr">
+                                                                    <div className="barcd-content">
+                                                                        <h4 className="my-3">SP-9879</h4>
+                                                                        <ul className="qrcode-list">
+                                                                            <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
+                                                                            <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
+                                                                        </ul>
+                                                                        <img src="/barcode.png" alt="" />
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div className="reprt-signature mt-5">
-                                                            <h6>Signature:</h6>
-                                                            <span className="reprt-mark"></span>
-                                                        </div>
+                                                            <div className="reprt-signature mt-5">
+                                                                <h6>Signature:</h6>
+                                                                <span className="reprt-mark"></span>
+                                                            </div>
 
+                                                        </div>
                                                     </div>
+
                                                 </div>
-
                                             </div>
-                                        </div>
 
-                                        <div className="text-end mt-3" >
-                                            <button className="nw-thm-btn rounded-4">Submit</button>
-                                        </div>
-
+                                            <div className="text-end mt-3" >
+                                                <button type="submit" className="nw-thm-btn rounded-4">Submit</button>
+                                            </div>
 
 
-                                    </div>}
+
+                                        </form>}
 
 
 
@@ -1097,16 +1197,16 @@ function ReportsTabs() {
                                                                                 </a>
                                                                             </li>
                                                                             <li className="report-item">
-                                                                                <a class="nw-dropdown-item report-nav" href="#">
+                                                                                <button onClick={() => sendReport(appointmentId, appointmentData?.patientId?.email, 'patient')} class="nw-dropdown-item report-nav" href="#">
                                                                                     Send Patient
-                                                                                </a>
+                                                                                </button>
                                                                             </li>
 
-                                                                            <li className="report-item">
+                                                                            {appointmentData?.doctorId && <li className="report-item">
                                                                                 <a class="nw-dropdown-item report-nav" href="#">
                                                                                     Send Doctor
                                                                                 </a>
-                                                                            </li>
+                                                                            </li>}
 
                                                                             <li className="report-item">
                                                                                 <a class="nw-dropdown-item report-nav" href="#">
@@ -1239,22 +1339,24 @@ function ReportsTabs() {
                                                                 ))}
                                                             </div>
 
-                                                            <div className="reprt-barcd flex-wrap mt-3">
+                                                            <div className="row  mt-3">
                                                                 {testData?.map((item, key) =>
-                                                                    <div className=" barcd-scannr" key={key}>
-                                                                        <div className="barcd-content">
-                                                                            <h4 className="my-3">SP-{item?._id?.slice(-5)}</h4>
-                                                                            <ul className="qrcode-list">
-                                                                                <li className="qrcode-item">Test  <span className="qrcode-title">: {item?.shortName}</span></li>
-                                                                                <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(reportMeta[item._id]?.createdAt)?.toLocaleDateString()}</span> </li>
-                                                                            </ul>
+                                                                    <div className="col-lg-6">
+                                                                        <div className=" barcd-scannr" key={key}>
+                                                                            <div className="barcd-content">
+                                                                                <h4 className="my-3">SP-{item?._id?.slice(-5)}</h4>
+                                                                                <ul className="qrcode-list">
+                                                                                    <li className="qrcode-item">Test  <span className="qrcode-title">: {item?.shortName}</span></li>
+                                                                                    <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(reportMeta[item._id]?.createdAt)?.toLocaleDateString()}</span> </li>
+                                                                                </ul>
+                                                                                {/* <img src="/barcode.png" alt="" /> */}
+                                                                                {/* {console.log(reportMeta[item._id]?.id)} */}
+                                                                                <Barcode value={reportMeta[item._id]?.id} width={1} displayValue={false}
+                                                                                    height={60} />
 
-                                                                            {/* <img src="/barcode.png" alt="" /> */}
-                                                                            {/* {console.log(reportMeta[item._id]?.id)} */}
-                                                                            <Barcode value={reportMeta[item._id]?.id} width={1} displayValue={false}
-                                                                                height={60} />
-
+                                                                            </div>
                                                                         </div>
+
                                                                     </div>)}
 
 

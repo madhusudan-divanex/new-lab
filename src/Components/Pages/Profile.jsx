@@ -128,7 +128,7 @@ function Profile() {
                 </nav>
               </div>
             </div>
-            {!isRequest && <div className="add-nw-bx">
+            {(!isRequest && !profiles?.allowEdit) && <div className="add-nw-bx">
               <a href="javascript:void(0)" className="add-nw-btn nw-thm-btn sub-nw-brd-tbn" data-bs-toggle="modal" data-bs-target="#edit-Request" >
                 Send Profile Edit Request
               </a>
@@ -237,15 +237,9 @@ function Profile() {
                                   <h4 className="lg_title ">{profiles?.name}</h4>
                                   <p className="first_para">ID : #{profiles?.customId}</p>
                                 </div>
-
-
-
                               </div>
-
-
                               <div className="d-flex align-items-center justify-content-center gap-2 carding-bx">
                                 <div className="add-patients-clients" ref={cardRef}>
-
                                   <div className="chip-card"></div>
                                   <img src="/lab-card.png" alt="" />
                                   <div className="patient-card-details">
@@ -253,19 +247,19 @@ function Profile() {
                                     <p>Laboratory ID</p>
                                     <h6>LAB{profiles?.customId}</h6>
                                   </div>
-                                  {/* <QRCode
+                                  <QRCode
                                     value="691ee677c18c1233339c9e2a"
                                     size={256}
-                                    style={{ width: "200px", height: "200px" }}
-                                  /> */}
-
-                                  <QRCode
-                                    size={256}
-                                    style={{ height: "auto", maxWidth: "100%", width: "20%" }}
-                                    viewBox={`0 0 256 256`}
                                     className="qr-code"
-                                    value={profiles?._id || ""}
+                                    style={{ height: "auto", maxWidth: "100%", width: "20%" }}
+                                  // style={{ width: "200px", height: "200px" }}
                                   />
+
+                                  {/* <QRCode
+                                    size={256}
+                                    viewBox={`0 0 256 256`}
+                                    value={profiles?._id || ""}
+                                  /> */}
 
                                 </div>
 

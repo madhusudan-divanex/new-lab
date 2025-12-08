@@ -1,34 +1,51 @@
-import { faEnvelope,  faMessage,  faPhone } from "@fortawesome/free-solid-svg-icons"
+import { faEnvelope, faMessage, faPhone } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { NavLink } from "react-router-dom"
+import { NavLink, useNavigate } from "react-router-dom"
 import { getSecureApiData } from "../../services/api"
 import { useEffect, useState } from "react"
 import base_url from "../../../baseUrl"
+import { toast } from "react-toastify"
+import { useDispatch, useSelector } from "react-redux"
+import { fetchUserDetail } from "../../redux/features/userSlice"
 
 
 function PatientDetails() {
+  const navigate = useNavigate()
   const userId = localStorage.getItem('userId')
-    const [appointments, setAppointments] = useState([])
-    const fetchLabAppointment = async () => {
-        try {
-            const response = await getSecureApiData(`lab/appointment/${userId}`);
-            if (response.success) {
-                // setCurrentPage(response.pagination.page)
-                // setTotalPage(response.pagination.totalPages)
-                setAppointments(response.data)
-            } else {
-                toast.error(response.message)
-            }
-        } catch (err) {
-            console.error("Error creating lab:", err);
-        }
+  const [appointments, setAppointments] = useState([])
+  const dispatch=useDispatch()
+  const [isLoading,setIsLoading]=useState(true)
+  const { isOwner, permissions } = useSelector(state => state.user)
+  useDispatch(()=>{
+    dispatch(fetchUserDetail())
+  },[dispatch])
+  const fetchLabAppointment = async () => {
+    try {
+      const response = await getSecureApiData(`lab/appointment/${userId}`);
+      if (response.success) {
+        // setCurrentPage(response.pagination.page)
+        // setTotalPage(response.pagination.totalPages)
+        setAppointments(response.data)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
     }
-    useEffect(()=>{
-        fetchLabAppointment()
-    },[userId])
+  }
+  useEffect(() => {
+    fetchLabAppointment()
+  }, [userId])
+  console.log(permissions,isOwner)
+  useEffect(() => {
+    if (!isOwner && !permissions?.patientDetails) {
+      toast.error('You do not have permission to see patient deatails ')
+      navigate(-1)
+    }
+  }, [isOwner, permissions])
   return (
-   <>
-     <div className="main-content flex-grow-1 p-3 overflow-auto">
+    <>
+      <div className="main-content flex-grow-1 p-3 overflow-auto">
         <form action="">
           <div className="row mb-3">
             <div className="d-flex align-items-center justify-content-between">
@@ -61,54 +78,54 @@ function PatientDetails() {
           </div>
         </form>
 
-          <div className="submega-main-bx">
-            <div className="row">
-                <div className="col-lg-12">
-                    {appointments?.length>0&& 
-                    appointments?.map((item,key)=>
-                    <div key={key} className="patient-main-bx">
-                        <h5>Patient Details</h5>
-                         <div className="admin-table-bx">
-                             <div className=" patient-details-bx mb-3">
-                                 <div className="admin-table-sub-bx patient-avartr-bx gap-3">
-                                <img src={item?.profileImage? `${base_url}/${item?.profileImage}` :"/table-avatar.jpg"} alt="" />
-                                <div className="admin-table-sub-details patient-bio-content">
-                                  <h6>{item?.patientId?.name}</h6>
-                                  <p>ID: {item?.patientId?.customId}</p>
-                                </div>
-                              </div>
+        <div className="submega-main-bx">
+          <div className="row">
+            <div className="col-lg-12">
+              {appointments?.length > 0 &&
+                appointments?.map((item, key) =>
+                  <div key={key} className="patient-main-bx">
+                    <h5>Patient Details</h5>
+                    <div className="admin-table-bx">
+                      <div className=" patient-details-bx mb-3">
+                        <div className="admin-table-sub-bx patient-avartr-bx gap-3">
+                          <img src={item?.profileImage ? `${base_url}/${item?.profileImage}` : "/table-avatar.jpg"} alt="" />
+                          <div className="admin-table-sub-details patient-bio-content">
+                            <h6>{item?.patientId?.name}</h6>
+                            <p>ID: {item?.patientId?.customId}</p>
+                          </div>
+                        </div>
 
-                              <div className="patient-social-bx">
-                                <button type="button" className="patient-social-btn animate-btn"><FontAwesomeIcon icon={faPhone}/></button>
-                                <a href="javascript:void(0)" className="patient-social-btn"><FontAwesomeIcon icon={faEnvelope}/></a>
-                                <button href="javascript:void(0)" className="patient-social-btn"><FontAwesomeIcon icon={faMessage}/></button>
-                              </div>
-                             </div>
+                        <div className="patient-social-bx">
+                          <button type="button" className="patient-social-btn animate-btn"><FontAwesomeIcon icon={faPhone} /></button>
+                          <a href="javascript:void(0)" className="patient-social-btn"><FontAwesomeIcon icon={faEnvelope} /></a>
+                          <button href="javascript:void(0)" className="patient-social-btn"><FontAwesomeIcon icon={faMessage} /></button>
+                        </div>
+                      </div>
 
-                             <div className="d-flex align-items-center justify-content-between flex-wrap">
-                              <ul className="patient-bio-list">
-                                <li className="patient-bio-item"><img src="/person.png" alt="" /> Age :<span className="patient-bio-title"> 18</span> </li>
-                                <li className="patient-bio-item"><img src="/gender.png" alt="" /> Gender :<span className="patient-bio-title"> {item?.patientId?.gender}</span> </li>
-                                <li className="patient-bio-item"><img src="/height.png" alt="" /> Height :<span className="patient-bio-title"> 6 fit </span> </li>
-                                <li className="patient-bio-item"><img src="/weight.png" alt="" /> Weight :<span className="patient-bio-title"> 50 Kg</span> </li>
-                                <li className="patient-bio-item"><img src="/blood.png" alt="" /> Blood Group :<span className="patient-bio-title"> B+</span> </li>
-                             </ul>
-                              <div>
-                              <NavLink to={`/patient-view/${item?.patientId?._id}`} className="option-rep-add-btn">View More</NavLink>
-                             </div>
-                             </div>
+                      <div className="d-flex align-items-center justify-content-between flex-wrap">
+                        <ul className="patient-bio-list">
+                          <li className="patient-bio-item"><img src="/person.png" alt="" /> Age :<span className="patient-bio-title"> 18</span> </li>
+                          <li className="patient-bio-item"><img src="/gender.png" alt="" /> Gender :<span className="patient-bio-title"> {item?.patientId?.gender}</span> </li>
+                          <li className="patient-bio-item"><img src="/height.png" alt="" /> Height :<span className="patient-bio-title"> 6 fit </span> </li>
+                          <li className="patient-bio-item"><img src="/weight.png" alt="" /> Weight :<span className="patient-bio-title"> 50 Kg</span> </li>
+                          <li className="patient-bio-item"><img src="/blood.png" alt="" /> Blood Group :<span className="patient-bio-title"> B+</span> </li>
+                        </ul>
+                        <div>
+                          <NavLink to={`/patient-view/${item?.patientId?._id}`} className="option-rep-add-btn">View More</NavLink>
+                        </div>
+                      </div>
 
-                            
 
-                            </div>
-                    </div>)}
-                </div>
+
+                    </div>
+                  </div>)}
             </div>
           </div>
+        </div>
 
-        
+
       </div>
-   </>
+    </>
   )
 }
 

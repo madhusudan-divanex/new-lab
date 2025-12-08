@@ -3,25 +3,28 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { getSecureApiData, securePostData } from "../../services/api";
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import html2pdf from "html2pdf.js";
 import html2canvas from "html2canvas";
 import Barcode from "react-barcode";
+import Loader from "../Layouts/Loader";
 
 function ReportView() {
   const params = useParams()
   const reportRef = useRef()
+  const navigate =useNavigate()
   const appointmentId = params.id
   const [demoData, setDemoData] = useState()
   const [testId, setTestId] = useState([]);
+  const [loading,setLoading] =useState(true)
   const [testData, setTestData] = useState([]);
   const [allComponentResults, setAllComponentResults] = useState({});
   const [allComments, setAllComments] = useState({});
   const [reportMeta, setReportMeta] = useState({});
 
   const { profiles, labPerson, labAddress, labImg,
-    rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
+    rating, avgRating, labLicense, isRequest ,isOwner,permissions} = useSelector(state => state.user)
   const [appointmentData, setAppointmentData] = useState({})
   const fetchAppointmentData = async () => {
     try {
@@ -29,6 +32,7 @@ function ReportView() {
       if (response.success) {
         setTestId(response.data.testId)
         setAppointmentData(response.data)
+        setLoading(false)
       } else {
         toast.error(response.message)
       }
@@ -152,10 +156,16 @@ function ReportView() {
         document.body.classList.remove("hide-buttons");
       });
   };
+  useEffect(()=>{
+    if (!isOwner && !permissions?.viewReport) {
+        toast.error('You do not have permission to view report')
+        navigate(-1)
+      }
+  },[isOwner,permissions])
   return (
 
     <>
-      <div className="main-content flex-grow-1 p-3 overflow-auto">
+      {loading ? <Loader/>:<div className="main-content flex-grow-1 p-3 overflow-auto">
         <form action="">
           <div className="row mb-3">
             <div className="d-flex align-items-center justify-content-between">
@@ -326,7 +336,7 @@ function ReportView() {
         </div>
 
 
-      </div>
+      </div>}
     </>
   )
 }

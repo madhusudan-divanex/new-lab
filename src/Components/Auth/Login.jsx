@@ -4,10 +4,13 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { postApiData } from '../../services/api'
 import { toast } from 'react-toastify'
 import { useState } from 'react'
+import { setOwner, setPermissions } from '../../redux/features/userSlice'
+import { useDispatch } from 'react-redux'
 
 
 function Login() {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const [isShow, setIsShow] = useState(false)
   const userId = localStorage.getItem('userId')
   const [formData, setFormData] = useState({
@@ -21,11 +24,19 @@ function Login() {
       if (response.success) {
         localStorage.setItem('token', response.token)
         localStorage.setItem('userId', response.userId)
+        console.log(response.isOwner)
+        localStorage.setItem('isOwner', response.isOwner);
+        if(!response.isOwner){
+
+          localStorage.setItem('permissions', JSON.stringify(response.user.permissionId))
+        }
+
+
         toast.success('Login successfully')
-        if(response.user.status=='pending'){
+        if (response.user.status == 'pending') {
           navigate('/wating-for-approval')
           return
-        }else{
+        } else {
 
           navigate('/')
         }

@@ -16,10 +16,11 @@ function EmployeeList() {
   const userId = localStorage.getItem('userId')
   const [employees, setEmployees] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPage, setTotalPage] = useState(0)
+  const [name, setName] = useState('')
+  const [totalPage, setTotalPage] = useState(1)
   const fetchLabStaff = async () => {
     try {
-      const response = await getSecureApiData(`lab/staff/${userId}`);
+      const response = await getSecureApiData(`lab/staff/${userId}?page=${currentPage}&name=${name}`);
       console.log(response)
       if (response.success) {
         setEmployees(response.data)
@@ -33,7 +34,7 @@ function EmployeeList() {
   }
   useEffect(() => {
     fetchLabStaff()
-  }, [userId])
+  }, [userId, currentPage])
   const staffAction = async (e, id, status) => {
     e.preventDefault()
     const data = { empId: id, status }
@@ -62,6 +63,11 @@ function EmployeeList() {
       console.error("Error creating lab:", err);
     }
   }
+  useEffect(() => {
+    setTimeout(() => {
+      fetchLabStaff()
+    }, 1000)
+  }, [name])
 
   return (
     <>
@@ -89,12 +95,10 @@ function EmployeeList() {
                   </nav>
                 </div>
               </div>
-
               <div className="add-nw-bx">
                 <NavLink
                   to="/employee-data"
                   className="add-nw-btn thm-btn"
-
                 >
                   <img src="/plus-icon.png" alt="" /> Add
                 </NavLink>
@@ -106,32 +110,28 @@ function EmployeeList() {
         <div className="row ">
           <div className="d-flex align-items-center justify-content-between">
             <div className="custom-frm-bx">
-              <input type="text" className="form-control pe-5" placeholder="Search " />
-
+              <input type="text" className="form-control pe-5"
+                value={name} onChange={(e) => setName(e.target.value)} placeholder="Search " />
               <div className="search-item-bx">
                 <button className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
               </div>
-
             </div>
-
             <div>
               <div className="page-selector d-flex align-items-center">
-
                 <div className="custom-frm-bx">
-                  <select className="form-select custom-page-dropdown nw-custom-page ">
-                    <option value="1" selected>1</option>
-                    <option value="2">2</option>
+                  <select
+                    value={currentPage}
+                    onChange={(e) => setCurrentPage(e.target.value)}
+                    className="form-select custom-page-dropdown nw-custom-page ">
+                    {Array.from({ length: totalPage }, (_, i) => (
+                      <option key={i + 1} value={i + 1}>{i + 1}</option>
+                    ))}
                   </select>
                 </div>
-
               </div>
             </div>
           </div>
-
-
-
         </div>
-
         <div className="row">
           <div className="col-lg-12 col-md-12 col-sm-12">
             <div className="table-section mega-table-section">
@@ -175,7 +175,7 @@ function EmployeeList() {
                                 id={`toggle-${item._id}`} // unique id for each item
                                 checked={item.status === "active"} // checked if status is active
                                 onChange={(e) =>
-                                  staffAction(e,item._id, e.target.checked ? "active" : "inactive")
+                                  staffAction(e, item._id, e.target.checked ? "active" : "inactive")
                                 }
                               />
                               <label htmlFor={`toggle-${item._id}`}></label>
@@ -224,7 +224,7 @@ function EmployeeList() {
                                 </li>
 
                                 <li className="drop-item">
-                                  <button className="nw-dropdown-item" type="button" onClick={()=>deleteStaff(item?._id)}>
+                                  <button className="nw-dropdown-item" type="button" onClick={() => deleteStaff(item?._id)}>
                                     <FontAwesomeIcon icon={faTrash} className="" />
                                     Delete
                                   </button>

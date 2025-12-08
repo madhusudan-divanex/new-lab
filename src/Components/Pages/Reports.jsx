@@ -9,9 +9,11 @@ import { FaTrash } from "react-icons/fa6";
 import { NavLink, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getSecureApiData, securePostData } from "../../services/api";
+import { useSelector } from "react-redux";
 
 function Reports() {
   const navigate=useNavigate()
+   const {isOwner,permissions}=useSelector(state=>state.user)
   const userId = localStorage.getItem('userId')
   const [selectedOption, setSelectedOption] = useState("select");
 
@@ -105,6 +107,10 @@ function Reports() {
 
   const testSubmit=async(e)=>{
     e.preventDefault()
+    if(!isOwner && !permissions.addTest){
+      toast.error('You do not have permission to add test ')
+      return
+    }
     const data={...testData,component:components}
     console.log(data)
     try {
