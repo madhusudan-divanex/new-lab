@@ -36,7 +36,20 @@ function PatientsView() {
                 setMedicalHistory(response.medicalHistory)
                 setDemographicData(response.demographic)
                 setPrescriptionData(response.prescription?.prescriptions)
-                setLabAppointments(response.labAppointment)
+                setIsLoading(false)
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+    const fetchLabPatient = async () => {
+        setIsLoading(true)
+        try {
+            const response = await getSecureApiData(`appointment/patient-lab/${patientId}?page=1`);
+            if (response.success) {
+                setLabAppointments(response.data)
                 setIsLoading(false)
             } else {
                 toast.error(response.message)
@@ -49,6 +62,7 @@ function PatientsView() {
         if(userId){
 
             fetchPatient()
+            fetchLabPatient()
             fetchPatientReport()
         }
     }, [userId])
@@ -293,7 +307,11 @@ function PatientsView() {
                                                                                         </ul>
                                                                                     </td>
 
-                                                                                    <td ><span className="approved approved-active fw-400 text-capitalize">{item?.status}</span></td>
+                                                                                    <td >{(item?.status=='approved' || item?.status=='deliver-report' )?<span className="approved approved-active fw-400 text-capitalize">
+                                                                                        {item?.status}</span>:
+                                                                                        <span className="approved approved-active reject   fw-400 text-capitalize">
+                                                                                        {item?.status}</span>}
+                                                                                        </td>
                                                                                     {/* <td>
                                                                                 <a
                                                                                     href="javascript:void(0)"
@@ -329,6 +347,7 @@ function PatientsView() {
                                                                                                     class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
                                                                                                     aria-labelledby="acticonMenu1"
                                                                                                 >
+                                                                                                    {userId===item?.labId &&<>
                                                                                                     <li className="drop-item">
                                                                                                         <a
                                                                                                             class="nw-dropdown-item"
@@ -342,35 +361,20 @@ function PatientsView() {
                                                                                                     </li>
                                                                                                     <li className="drop-item">
                                                                                                         <a class="nw-dropdown-item" href="#">
-                                                                                                            <img src="/add-user.png" alt="" />
-                                                                                                            Patient Details
-                                                                                                        </a>
-                                                                                                    </li>
-                                                                                                    <li className="drop-item">
-                                                                                                        <a class="nw-dropdown-item" href="#">
                                                                                                             <img src="/flask-report.png" alt="" />
                                                                                                             Appointment Details
                                                                                                         </a>
                                                                                                     </li>
-
                                                                                                     <li className="drop-item">
                                                                                                         <a class="nw-dropdown-item" href="#">
                                                                                                             <img src="/reprt-icon.png" alt="" />
                                                                                                             Generate Report
                                                                                                         </a>
                                                                                                     </li>
-
                                                                                                     <li className="drop-item">
                                                                                                         <a class="nw-dropdown-item" href="#">
                                                                                                             <img src="/barcd-icon.png" alt="" />
                                                                                                             Labels
-                                                                                                        </a>
-                                                                                                    </li>
-
-                                                                                                    <li className="drop-item">
-                                                                                                        <a class="nw-dropdown-item" href="#">
-                                                                                                            <img src="/file.png" alt="" />
-                                                                                                            Report  view
                                                                                                         </a>
                                                                                                     </li>
                                                                                                     <li className="drop-item">
@@ -379,21 +383,26 @@ function PatientsView() {
                                                                                                             Invoice
                                                                                                         </a>
                                                                                                     </li>
+                                                                                                    </>}
+
                                                                                                     <li className="drop-item">
+                                                                                                        <a class="nw-dropdown-item" href="#">
+                                                                                                            <img src="/file.png" alt="" />
+                                                                                                            Report  view
+                                                                                                        </a>
+                                                                                                    </li>
+                                                                                                    {/* <li className="drop-item">
                                                                                                         <a class="nw-dropdown-item" href="#">
                                                                                                             <img src="/dc-usr.png" alt="" />
                                                                                                             Send  Report Doctor
                                                                                                         </a>
                                                                                                     </li>
-
-
-
                                                                                                     <li className="drop-item">
                                                                                                         <a class="nw-dropdown-item" href="#">
                                                                                                             <img src="/add-user.png" alt="" />
                                                                                                             Send  Report Patient
                                                                                                         </a>
-                                                                                                    </li>
+                                                                                                    </li> */}
                                                                                                 </ul>
                                                                                             </div>
                                                                                         </td>}

@@ -4,17 +4,35 @@ import { FaPlusCircle } from "react-icons/fa";
 import { getSecureApiData, securePostData } from "../../services/api";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-
+import { Select, Spin } from "antd";
+import { FaSquarePlus } from "react-icons/fa6";
 function AddAppointment() {
     const userId = localStorage.getItem('userId')
     const [allTest, setAllTest] = useState([])
-    const [aptDate,setAptDate]=useState({date:null,time:null})
+    const [aptDate, setAptDate] = useState({ date: null, time: null })
     const [selectedTest, setSelectedTest] = useState([''])
+    const [ptName, setPtName] = useState('')
+    const [loading, setLoading] = useState(false);
+    const [allPatient, setAllPatient] = useState([])
     const fetchLabTest = async () => {
         try {
             const response = await getSecureApiData(`lab/test/${userId}`);
             if (response.success) {
                 setAllTest(response.data)
+            } else {
+                toast.error(response.message)
+            }
+        } catch (err) {
+            console.error("Error creating lab:", err);
+        }
+    }
+    const fetchUserProfile = async (searchText) => {
+        setLoading(true)
+        try {
+            const response = await getSecureApiData(`patient/search/${searchText}`);
+            if (response.success) {
+                setAllPatient(response.data)
+                setLoading(false)
             } else {
                 toast.error(response.message)
             }
@@ -52,17 +70,18 @@ function AddAppointment() {
             0
         );
         const data = {
-            patientId: patData?._id, status: 'approved',
+            patientId: ptName, status: 'approved',
             testId: selectedTest,
-            date: new Date(), labId: userId, fees: totalFee
+            date: aptDate.date && aptDate.time
+                ? new Date(`${aptDate.date}T${aptDate.time}`)
+                : null, labId: userId, fees: totalFee
         }
         try {
             const response = await securePostData(`appointment/lab`, data)
             if (response.success) {
-
-                handleBack(e, "#profile-tab");
-                // setTestId(response.data.testId)
-                // setAppointmentData(response.data)
+                setAptDate({ date: null, time: null })
+                setSelectedTest([''])
+                toast.success("Appointment created successfully")
             } else {
                 toast.error(response.message)
             }
@@ -114,18 +133,18 @@ function AddAppointment() {
                                 <div className="col-lg-6 col-md-6 col-sm-12">
                                     <div className="custom-frm-bx">
                                         <label htmlFor="">Appointment Date</label>
-                                        <input onChange={(e)=>setAptDate({...aptDate,date:e.target.value})}
-                                        min={new Date().toISOString().split("T")[0]}
-                                         type="date" className="form-control nw-frm-select" />
+                                        <input onChange={(e) => setAptDate({ ...aptDate, date: e.target.value })}
+                                            min={new Date().toISOString().split("T")[0]}
+                                            type="date" className="form-control nw-frm-select" />
                                     </div>
                                 </div>
 
                                 <div className="col-lg-6 col-md-6 col-sm-12">
                                     <div className="custom-frm-bx">
                                         <label htmlFor="">Appointment Time</label>
-                                        <input 
-                                        min={new Date().toISOString().split("T")[0]}
-                                        onChange={(e)=>setAptDate({...aptDate,time:e.target.value})} type="time" className="form-control nw-frm-select" />
+                                        <input
+                                            min={new Date().toISOString().split("T")[0]}
+                                            onChange={(e) => setAptDate({ ...aptDate, time: e.target.value })} type="time" className="form-control nw-frm-select" />
                                     </div>
                                 </div>
 
@@ -154,9 +173,24 @@ function AddAppointment() {
                                 <div className="custom-frm-bx">
                                     <label htmlFor="">Patient</label>
                                     <div class="select-wrapper">
-                                        <select class="form-select nw-control-frm">
+                                        {/* <select class="form-select nw-control-frm">
                                             <option>---Select Patient ---</option>
-                                        </select>
+                                        </select> */}
+                                        <Select
+                                            showSearch
+                                            allowClear
+                                            className="w-100 form-control"
+                                            placeholder="Search and select user"
+                                            value={ptName}   // ✅ IDs here
+                                            onChange={(value) => setPtName(value)}
+                                            filterOption={false}
+                                            onSearch={fetchUserProfile}
+                                            notFoundContent={loading ? <Spin size="small" /> : "No patient found"}
+                                            options={allPatient.map((user) => ({
+                                                label: `${user.name}`, // ✅ display name
+                                                value: user._id, // ✅ backend receives ID
+                                            }))}
+                                        />
                                     </div>
 
                                 </div>
@@ -182,7 +216,7 @@ function AddAppointment() {
                                 <div className="custom-frm-bx">
                                     <label htmlFor="">Doctor</label>
                                     <div class="select-wrapper">
-                                        <select class="form-select nw-control-frm">
+                                        <select disabled class="form-select nw-control-frm">
                                             <option>---Select Doctor ---</option>
                                         </select>
                                     </div>
@@ -238,9 +272,13 @@ function AddAppointment() {
                                     </div>
                                 ))}
 
+                                <div className="d-flex align-items-center gap-2 justify-content-end">
+                                    <button onClick={handleAddTest}
+                                        type="button"
+                                        className="fz-16 fw-700 " style={{ color: "#34A853" }}><FaSquarePlus /> Add </button>
+                                </div>
                             </div>
                         </div>
-
                     </div>
 
                     <div className="text-end mt-4">

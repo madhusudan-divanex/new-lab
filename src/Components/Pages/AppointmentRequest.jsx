@@ -51,7 +51,7 @@ function AppointmentRequest() {
                 // setCurrentPage(response.pagination.page)
                 // setTotalPage(response.pagination.totalPages)
                 setAllTest(response.data)
-                setTotalPage(response.totalPages)
+                // setTotalPage(response.totalPages)
             } else {
                 toast.error(response.message)
             }

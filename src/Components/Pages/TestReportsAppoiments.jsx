@@ -425,18 +425,20 @@ function TestReportsAppoiments() {
                                     Invoice
                                   </NavLink>
                                 </li>
-                                <li className="drop-item">
+                                {(item?.status==='pending-report' || item?.status==='deliver-report') &&<>
+                                {item?.doctorId &&<li className="drop-item">
                                   <a className="nw-dropdown-item" href="#">
                                     <img src="/dc-usr.png" alt="" />
                                     Send  Report Doctor
                                   </a>
-                                </li>
+                                </li>}
                                 <li className="drop-item">
                                   <button className="nw-dropdown-item" onClick={() => sendReport(item?._id, item?.patientId?.email, 'patient')}>
                                     <img src="/report-mail.png" alt="" />
                                     Send  Report Patient
                                   </button>
                                 </li>
+                                </>}
                               </ul>
                             </div>
                           </td>
