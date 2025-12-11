@@ -15,12 +15,13 @@ import { fetchUserDetail, fetchUserProfile } from "../../redux/features/userSlic
 import base_url from "../../../baseUrl";
 import html2canvas from "html2canvas";
 import QRCode from "react-qr-code";
+import Loader from "../Layouts/Loader";
 function Profile() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const userId = localStorage.getItem("userId")
   const { profiles, labPerson, labAddress, labImg,
-    rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
+    rating, avgRating, labLicense, isRequest,loading } = useSelector(state => state.user)
   const [message, setMessage] = useState('')
 
   const fetchLabDetail = async (e) => {
@@ -105,7 +106,8 @@ function Profile() {
 
   return (
     <>
-      <div className="main-content flex-grow-1 p-3 overflow-auto">
+      {loading?<Loader/>
+      :<div className="main-content flex-grow-1 p-3 overflow-auto">
         <div className="row mb-3">
           <div className="d-flex align-items-center justify-content-between sub-header-bx">
             <div>
@@ -591,7 +593,7 @@ function Profile() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/*Payment Status Popup Start  */}
       {/* data-bs-toggle="modal" data-bs-target="#edit-Request" */}

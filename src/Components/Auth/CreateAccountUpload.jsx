@@ -17,7 +17,7 @@ import { fetchUserDetail } from "../../redux/features/userSlice";
 function CreateAccountUpload() {
     const navigate=useNavigate()
     const dispatch=useDispatch()
-    const [isShow, setIsShow] = useState(true)
+    const [isShow, setIsShow] = useState(false)
     const userId = localStorage.getItem('userId')
     const { labLicense } = useSelector(state => state.user)
     const [formData, setFormData] = useState({

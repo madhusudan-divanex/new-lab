@@ -702,8 +702,9 @@ function EditProfile() {
                                                                         id="fileInput2"
                                                                         name="labImg"
                                                                         multiple
+                                                                        disabled={labImages?.labImg?.length ===3}
                                                                         onChange={handleLabImagesChange}
-                                                                        max={3}
+                                                                        max={3 -labImages?.labImg?.length}
                                                                         accept=".png,.jpg,.jpeg"
                                                                     />
 

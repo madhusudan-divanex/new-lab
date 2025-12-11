@@ -46,8 +46,6 @@ function CreateAccountPerson() {
             }));
         }
     };
-
-
     const [logoPreview, setLogoPreview] = useState(null);
     const handleFilePreview = (e) => {
         const file = e.target.files[0];
