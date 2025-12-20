@@ -174,17 +174,17 @@ function ApproveProfile() {
                           <div className="col-lg-12">
                             <div className="lab-profile-mega-bx">
                               <div className="lab-profile-avatr-bx">
-                                <img src="/profile-tab-avatar.png" alt="" />
+                                <img src={profiles?.logo?`${base_url}/${profiles?.logo}`:"/profile-tab-avatar.png"} alt="" />
                                 <div className="lab-profile-edit-avatr">
                                   <a href="javascript:void(0)" className="edit-btn cursor-pointer">
                                     <FontAwesomeIcon icon={faPen} />
                                   </a>
                                 </div>
-                                <input
+                                {/* <input
                                   type="file"
                                   accept=""
                                   className="lab-profile-file-input"
-                                />
+                                /> */}
                               </div>
 
                               <div>

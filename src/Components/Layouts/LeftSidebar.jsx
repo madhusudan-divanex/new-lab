@@ -17,7 +17,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import base_url from "../../../baseUrl";
 import { useEffect } from "react";
-import { fetchUserDetail } from "../../redux/features/userSlice";
+import { fetchEmpDetail, fetchUserDetail } from "../../redux/features/userSlice";
 
 function LeftSidebar() {
   const dispatch = useDispatch();
@@ -25,11 +25,14 @@ function LeftSidebar() {
 
   const {
     profiles,
-    labPerson
+    labPerson, empData, isOwner
   } = useSelector((state) => state.user);
 
   useEffect(() => {
     dispatch(fetchUserDetail());
+    if (localStorage.getItem('isOwner') === 'false') {
+      dispatch(fetchEmpDetail(localStorage.getItem('staffId')))
+    }
   }, [dispatch]);
 
   // helper to check active route
@@ -64,17 +67,17 @@ function LeftSidebar() {
               <div className="task-vendor-profile-bx">
                 <img
                   src={
-                    profiles?.logo
+                    isOwner
                       ? `${base_url}/${profiles?.logo}`
-                      : "/user-avatar.png"
+                      : empData?.profileImage
                   }
                   alt=""
                 />
                 <div>
                   <h6 className="new_title fw-500 mb-0">
-                    {labPerson?.name}
+                    {isOwner ? labPerson?.name : empData?.name}
                   </h6>
-                  <p>#{profiles?.customId}</p>
+                  <p>#{isOwner ? profiles?.customId : empData?._id?.slice(-10)}</p>
                 </div>
               </div>
             </NavLink>

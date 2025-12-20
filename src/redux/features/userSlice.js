@@ -30,6 +30,21 @@ export const fetchUserDetail = createAsyncThunk(
         }
     }
 );
+export const fetchEmpDetail = createAsyncThunk(
+    "empDetail/fetch",
+    async (id, { rejectWithValue }) => {
+        try {
+            console.log(id)
+            const response = await getSecureApiData(`lab/staff-data/${id}`);
+            console.log(response)
+            if (response.success) {
+                return response.employee;
+            }
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || error.message);
+        }
+    }
+);
 const userSlice = createSlice({
     name: "userProfile",
     initialState: {
@@ -45,6 +60,7 @@ const userSlice = createSlice({
         error: null,
         isOwner: localStorage.getItem('isOwner') === 'true' ?true:false, // <-- read from localStorage
         permissions: JSON.parse(localStorage.getItem('permissions')) || null,
+        empData:null,
     },
     reducers: {
         clearProfiles: (state) => {
@@ -82,11 +98,20 @@ const userSlice = createSlice({
                 state.labPerson = action.payload.labPerson;
                 state.isRequest = action.payload.isRequest
                 state.labLicense = action.payload.labLicense;
+                state.isOwner = localStorage.getItem('isOwner') === 'true' ?true:false;
+                state.permissions= JSON.parse(localStorage.getItem('permissions')) || null;
             })
             .addCase(fetchUserDetail.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
-            });
+            })
+            .addCase(fetchEmpDetail.fulfilled, (state, action) => {
+                state.loading = false;
+                console.log(action)
+                state.empData = action.payload;
+                state.isOwner = localStorage.getItem('isOwner') === 'true' ?true:false;
+                state.permissions= JSON.parse(localStorage.getItem('permissions')) || null;
+            })
     },
 });
 

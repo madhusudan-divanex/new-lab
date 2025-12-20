@@ -856,16 +856,14 @@ function PatientsView() {
                                                             <div className="medical-history-content my-3">
                                                                 <div>
                                                                     <h4 className="fz-16 fw-700">Medication Details</h4>
-                                                                    <p>ACE Inhibitors (Twice daily)</p>
-                                                                    <p>Beta Blockers  (Once daily)</p>
+                                                                    <p>{medicalHistory?.medicationDetail}</p>
+                                                                   
                                                                 </div>
 
                                                                 <div className="mt-3">
-                                                                    <h4 className="fz-16 fw-700">Allergies</h4>
-                                                                    <p>Penicillin</p>
-                                                                    <p>Peanuts</p>
+                                                                    <h4 className="fz-16 fw-700">Allergies</h4>                                                                    
+                                                                    <p>{medicalHistory?.allergies}</p>
                                                                 </div>
-
                                                             </div>
 
                                                             <div className="ovrview-bx mb-3">

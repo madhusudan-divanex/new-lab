@@ -254,10 +254,10 @@ function ReportsTabs() {
         }
     }
     const fetchInputPtData = async () => {
-        if (inputPtId?.length < 4) {
+        if (inputPtId?.length < 8) {
             return
         }
-        if (patData && inputPtId?.length > 4) {
+        if (patData && inputPtId?.length > 8) {
             return
         }
         try {

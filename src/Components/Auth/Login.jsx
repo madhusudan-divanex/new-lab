@@ -4,7 +4,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { postApiData } from '../../services/api'
 import { toast } from 'react-toastify'
 import { useState } from 'react'
-import { setOwner, setPermissions } from '../../redux/features/userSlice'
+import { fetchEmpDetail, setOwner, setPermissions } from '../../redux/features/userSlice'
 import { useDispatch } from 'react-redux'
 
 
@@ -24,11 +24,12 @@ function Login() {
       if (response.success) {
         localStorage.setItem('token', response.token)
         localStorage.setItem('userId', response.userId)
-        console.log(response.isOwner)
         localStorage.setItem('isOwner', response.isOwner);
-        if(!response.isOwner){
+        if(!response.isOwner){  
+          localStorage.setItem('staffId', response.staffId)
 
           localStorage.setItem('permissions', JSON.stringify(response.user.permissionId))
+          dispatch(fetchEmpDetail(response.staffId))
         }
 
 

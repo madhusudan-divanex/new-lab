@@ -6,7 +6,7 @@ import { IoMdQrScanner } from "react-icons/io";
 import Scanner from "../Pages/Scanner";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchUserDetail } from "../../redux/features/userSlice";
+import { fetchEmpDetail, fetchUserDetail } from "../../redux/features/userSlice";
 import base_url from "../../../baseUrl";
 import { BarcodeScanner } from 'react-barcode-scanner'
 import { toast } from "react-toastify";
@@ -15,10 +15,13 @@ function TopHeader() {
   const dispatch = useDispatch()
   const [ptId, setPtId] = useState(null)
   const [scannerOpen, setScannerOpen] = useState(false)
-  const { profiles, labPerson, labAddress, labImg,
+  const { profiles, labPerson, labAddress, labImg,empData,isOwner,
     rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
   useEffect(() => {
     dispatch(fetchUserDetail())
+    if(localStorage.getItem('isOwner')==='false'){
+      dispatch(fetchEmpDetail(localStorage.getItem('staffId')))
+    }
   }, [dispatch])
   const openScanner = () => setScannerOpen(true);
   const closeScanner = () => setScannerOpen(false);
@@ -139,7 +142,7 @@ function TopHeader() {
                 aria-expanded="false"
               >
                 <div className="admn-icon me-2">
-                  <img src={profiles?.logo ? `${base_url}/${profiles.logo}` : "/user-avatar.png"} alt="" />
+                  <img src={isOwner ? `${base_url}/${profiles.logo}` : empData?.profileImage} alt="" />
                 </div>
               </a>
               <ul
@@ -149,14 +152,14 @@ function TopHeader() {
                 <div className="profile-card-box">
                   <div className="profile-top-section">
                     <img
-                      src={profiles?.logo ? `${base_url}/${profiles.logo}` : "/user-avatar.png"}
+                      src={isOwner ? `${base_url}/${profiles.logo}` : empData?.profileImage}
                       alt="Profile"
                       className="profile-image"
                     />
                     <div className="profile-info">
                       {/* <span className="profile-role">Admin</span> */}
-                      <h4 className="profile-name">{labPerson?.name}</h4>
-                      <p className="profile-id">ID : {profiles?.customId}</p>
+                      <h4 className="profile-name">{isOwner? labPerson?.name:empData?.name}</h4>
+                      <p className="profile-id">ID : {isOwner? profiles?.customId:empData?._id?.slice(-10)}</p>
                     </div>
                   </div>
                   <div className="profile-logout-box">
@@ -183,7 +186,6 @@ function TopHeader() {
 
           <div className="modal-dialog modal-dialog-centered modal-md">
             <div className="modal-content rounded-5">
-
               <div className="d-flex align-items-center justify-content-between popup-nw-brd px-4 py-3">
                 <h6 className="lg_title mb-0">Scan</h6>
 

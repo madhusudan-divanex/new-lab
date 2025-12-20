@@ -112,7 +112,6 @@ function Reports() {
       return
     }
     const data={...testData,component:components}
-    console.log(data)
     try {
       const response=await securePostData(`lab/test`,data)
       if(response.success){
