@@ -2,6 +2,7 @@ import axios from "axios"
 import base_url from "../../baseUrl";
 
 export const getApiData=async(endpoint)=>{
+  console.log("end",endpoint)
     const res=await axios.get(`${base_url}/${endpoint}`)
     return res.data
 }
