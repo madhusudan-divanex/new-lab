@@ -313,7 +313,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labAddress?.country}
+                                value={labAddress?.countryId?.name}
                               />
                             </div>
                           </div>
@@ -325,7 +325,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labAddress?.state}
+                                value={labAddress?.stateId?.name}
                               />
                             </div>
                           </div>
@@ -337,7 +337,7 @@ function ApproveProfile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labAddress?.city}
+                                value={labAddress?.cityId?.name}
                               />
                             </div>
                           </div>

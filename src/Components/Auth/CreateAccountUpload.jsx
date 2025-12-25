@@ -13,11 +13,13 @@ import { securePostData } from "../../services/api";
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserDetail } from "../../redux/features/userSlice";
+import Loader from "../Layouts/Loader";
 
 function CreateAccountUpload() {
     const navigate=useNavigate()
     const dispatch=useDispatch()
     const [isShow, setIsShow] = useState(false)
+    const [loading,setLoading] =useState(false)
     const userId = localStorage.getItem('userId')
     const { labLicense } = useSelector(state => state.user)
     const [formData, setFormData] = useState({
@@ -85,6 +87,7 @@ function CreateAccountUpload() {
             if (!cert.certName) return alert(`Please enter certificate name for Certificate #${i + 1}`);
             if (!cert.certFile) return alert(`Please upload certificate file for Certificate #${i + 1}`);
         }
+        setLoading(true)
 
         // --- Create FormData ---
         const dataToSend = new FormData();
@@ -111,6 +114,7 @@ function CreateAccountUpload() {
         } else {
             toast.error(result.message);
         }
+        setLoading(false)
     };
     useEffect(()=>{
         if(labLicense){
@@ -119,7 +123,8 @@ function CreateAccountUpload() {
     },[labLicense])
     return (
         <>
-            <section className="admin-login-section account-lg-section nw-create-account-section">
+            {loading?<Loader/>
+            :<section className="admin-login-section account-lg-section nw-create-account-section">
                 <div className="container-fluid px-lg-0">
                     <div className="row justify-content-center mb-4">
                         <div className="col-lg-8">
@@ -307,7 +312,7 @@ function CreateAccountUpload() {
                     </div>
 
                 </div>
-            </section>
+            </section>}
 
 
 

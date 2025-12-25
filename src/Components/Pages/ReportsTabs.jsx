@@ -57,6 +57,7 @@ function ReportsTabs() {
 
         }
     }
+    console.log(appointmentData)
     const fetchLabTest = async () => {
         try {
             const response = await getSecureApiData(`lab/test/${userId}`);
@@ -997,8 +998,8 @@ function ReportsTabs() {
                                                             </div>
                                                             <div className="laboratory-header mb-4">
                                                                 <div className="laboratory-name">
-                                                                    <h5>Advance Lab Tech</h5>
-                                                                    <p><span className="laboratory-title">GSTIN :</span> 09897886454</p>
+                                                                    <h5>{profiles?.name}</h5>
+                                                                    <p><span className="laboratory-title">GSTIN :</span> {profiles?.gstNumber}</p>
                                                                 </div>
                                                                 <div className="invoice-details">
                                                                     <p className="text-end"><span className="laboratory-invoice">Report ID :</span> RE-89767</p>

@@ -189,6 +189,7 @@ function Router() {
         { path: "/set-password", element: <SetPassword /> },
         { path: "/create-account", element: <CreateAccount /> },
         { path: "/create-account-image", element: <ProtectedRoute component={CreateAccountImage} /> },
+        // { path: "/create-account-address", element: <CreateAccountAddress/> },
         { path: "/create-account-address", element: <ProtectedRoute component={CreateAccountAddress} /> },
         { path: "/create-account-person", element: <ProtectedRoute component={CreateAccountPerson} /> },
         { path: "/create-account-upload", element: <ProtectedRoute component={CreateAccountUpload} /> },

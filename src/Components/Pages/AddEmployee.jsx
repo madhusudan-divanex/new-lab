@@ -243,7 +243,7 @@ function AddEmployee() {
 
         // Basic fields
         for (let key in professionalInfo) {
-            if (key === 'labCert' || key === 'education') continue;
+            if (key === 'labCert' || key === 'education' || key==='empId') continue;
             data.append(key, professionalInfo[key]);
         }
 
@@ -255,6 +255,10 @@ function AddEmployee() {
             certName: i.certName
         }));
         data.append("labCert", JSON.stringify(certMeta));
+        if(staffId){
+
+            data.append("empId",staffId);
+        }
 
         // Certificate files
         professionalInfo.labCert.forEach(i => {
@@ -262,7 +266,7 @@ function AddEmployee() {
                 data.append("certFile", i.certFile);
             }
         });
-
+console.log(staffId)
         try {
             const response = await securePostData(`lab/professional`, data);
             if (response.success) {
@@ -575,28 +579,46 @@ function AddEmployee() {
                                                 <div className="col-lg-4 col-md-6 col-sm-12">
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">State</label>
-                                                        <select className="form-select nw-frm-control" value={userInfo.state}
+                                                        {/* <select className="form-select nw-frm-control" value={userInfo.state}
                                                             name="state"
                                                             onChange={handleUserChange}
                                                             required>
                                                             <option>---Select State---</option>
                                                             <option value="rajasthan">Rajasthan</option>
                                                             <option value="gujrat">Gujrat</option>
-                                                        </select>
+                                                        </select> */}
+                                                        <input
+                                                            type="text"
+                                                            className="form-control "
+                                                            placeholder="Enter State"
+                                                            value={userInfo.state}
+                                                            name="state"
+                                                            onChange={handleUserChange}
+                                                            required
+                                                        />
                                                     </div>
                                                 </div>
 
                                                 <div className="col-lg-4 col-md-6 col-sm-12">
                                                     <div className="custom-frm-bx">
                                                         <label htmlFor="">City</label>
-                                                        <select className="form-select nw-frm-control" value={userInfo.city}
+                                                        {/* <select className="form-select nw-frm-control" value={userInfo.city}
                                                             name="city"
                                                             onChange={handleUserChange}
                                                             required>
                                                             <option>---Select City---</option>
                                                             <option value="jaipur">Jaipur</option>
                                                             <option value="ahemdabad">Ahemdabad</option>
-                                                        </select>
+                                                        </select> */}
+                                                        <input
+                                                            type="text"
+                                                            className="form-control "
+                                                            placeholder="Enter City"
+                                                            value={userInfo.city}
+                                                            name="city"
+                                                            onChange={handleUserChange}
+                                                            required
+                                                        />
                                                     </div>
                                                 </div>
 

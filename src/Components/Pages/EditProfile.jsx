@@ -12,13 +12,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { fetchUserDetail } from "../../redux/features/userSlice";
 import base_url from "../../../baseUrl";
-import { postApiData, securePostData } from "../../services/api";
+import { getApiData, postApiData, securePostData } from "../../services/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 function EditProfile() {
     const dispatch = useDispatch()
     const navigate = useNavigate()
+    const [countries, setCountries] = useState([])
+    const [states, setStates] = useState([])
+    const [cities, setCities] = useState([])
+    const [loading, setLoading] = useState(false)
     const userId = localStorage.getItem("userId")
     const { profiles, labPerson, labAddress, labImg,
         rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
@@ -188,9 +192,9 @@ function EditProfile() {
     //   Address
     const [addressData, setAddressData] = useState({
         fullAddress: "",
-        country: "",
-        state: "",
-        city: "",
+        countryId: "",
+        stateId: "",
+        cityId: "",
         pinCode: "",
         userId
     });
@@ -206,6 +210,14 @@ function EditProfile() {
                 ...prev,
                 [name]: value
             }));
+        }
+        if (name === 'countryId' && value) {
+            const data = countries?.filter(item => item?._id === value)
+            fetchStates(data[0].isoCode);
+        }
+        if (name === 'stateId' && value) {
+            const data = states?.filter(item => item?._id === value)
+            fetchCities(data[0].isoCode);
         }
     };
     const addressSubmit = async (e) => {
@@ -309,7 +321,7 @@ function EditProfile() {
             certName: c.certName,
             certFile: c.certFile instanceof File ? null : c.certFile // keep existing path
         }));
-        dataToSend.append("labCert", JSON.stringify(certMeta));      
+        dataToSend.append("labCert", JSON.stringify(certMeta));
         licenseData.labCert.forEach((item) => {
             if (item.certFile instanceof File) {
                 dataToSend.append("certFiles", item.certFile);
@@ -339,7 +351,9 @@ function EditProfile() {
             setLabData(profiles)
         }
         if (labAddress) {
-            setAddressData(labAddress)
+            fetchStates(labAddress?.countryId?.isoCode)
+            fetchCities(labAddress?.stateId?.isoCode)
+            setAddressData({...labAddress,stateId:labAddress?.stateId?._id,cityId:labAddress?.cityId?._id,countryId:labAddress?.countryId?._id})
         }
         if (labImg) {
             setLabImages(labImg)
@@ -384,7 +398,45 @@ function EditProfile() {
             labImg: prev.labImg?.filter((_, i) => i !== index)
         }));
     };
+    async function fetchCountries() {
+        setLoading(true)
+        try {
+            const response = await getApiData('api/location/countries')
+            const data = await response
+            setCountries(data)
+        } catch (error) {
 
+        } finally {
+            setLoading(false)
+        }
+    }
+    useEffect(() => {
+        fetchCountries()
+    }, [])
+    async function fetchStates(value) {
+        setLoading(true)
+        try {
+            const response = await getApiData(`api/location/states/${value}`)
+            const data = await response
+            setStates(data)
+        } catch (error) {
+
+        } finally {
+            setLoading(false)
+        }
+    }
+    async function fetchCities(value) {
+        setLoading(true)
+        try {
+            const response = await getApiData(`api/location/cities/${value}`)
+            const data = await response
+            setCities(data)
+        } catch (error) {
+
+        } finally {
+            setLoading(false)
+        }
+    }
 
     return (
         <>
@@ -604,7 +656,7 @@ function EditProfile() {
                                                     </div>
 
                                                     <div className="d-flex justify-content-end gap-3">
-                                                        <button onClick={()=>navigate('/approve-profile')} type="button" className="nw-filtr-thm-btn outline">Cancel</button>
+                                                        <button onClick={() => navigate('/approve-profile')} type="button" className="nw-filtr-thm-btn outline">Cancel</button>
                                                         <button type="submit" className="nw-filtr-thm-btn">Save</button>
                                                     </div>
 
@@ -702,9 +754,9 @@ function EditProfile() {
                                                                         id="fileInput2"
                                                                         name="labImg"
                                                                         multiple
-                                                                        disabled={labImages?.labImg?.length ===3}
+                                                                        disabled={labImages?.labImg?.length === 3}
                                                                         onChange={handleLabImagesChange}
-                                                                        max={3 -labImages?.labImg?.length}
+                                                                        max={3 - labImages?.labImg?.length}
                                                                         accept=".png,.jpg,.jpeg"
                                                                     />
 
@@ -786,7 +838,7 @@ function EditProfile() {
                                                     <div className="col-lg-6">
                                                         <div className="custom-frm-bx">
                                                             <label htmlFor="">Country</label>
-                                                            <input
+                                                            {/* <input
                                                                 type="text"
                                                                 className="form-control patient-frm-control"
                                                                 placeholder=""
@@ -794,35 +846,34 @@ function EditProfile() {
                                                                 name="country"
                                                                 onChange={addressChange}
                                                                 value={addressData?.country}
-                                                            />
+                                                            /> */}
+                                                            <select name="countryId" value={addressData.countryId} onChange={addressChange} id="" className="form-select">
+                                                                <option value="">---Select Country---</option>
+                                                                {countries?.map((item, key) =>
+                                                                    <option value={item?._id} key={key}>{item?.name}</option>)}
+                                                            </select>
                                                         </div>
                                                     </div>
 
                                                     <div className="col-lg-6">
                                                         <div className="custom-frm-bx">
                                                             <label htmlFor="">State</label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control patient-frm-control"
-                                                                required
-                                                                name="state"
-                                                                onChange={addressChange}
-                                                                value={addressData?.state}
-                                                            />
+                                                            <select name="stateId" value={addressData.stateId} onChange={addressChange} id="" className="form-select">
+                                                                <option value="">---Select State---</option>
+                                                                {states?.map((item, key) =>
+                                                                    <option value={item?._id} key={key}>{item?.name}</option>)}
+                                                            </select>
                                                         </div>
                                                     </div>
 
                                                     <div className="col-lg-6">
                                                         <div className="custom-frm-bx">
                                                             <label htmlFor="">City</label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control patient-frm-control"
-                                                                required
-                                                                name="city"
-                                                                onChange={addressChange}
-                                                                value={addressData?.city}
-                                                            />
+                                                            <select name="cityId" value={addressData.cityId} onChange={addressChange} id="" className="form-select">
+                                                                <option value="">---Select City---</option>
+                                                                {cities?.map((item, key) =>
+                                                                    <option value={item?._id} key={key}>{item?.name}</option>)}
+                                                            </select>
                                                         </div>
                                                     </div>
 

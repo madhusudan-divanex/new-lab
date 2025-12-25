@@ -6,21 +6,26 @@ import { FaCloudUploadAlt } from "react-icons/fa";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { postApiData, securePostData } from "../../services/api";
+import { getApiData, postApiData, securePostData } from "../../services/api";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserDetail } from "../../redux/features/userSlice";
+import Loader from "../Layouts/Loader";
 
 
 function CreateAccountAddress() {
     const navigate = useNavigate()
-    const dispatch=useDispatch()
+    const dispatch = useDispatch()
     const userId = localStorage.getItem('userId')
     const { labAddress } = useSelector(state => state.user)
+    const [countries, setCountries] = useState([])
+    const [states, setStates] = useState([])
+    const [cities, setCities] = useState([])
+    const [loading,setLoading] =useState(false)
     const [formData, setFormData] = useState({
         fullAddress: "",
-        country: "",
-        state: "",
-        city: "",
+        countryId: "",
+        stateId: "",
+        cityId: "",
         pinCode: "",
         userId
     });
@@ -37,7 +42,16 @@ function CreateAccountAddress() {
                 [name]: value
             }));
         }
+        if (name === 'countryId' && value) {
+            const data = countries?.filter(item => item?._id === value)
+            fetchStates(data[0].isoCode);
+        }
+        if (name === 'stateId' && value) {
+            const data = states?.filter(item => item?._id === value)
+            fetchCities(data[0].isoCode);
+        }
     };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -54,9 +68,49 @@ function CreateAccountAddress() {
             console.error("Error creating lab:", err);
         }
     };
-    useEffect(()=>{
+
+    async function fetchCountries() {
+        setLoading(true)
+        try {
+            const response = await getApiData('api/location/countries')
+            const data = await response
+            setCountries(data)
+        } catch (error) {
+
+        } finally{
+            setLoading(false)
+        }
+    }
+    useEffect(() => {
+        fetchCountries()
+    }, [])
+    async function fetchStates(value) {
+        setLoading(true)
+        try {
+            const response = await getApiData(`api/location/states/${value}`)
+            const data = await response
+            setStates(data)
+        } catch (error) {
+
+        } finally{
+            setLoading(false)
+        }
+    }
+    async function fetchCities(value) {
+        setLoading(true)
+        try {
+            const response = await getApiData(`api/location/cities/${value}`)
+            const data = await response
+            setCities(data)
+        } catch (error) {
+
+        }finally{
+            setLoading(false)
+        }
+    }
+    useEffect(() => {
         dispatch(fetchUserDetail())
-    },[dispatch])
+    }, [dispatch])
     useEffect(() => {
         if (labAddress) {
             navigate('/create-account-person')
@@ -64,7 +118,8 @@ function CreateAccountAddress() {
     }, [labAddress])
     return (
         <>
-            <section className="admin-login-section account-lg-section nw-create-account-section">
+            {loading?<Loader/>
+            :<section className="admin-login-section account-lg-section nw-create-account-section">
                 <div className="container-fluid px-lg-0">
                     <div className="row justify-content-center mb-4">
                         <div className="col-lg-8">
@@ -139,25 +194,28 @@ function CreateAccountAddress() {
 
                                         <div className="custom-frm-bx">
                                             <label htmlFor="">Country</label>
-                                            <select name="country" value={formData.country} onChange={handleChange} id="" className="form-select">
+                                            <select name="countryId" value={formData.countryId} onChange={handleChange} id="" className="form-select">
                                                 <option value="">---Select Country---</option>
-                                                <option value="India">India</option>
+                                                {countries?.map((item, key) =>
+                                                    <option value={item?._id} key={key}>{item?.name}</option>)}
                                             </select>
                                         </div>
 
                                         <div className="custom-frm-bx">
                                             <label htmlFor="">State</label>
-                                            <select name="state" value={formData.state} onChange={handleChange} id="" className="form-select">
+                                            <select name="stateId" value={formData.stateId} onChange={handleChange} id="" className="form-select">
                                                 <option value="">---Select State---</option>
-                                                <option value="Rajasthan">Rajasthan</option>
+                                                {states?.map((item, key) =>
+                                                    <option value={item?._id} key={key}>{item?.name}</option>)}
                                             </select>
                                         </div>
 
                                         <div className="custom-frm-bx">
                                             <label htmlFor="">City</label>
-                                            <select name="city" value={formData.city} onChange={handleChange} id="" className="form-select">
+                                            <select name="cityId" value={formData.cityId} onChange={handleChange} id="" className="form-select">
                                                 <option value="">---Select City---</option>
-                                                <option value="Jaipur">Jaipur</option>
+                                                {cities?.map((item, key) =>
+                                                    <option value={item?._id} key={key}>{item?.name}</option>)}
                                             </select>
                                         </div>
 
@@ -191,7 +249,7 @@ function CreateAccountAddress() {
                     </div>
 
                 </div>
-            </section>
+            </section>}
         </>
     )
 }

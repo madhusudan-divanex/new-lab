@@ -59,6 +59,7 @@ function Permission() {
         const response = await securePostData(`lab/permission`, data);
         if (response.success) {
           setName('')
+          fetchLabPermission()
           toast.success("Permission created")
         } else {
           toast.error(response.message)
@@ -178,7 +179,7 @@ function Permission() {
                     {permissions?.length > 0 &&
                       permissions?.map((item, key) =>
                         <tr key={key}>
-                          <td>01.</td>
+                          <td>{key+1}.</td>
                           <td>
                             {item?.name}
                           </td>
