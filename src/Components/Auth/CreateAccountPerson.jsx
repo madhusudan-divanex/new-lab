@@ -76,11 +76,6 @@ function CreateAccountPerson() {
             console.error("Error creating lab:", err);
         }
     };
-    useEffect(()=>{
-        if(labPerson){
-            navigate('/create-account-upload')
-        }
-    },[labPerson])
     return (
         <>
             <section className="admin-login-section account-lg-section nw-create-account-section">

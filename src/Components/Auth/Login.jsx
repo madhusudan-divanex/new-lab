@@ -34,6 +34,10 @@ function Login() {
 
 
         toast.success('Login successfully')
+        if(response.nextStep){
+          navigate(response.nextStep)
+          return
+        }
         if (response.user.status == 'pending') {
           navigate('/wating-for-approval')
           return

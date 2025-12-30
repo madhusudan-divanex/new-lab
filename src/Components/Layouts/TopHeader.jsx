@@ -15,7 +15,7 @@ function TopHeader() {
   const dispatch = useDispatch()
   const [ptId, setPtId] = useState(null)
   const [scannerOpen, setScannerOpen] = useState(false)
-  const { profiles, labPerson, labAddress, labImg,empData,isOwner,
+  const { profiles, labPerson, labAddress, labImg,empData,isOwner,customId,
     rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
   useEffect(() => {
     dispatch(fetchUserDetail())
@@ -159,7 +159,7 @@ function TopHeader() {
                     <div className="profile-info">
                       {/* <span className="profile-role">Admin</span> */}
                       <h4 className="profile-name">{isOwner? labPerson?.name:empData?.name}</h4>
-                      <p className="profile-id">ID : {isOwner? profiles?.customId:empData?._id?.slice(-10)}</p>
+                      <p className="profile-id">ID : {isOwner? customId:empData?._id?.slice(-10)}</p>
                     </div>
                   </div>
                   <div className="profile-logout-box">

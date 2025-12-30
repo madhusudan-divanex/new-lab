@@ -61,6 +61,7 @@ const userSlice = createSlice({
         isOwner: localStorage.getItem('isOwner') === 'true' ?true:false, // <-- read from localStorage
         permissions: JSON.parse(localStorage.getItem('permissions')) || null,
         empData:null,
+        customId:null
     },
     reducers: {
         clearProfiles: (state) => {
@@ -98,6 +99,7 @@ const userSlice = createSlice({
                 state.labPerson = action.payload.labPerson;
                 state.isRequest = action.payload.isRequest
                 state.labLicense = action.payload.labLicense;
+                state.customId = action.payload.customId;
                 state.isOwner = localStorage.getItem('isOwner') === 'true' ?true:false;
                 state.permissions= JSON.parse(localStorage.getItem('permissions')) || null;
             })

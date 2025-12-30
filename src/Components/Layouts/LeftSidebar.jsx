@@ -25,7 +25,7 @@ function LeftSidebar() {
 
   const {
     profiles,
-    labPerson, empData, isOwner
+    labPerson, empData, isOwner,customId
   } = useSelector((state) => state.user);
 
   useEffect(() => {
@@ -77,7 +77,7 @@ function LeftSidebar() {
                   <h6 className="new_title fw-500 mb-0">
                     {isOwner ? labPerson?.name : empData?.name}
                   </h6>
-                  <p>#{isOwner ? profiles?.customId : empData?._id?.slice(-10)}</p>
+                  <p>#{isOwner ? customId : empData?._id?.slice(-10)}</p>
                 </div>
               </div>
             </NavLink>

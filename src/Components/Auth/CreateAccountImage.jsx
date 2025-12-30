@@ -58,11 +58,6 @@ function CreateAccountImage() {
     useEffect(() => {
         dispatch(fetchUserDetail())
     }, [dispatch])
-    useEffect(() => {
-        if (labImg) {
-            navigate('/create-account-address')
-        }
-    }, [labImg])
     return (
         <>
             <section className="admin-login-section account-lg-section nw-create-account-section">
