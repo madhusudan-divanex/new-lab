@@ -19,9 +19,10 @@ import Loader from "../Layouts/Loader";
 function Profile() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const [labAddressData,setLabAddressData]=useState()
   const userId = localStorage.getItem("userId")
   const { profiles, labPerson, labAddress, labImg,
-    rating, avgRating, labLicense, isRequest,loading } = useSelector(state => state.user)
+    rating, avgRating, labLicense, isRequest,loading,customId } = useSelector(state => state.user)
   const [message, setMessage] = useState('')
 
   const fetchLabDetail = async (e) => {
@@ -77,6 +78,7 @@ function Profile() {
       const response = await securePostData(`lab/edit-request`, data);
       if (response.success) {
         setMessage('')
+        dispatch(fetchUserDetail())
         toast.success("You request was sent!")
       } else {
         toast.error(response.message)
@@ -130,7 +132,7 @@ function Profile() {
                 </nav>
               </div>
             </div>
-            {(!isRequest && !profiles?.allowEdit) && <div className="add-nw-bx">
+            {!isRequest  && <div className="add-nw-bx">
               <a href="javascript:void(0)" className="add-nw-btn nw-thm-btn sub-nw-brd-tbn" data-bs-toggle="modal" data-bs-target="#edit-Request" >
                 Send Profile Edit Request
               </a>
@@ -237,7 +239,7 @@ function Profile() {
 
                                 <div>
                                   <h4 className="lg_title ">{profiles?.name}</h4>
-                                  <p className="first_para">ID : #{profiles?.customId}</p>
+                                  <p className="first_para">ID : #{customId}</p>
                                 </div>
                               </div>
                               <div className="d-flex align-items-center justify-content-center gap-2 carding-bx">

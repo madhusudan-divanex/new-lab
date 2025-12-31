@@ -993,7 +993,7 @@ console.log(staffId)
                                                             className="form-control "
                                                             placeholder="Enter  Total Experience"
                                                             value={employmentInfo?.onLeaveDate}
-                                                            required
+                                                            // required
                                                             name="onLeaveDate"
                                                             onChange={handleEmploymentChange}
                                                         />

@@ -142,7 +142,7 @@ function TopHeader() {
                 aria-expanded="false"
               >
                 <div className="admn-icon me-2">
-                  <img src={isOwner ? `${base_url}/${profiles?.logo}` : empData?.profileImage} alt="" />
+                  <img src={isOwner ? `${base_url}/${profiles?.logo}` : `${base_url}/${empData?.profileImage}`} alt="" />
                 </div>
               </a>
               <ul
@@ -152,7 +152,7 @@ function TopHeader() {
                 <div className="profile-card-box">
                   <div className="profile-top-section">
                     <img
-                      src={isOwner ? `${base_url}/${profiles?.logo}` : empData?.profileImage}
+                      src={isOwner ? `${base_url}/${profiles?.logo}` : `${base_url}/${empData?.profileImage}`}
                       alt="Profile"
                       className="profile-image"
                     />

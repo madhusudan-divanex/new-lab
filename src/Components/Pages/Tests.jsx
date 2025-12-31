@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { deleteApiData, getSecureApiData, securePostData } from "../../services/api";
 import { useSelector } from "react-redux";
+import Loader from "../Layouts/Loader";
 
 function Tests() {
     const navigate= useNavigate()
@@ -12,9 +13,11 @@ function Tests() {
     const [totalPages, setTotalPages] = useState(1)
     const userId = localStorage.getItem('userId')
     const [name, setName] = useState('')
+    const [loading,setLoading] =useState(false)
     const { isOwner, permissions } = useSelector(state => state.user)
     const [allTest, setAllTest] = useState([])
     const fetchLabTest = async () => {
+        setLoading(true)
         try {
             const response = await getSecureApiData(`lab/test/${userId}?page=${currentPage}&name=${name}`);
             if (response.success) {
@@ -27,6 +30,8 @@ function Tests() {
             }
         } catch (err) {
             console.error("Error creating lab:", err);
+        } finally{
+            setLoading(false)
         }
     }
     const testAction = async (e, id, status) => {
@@ -63,12 +68,12 @@ function Tests() {
     useEffect(() => {
         setTimeout(() => {
             fetchLabTest()
-
         }, 800)
     }, [name])
     return (
         <>
-            <div className="main-content flex-grow-1 p-3 overflow-auto">
+            {loading?<Loader/>
+            :<div className="main-content flex-grow-1 p-3 overflow-auto">
                 <div className="row">
                     <div className="d-flex align-items-center justify-content-between">
                         <div>
@@ -291,7 +296,7 @@ function Tests() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>}
         </>
     );
 }

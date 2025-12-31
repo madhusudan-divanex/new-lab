@@ -8,10 +8,12 @@ import { useEffect, useState } from "react";
 import base_url from "../../../baseUrl";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserDetail } from "../../redux/features/userSlice";
+import Loader from "../Layouts/Loader";
 function Dashboard() {
   const [rpData, setRpData] = useState({})
   const [totalTest,setTotalTest]=useState(0)
   const [testReport,setTestReport]=useState()
+  const [loading,setLoading] =useState(false)
   const {isOwner,permissions}=useSelector(state=>state.user)
   const labReports = {
     series: [rpData?.deliverRequest ||0,rpData?.pendingTestRequest|| 0, rpData?.pendingReport ||0], 
@@ -85,7 +87,6 @@ function Dashboard() {
       console.error("Error creating lab:", err);
     }
   }
-  console.log(isOwner,permissions)
   const appointmentAction = async (e, type) => {
     e.preventDefault()
     let data = {}
@@ -128,6 +129,7 @@ function Dashboard() {
     }
   }
   const labDashboard = async () => {
+    setLoading(true)
     try {
       const response = await getSecureApiData(`lab/dashboard/${userId}`);
       if (response.success) {
@@ -139,11 +141,14 @@ function Dashboard() {
       }
     } catch (err) {
       console.error("Error creating lab:", err);
+    } finally{
+      setLoading(false)
     }
   }
   return (
     <>
-      <div className="main-content flex-grow-1 p-3 overflow-auto">
+      {loading?<Loader/>
+      :<div className="main-content flex-grow-1 p-3 overflow-auto">
         <div className="row">
           <div>
             <h3 className="innr-title">Dashboard</h3>
@@ -558,7 +563,7 @@ function Dashboard() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
     </>
   );
 }

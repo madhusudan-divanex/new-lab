@@ -27,12 +27,14 @@ function PatientsView() {
     const [demographicData, setDemographicData] = useState()
     const [prescriptionData, setPrescriptionData] = useState()
     const [labAppointments, setLabAppointments] = useState([])
+    const [customId,setCustomId]=useState()
     const [labReports, setLabReports] = useState([])
     const fetchPatient = async () => {
         try {
             const response = await getSecureApiData(`patient/detail/${patientId}`);
             if (response.success) {
                 setPtData(response.user)
+                setCustomId(response.customId)
                 setMedicalHistory(response.medicalHistory)
                 setDemographicData(response.demographic)
                 setPrescriptionData(response.prescription?.prescriptions)
@@ -141,7 +143,7 @@ function PatientsView() {
                                     <div className="view-avatr-bio-bx text-center">
                                         <img src={ptData?.profileImage ? `${base_url}/${ptData?.profileImage}` : "/view-avatr.png"} alt="" />
                                         <h4>{ptData?.name}</h4>
-                                        <p><span className="vw-id">ID:</span> {ptData?.customId}</p>
+                                        <p><span className="vw-id">ID:</span> {customId}</p>
                                         <h6 className="vw-activ text-capitalize">{ptData?.status}</h6>
 
                                     </div>

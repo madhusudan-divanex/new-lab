@@ -69,7 +69,7 @@ function LeftSidebar() {
                   src={
                     isOwner
                       ? `${base_url}/${profiles?.logo}`
-                      : empData?.profileImage
+                      : `${base_url}/${empData?.profileImage}`
                   }
                   alt=""
                 />
@@ -129,17 +129,17 @@ function LeftSidebar() {
                 </NavLink>
               </li>
 
-              <li className="nav-item">
+              {isOwner &&<li className="nav-item">
                 <NavLink to="/employee-list" className={active("/employee-list")}>
                   <FontAwesomeIcon icon={faUsers} /> Employees/Doctor
                 </NavLink>
-              </li>
+              </li>}
 
-              <li className="nav-item">
+              {isOwner &&<li className="nav-item">
                 <NavLink to="/permission" className={active("/permission")}>
                   <FontAwesomeIcon icon={faKey} /> Permission
                 </NavLink>
-              </li>
+              </li>}
 
               <li className="nav-item">
                 <NavLink
@@ -154,14 +154,14 @@ function LeftSidebar() {
                 </NavLink>
               </li>
 
-              <li className="nav-item">
+              {isOwner &&<li className="nav-item">
                 <NavLink
                   to="/change-password"
                   className={active("/change-password")}
                 >
                   <FontAwesomeIcon icon={faLock} /> Change Password
                 </NavLink>
-              </li>
+              </li>}
 
               <li className="nav-item">
                 <NavLink to="/login" className={active("/login")}>

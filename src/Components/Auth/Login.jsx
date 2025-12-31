@@ -6,11 +6,13 @@ import { toast } from 'react-toastify'
 import { useState } from 'react'
 import { fetchEmpDetail, setOwner, setPermissions } from '../../redux/features/userSlice'
 import { useDispatch } from 'react-redux'
+import Loader from '../Layouts/Loader'
 
 
 function Login() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const [loading,setLoading] =useState(false)
   const [isShow, setIsShow] = useState(false)
   const userId = localStorage.getItem('userId')
   const [formData, setFormData] = useState({
@@ -19,6 +21,7 @@ function Login() {
   });
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true)
     try {
       const response = await postApiData('lab/signin', formData)
       if (response.success) {
@@ -50,11 +53,14 @@ function Login() {
       }
     } catch (err) {
       console.error("Error creating lab:", err);
+    } finally{
+      setLoading(false)
     }
   };
   return (
     <>
-      <section className="admin-login-section ">
+      {loading?<Loader/>
+      :<section className="admin-login-section ">
         <div className="container-fluid ">
           <div className="row">
             <div className="col-lg-6 col-md-12 col-sm-12 px-0 mb-sm-3 mb-lg-0">
@@ -131,7 +137,7 @@ function Login() {
             </div>
           </div>
         </div>
-      </section>
+      </section>}
     </>
   )
 }
