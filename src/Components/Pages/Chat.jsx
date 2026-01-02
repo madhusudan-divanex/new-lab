@@ -45,8 +45,7 @@ function Chat() {
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
-    const myUser = JSON.parse(localStorage.getItem("user"));
-    const myUserId = myUser?.id;
+    const myUserId = localStorage.getItem("userId");
     const SERVER_BASE_URL = base_url;
 
 
@@ -82,7 +81,7 @@ function Chat() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const res = await securePostData("/chat/upload", formData);
+        const res = await securePostData("api/chat/upload", formData);
 
         socketRef.current.emit("send-message", {
             toUserId: selectedChat.participants[0]._id,
@@ -299,6 +298,13 @@ function Chat() {
         });
 
         socketRef.current.on("receive-message", (msg) => {
+            getSecureApiData("api/chat/conversations").then((res) => {
+                setChatList(res.data);
+                if(selectedChat==null){
+                    setSelectedChat(res.data[0])
+                    openChat(res.data[0])
+                }
+            });
             setMessages((prev) => [...prev, msg]);
         });
 
@@ -351,9 +357,9 @@ function Chat() {
     useEffect(() => {
         getSecureApiData("api/chat/conversations").then((res) => {
             setChatList(res.data);
-            if(selectedChat==null){
-                setSelectedChat(res.data[0])
-            }
+            // if(selectedChat==null){
+            //     setSelectedChat(res.data[0])
+            // }
         });
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, []);

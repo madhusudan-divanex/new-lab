@@ -165,7 +165,8 @@ function ReportView() {
   return (
 
     <>
-      {loading ? <Loader/>:<div className="main-content flex-grow-1 p-3 overflow-auto">
+      {loading ? <Loader/>:
+      <div className="main-content flex-grow-1 p-3 overflow-auto">
         <form action="">
           <div className="row mb-3">
             <div className="d-flex align-items-center justify-content-between">

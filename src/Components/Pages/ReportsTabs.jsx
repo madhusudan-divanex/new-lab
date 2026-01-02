@@ -298,8 +298,6 @@ function ReportsTabs() {
         try {
             const response = await securePostData(`appointment/lab`, data)
             if (response.success) {
-
-                handleBack(e, "#profile-tab");
                 // setTestId(response.data.testId)
                 // setAppointmentData(response.data)
             } else {
