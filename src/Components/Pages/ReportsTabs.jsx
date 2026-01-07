@@ -1022,8 +1022,8 @@ function ReportsTabs() {
 
                                                                     {appointmentData?.doctorId && <div className="laboratory-bill-bx laboratory-sub-bx">
                                                                         <h6 className="my-0">Doctor </h6>
-                                                                        <h4>Dr. Ravi Kumar</h4>
-                                                                        <p><span className="laboratory-phne"> ID :</span> OID-7C1B48  </p>
+                                                                        <h4>Dr. {appointmentData?.doctorId?.name}</h4>
+                                                                        <p><span className="laboratory-phne"> ID :</span> {appointmentData?.doctorId?.unique_id}  </p>
                                                                     </div>}
                                                                 </div>
                                                             </div>
@@ -1101,8 +1101,8 @@ function ReportsTabs() {
 
                                                             {appointmentData?.doctorId && <div className="laboratory-bill-bx">
                                                                 <h6>Lab tests prescribed by the doctor</h6>
-                                                                <h4>Dr.James Harris</h4>
-                                                                <p><span className="laboratory-phne">ID :</span>DO-7668</p>
+                                                                <h4>Dr.{appointmentData?.doctorId?.name}</h4>
+                                                                <p><span className="laboratory-phne">ID :</span>{appointmentData?.doctorId?.unique_id}</p>
                                                             </div>}
                                                             <div className="reprt-barcd mt-3">
                                                                 <div className="barcd-scannr">

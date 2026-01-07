@@ -253,16 +253,11 @@ function ReportView() {
 
                     {appointmentData?.doctorId && <div className="laboratory-bill-bx laboratory-sub-bx">
                       <h6 className="my-0">Doctor</h6>
-                      <h4 >Aarav Mehta</h4>
-                      <p><span className="laboratory-phne">ID :</span> OID-7C1B48  </p>
+                      <h4 >{appointmentData?.doctorId?.name}</h4>
+                      <p><span className="laboratory-phne">ID :</span> {appointmentData?.doctorId?.unique_id}  </p>
                     </div>}
-
                   </div>
-
                 </div>
-
-
-
                 <div className="laboratory-report-table mt-3">
                   <div className="table table-responsive mb-0 reprt-table">
                     <table className="table mb-0">
@@ -276,7 +271,6 @@ function ReportView() {
                         </tr>
                       </thead>
                       <tbody>
-
                         {testData.map((test) => (
                           test.component.map((cmp, index) => {
                             const resultObj = allComponentResults[test._id]?.[index] || {};

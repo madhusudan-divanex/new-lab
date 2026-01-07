@@ -292,7 +292,7 @@ function PatientsView() {
                                                                                                 <img src={ptData?.profileImage ? `${base_url}/${ptData?.profileImage}` : "/admin-tb-logo.png"} alt="" />
                                                                                                 <div className="admin-table-sub-details">
                                                                                                     <h6>{ptData?.name}</h6>
-                                                                                                    <p>ID: {ptData?.customId}</p>
+                                                                                                    <p>ID: {customId}</p>
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>

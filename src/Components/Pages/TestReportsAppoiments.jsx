@@ -279,10 +279,10 @@ function TestReportsAppoiments() {
                           <td>
                             <div className="admin-table-bx">
                               <div className="admin-table-sub-bx">
-                                <img src={item?.patientId?.profileImage ? `${base_url}/${item?.patientId?.profileImage}` : "/table-avatar.jpg"} alt="" />
+                                <img src={item?.patientId?.patientId?.profileImage ? `${base_url}/${item?.patientId?.patientId?.profileImage}` : "/table-avatar.jpg"} alt="" />
                                 <div className="admin-table-sub-details">
                                   <h6>{item?.patientId?.name} </h6>
-                                  <p>ID: {item?.patientId?.customId}</p>
+                                  <p>ID: {item?.patientId?.unique_id}</p>
                                 </div>
                               </div>
                             </div>
