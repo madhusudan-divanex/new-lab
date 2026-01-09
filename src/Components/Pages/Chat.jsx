@@ -7,6 +7,7 @@ import { io } from "socket.io-client";
 import { getApiData, getSecureApiData, securePostData } from "../../Services/api";
 import AudioWaveform from "../AudioWaveform";
 import base_url from "../../../baseUrl";
+import '../../assets/css/chat.css'
 function Chat() {
     const ringtoneRef = useRef(null);
     const [callSeconds, setCallSeconds] = useState(0);
@@ -300,7 +301,7 @@ function Chat() {
         socketRef.current.on("receive-message", (msg) => {
             getSecureApiData("api/chat/conversations").then((res) => {
                 setChatList(res.data);
-                if(selectedChat==null){
+                if (selectedChat == null) {
                     setSelectedChat(res.data[0])
                     openChat(res.data[0])
                 }
@@ -534,6 +535,21 @@ function Chat() {
             return exists ? prev : [conversation, ...prev];
         });
     };
+    let typingTimeout;
+
+    const handleTyping = (value) => {
+        socketRef.current.emit("typing", {
+            toUserId: selectedChat.participants[0]._id,
+        });
+
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            socketRef.current.emit("stop-typing", {
+                toUserId: selectedChat.participants[0]._id,
+            });
+        }, 1000);
+    };
+
     return (
         <>
             <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -689,7 +705,7 @@ function Chat() {
                                                             }`}
                                                     >
                                                         {msg.message && (
-                                                            <p className={isMe&&"text-white"}>{msg.message}</p>
+                                                            <p className={isMe && "text-white"}>{msg.message}</p>
                                                         )}
                                                         {msg.file && (
                                                             msg.file.type?.startsWith("audio/") ? (
@@ -759,7 +775,14 @@ function Chat() {
                                             type="text"
                                             className="form-control px-5"
                                             value={message}
-                                            onChange={(e) => setMessage(e.target.value)}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setMessage(value);
+
+                                                if (value.length > 0) {
+                                                    handleTyping(value);
+                                                }
+                                            }}
                                             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                                         />
 
@@ -829,6 +852,76 @@ function Chat() {
 
 
             </div>
+            {(incomingCall || callActive) && (
+                <div className="call-modal">
+                    <div className="call-header">
+                        <h4>
+                            {incomingCall ? "Incoming" : "Ongoing"} {callType} Call
+                        </h4>
+                        {callActive && (
+                            <span className="call-timer">
+                                ⏱ {formatTime(callSeconds)}
+                            </span>
+                        )}
+                        <p>{selectedChat?.participants[0]?.name || "User"}</p>
+                    </div>
+
+                    {/* BODY */}
+                    <div className="call-body">
+                        {callType === "video" ? (
+                            <>
+                                <video
+                                    ref={remoteVideoRef}
+                                    autoPlay
+                                    playsInline
+                                    className="remote-video"
+                                />
+                                <video
+                                    ref={localVideoRef}
+                                    autoPlay
+                                    muted
+                                    playsInline
+                                    className="local-video"
+                                />
+                            </>
+                        ) : (
+                            <div className="voice-call-ui">
+                                <img src="/profile.png" className="caller-avatar" />
+                                <div className="voice-wave"></div>
+                                <p>{incomingCall ? "Ringing..." : "Call in progress"}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* FOOTER */}
+                    <div className="call-footer">
+                        {incomingCall ? (
+                            <>
+                                <button className="btn accept" onClick={acceptCall}>
+                                    Accept
+                                </button>
+                                <button className="btn reject" onClick={rejectCall}>
+                                    Reject
+                                </button>
+                            </>
+                        ) : (
+                            <button className="btn end" onClick={endCall}>
+                                End Call
+                            </button>
+                        )}
+                    </div>
+
+                    {incomingCall && (
+                        <audio
+                            ref={ringtoneRef}
+                            autoPlay
+                            loop
+                            src="/ringtone.mp3"
+                        />
+                    )}
+                </div>
+            )}
+            <audio ref={remoteAudioRef} autoPlay />
         </>
     )
 }

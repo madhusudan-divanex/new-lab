@@ -11,6 +11,114 @@
 
 
 </head>
+<style>
+    .chat-container {
+  max-height: 100vh;
+  overflow-y: auto;
+}
+.call-modal {
+  position: fixed;
+  inset: 0;
+  background: #0f172a;
+  color: #fff;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.call-header {
+  text-align: center;
+  padding: 20px;
+}
+
+.call-header h4 {
+  margin-bottom: 5px;
+}
+
+.call-body {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* VIDEO */
+.remote-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.local-video {
+  position: absolute;
+  bottom: 100px;
+  right: 20px;
+  width: 120px;
+  height: 160px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid #fff;
+}
+
+/* VOICE CALL */
+.voice-call-ui {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.caller-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin-bottom: 20px;
+}
+
+.voice-wave {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px solid #38bdf8;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.5; }
+}
+
+/* FOOTER */
+.call-footer {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 25px;
+}
+
+.btn {
+  padding: 14px 25px;
+  border-radius: 50px;
+  border: none;
+  font-size: 16px;
+  color: white !important;
+  cursor: pointer;
+}
+
+.accept {
+  background: #22c55e;
+  color: #fff !important;
+}
+
+.reject,
+.end {
+  background: #ef4444;
+  color: #fff !important;
+}
+
+  </style>
 
 <body>
   <div id="root"></div>
