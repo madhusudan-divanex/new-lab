@@ -7,7 +7,6 @@ import {
   faShareNodes
 } from "@fortawesome/free-solid-svg-icons";
 import { NavLink, useNavigate } from "react-router-dom";
-import { getSecureApiData, securePostData } from "../../services/api";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
@@ -16,6 +15,7 @@ import base_url from "../../../baseUrl";
 import html2canvas from "html2canvas";
 import QRCode from "react-qr-code";
 import Loader from "../Layouts/Loader";
+import { getSecureApiData } from "../../Services/api";
 function Profile() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
@@ -24,7 +24,6 @@ function Profile() {
   const { profiles, labPerson, labAddress, labImg,
     rating, avgRating, labLicense, isRequest,loading,customId } = useSelector(state => state.user)
   const [message, setMessage] = useState('')
-
   const fetchLabDetail = async (e) => {
     try {
       const response = await getSecureApiData(`lab/detail/${userId}`);
@@ -252,7 +251,7 @@ function Profile() {
                                     <h6>LAB{profiles?.customId}</h6>
                                   </div>
                                   <QRCode
-                                    value="691ee677c18c1233339c9e2a"
+                                    readOnly value="691ee677c18c1233339c9e2a"
                                     size={256}
                                     className="qr-code"
                                     style={{ height: "auto", maxWidth: "100%", width: "20%" }}
@@ -262,7 +261,7 @@ function Profile() {
                                   {/* <QRCode
                                     size={256}
                                     viewBox={`0 0 256 256`}
-                                    value={profiles?._id || ""}
+                                    readOnly value={profiles?._id || ""}
                                   /> */}
 
                                 </div>
@@ -285,7 +284,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={profiles?.name}
+                                readOnly value={profiles?.name}
                               />
                             </div>
                           </div>
@@ -297,7 +296,7 @@ function Profile() {
                                 type="number"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={profiles?.contactNumber}
+                                readOnly value={profiles?.contactNumber}
                               />
                             </div>
                           </div>
@@ -309,7 +308,7 @@ function Profile() {
                                 type="email"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={profiles?.email}
+                                readOnly value={profiles?.email}
                               />
                             </div>
                           </div>
@@ -321,7 +320,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={profiles?.gstNumber}
+                                readOnly value={profiles?.gstNumber}
                               />
                             </div>
                           </div>
@@ -329,7 +328,7 @@ function Profile() {
                           <div className="col-lg-12">
                             <div className="custom-frm-bx">
                               <label htmlFor="">About</label>
-                              <textarea name="" id="" className="form-control patient-frm-control" value={profiles?.about}></textarea>
+                              <textarea name="" id="" className="form-control patient-frm-control" readOnly value={profiles?.about}></textarea>
                             </div>
                           </div>
                         </div>
@@ -382,7 +381,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labAddress?.fullAddress}
+                                readOnly value={labAddress?.fullAddress}
                               />
                             </div>
                           </div>
@@ -394,7 +393,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labAddress?.countryId?.name}
+                                readOnly value={labAddress?.countryId?.name}
                               />
                             </div>
                           </div>
@@ -406,7 +405,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labAddress?.stateId?.name}
+                                readOnly value={labAddress?.stateId?.name}
                               />
                             </div>
                           </div>
@@ -418,7 +417,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labAddress?.cityId?.name}
+                                readOnly value={labAddress?.cityId?.name}
                               />
                             </div>
                           </div>
@@ -430,7 +429,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labAddress?.pinCode}
+                                readOnly value={labAddress?.pinCode}
                               />
                             </div>
                           </div>
@@ -451,7 +450,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labLicense?.labLicenseNumber}
+                                readOnly value={labLicense?.labLicenseNumber}
                               />
                             </div>
                           </div>
@@ -486,7 +485,7 @@ function Profile() {
                                     type="email"
                                     className="form-control patient-frm-control"
                                     placeholder=""
-                                    value={item?.certName}
+                                    readOnly value={item?.certName}
                                   />
                                 </div>
                               </div>
@@ -546,7 +545,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labPerson?.name}
+                                readOnly value={labPerson?.name}
                               />
                             </div>
                           </div>
@@ -558,7 +557,7 @@ function Profile() {
                                 type="number"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labPerson?.contactNumber}
+                                readOnly value={labPerson?.contactNumber}
                               />
                             </div>
                           </div>
@@ -570,7 +569,7 @@ function Profile() {
                                 type="email"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labPerson?.email}
+                                readOnly value={labPerson?.email}
                               />
                             </div>
                           </div>
@@ -582,7 +581,7 @@ function Profile() {
                                 type="text"
                                 className="form-control patient-frm-control"
                                 placeholder=""
-                                value={labPerson?.gender}
+                                readOnly value={labPerson?.gender}
                               />
                             </div>
                           </div>
@@ -628,7 +627,7 @@ function Profile() {
 
                   <div className="custom-frm-bx">
                     <label htmlFor="">Note</label>
-                    <textarea name="" value={message} required onChange={(e) => setMessage(e.target.value)} id="" className="form-control"></textarea>
+                    <textarea name="" readOnly value={message} required onChange={(e) => setMessage(e.target.value)} id="" className="form-control"></textarea>
 
                   </div>
 

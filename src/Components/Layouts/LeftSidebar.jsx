@@ -24,7 +24,7 @@ function LeftSidebar() {
   const { pathname } = useLocation();
 
   const {
-    profiles,
+    profiles,allowEdit,
     labPerson, empData, isOwner,customId
   } = useSelector((state) => state.user);
 
@@ -143,9 +143,9 @@ function LeftSidebar() {
 
               <li className="nav-item">
                 <NavLink
-                  to={profiles?.allowEdit ? "/approve-profile" : "/profile"}
+                  to={allowEdit ? "/approve-profile" : "/profile"}
                   className={active(
-                    profiles?.allowEdit
+                    allowEdit
                       ? "/approve-profile"
                       : "/profile"
                   )}

@@ -56,6 +56,7 @@ const userSlice = createSlice({
         avgRating: null,
         labLicense: null,
         isRequest: null,
+        allowEdit:null,
         loading: false,
         error: null,
         isOwner: localStorage.getItem('isOwner') === 'true' ?true:false, // <-- read from localStorage
@@ -98,6 +99,7 @@ const userSlice = createSlice({
                 state.avgRating = action.payload.avgRating;
                 state.labPerson = action.payload.labPerson;
                 state.isRequest = action.payload.isRequest
+                state.allowEdit = action.payload.allowEdit
                 state.labLicense = action.payload.labLicense;
                 state.customId = action.payload.customId;
                 state.isOwner = localStorage.getItem('isOwner') === 'true' ?true:false;
