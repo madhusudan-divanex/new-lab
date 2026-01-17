@@ -90,7 +90,7 @@ function Router() {
           element: <ProtectedRoute component={ChangePassword} />,
         },
         {
-          path: "/patient-details",
+          path: "/patient-details/:id",
           element: <ProtectedRoute component={PatientDetails} />,
         },
         {

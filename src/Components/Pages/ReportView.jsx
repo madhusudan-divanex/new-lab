@@ -204,9 +204,10 @@ function ReportView() {
               <div className="new-invoice-card h-100">
                 <div className="">
                   <ul className="appointment-booking-list">
-                    <li className="appoint-item"> Appointment Book Date : <span className="appoint-title">{new Date(appointmentData?.date)?.toLocaleDateString()}</span></li>
-                    <li className="appoint-item"> Visited  date : <span className="appoint-title">25-11-03</span></li>
-                    <li className="appoint-item"> Appointment Completed date : <span className="appoint-title">25-11-03</span></li>
+                    <li className="appoint-item"> Appointment Book Date : <span className="appoint-title">{new Date(appointmentData?.createdAt)?.toLocaleDateString(('en-GB'))}</span></li>
+                    <li className="appoint-item"> Visited  date : <span className="appoint-title">{new Date(appointmentData?.date)?.toLocaleDateString(('en-GB'))}</span></li>
+                    <li className="appoint-item"> Appointment Completed date : <span className="appoint-title">{appointmentData?.status=='deliver-report'?
+                    new Date(appointmentData?.updatedAt)?.toLocaleDateString(('en-GB')):'-'}</span></li>
                   </ul>
                 </div>
               </div>

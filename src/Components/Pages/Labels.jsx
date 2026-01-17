@@ -183,9 +183,9 @@ function Labels() {
                             </div>
                         </div>
                         <div ref={componentRef} className="row" >
-                            {Object.keys(reportMeta)?.length>0 && testData?.map((item, key) =>
-                                <div className="col-lg-3 col-md-4 col-sm-12 mb-3" key={key}>
-                                    <div className=" barcd-scannr" >
+                            {testData?.map((item, key) =>
+                                <div className="col-lg-4 col-md-4 col-sm-12 mb-3" key={key}>
+                                    <div className=" barcd-scannr w-100" style={{maxWidth : '100%'}}>
                                         <div className="barcd-content">
                                             <h4 className="my-3">SP-{item?._id?.slice(-5)}</h4>
                                             <ul className="qrcode-list">
@@ -194,19 +194,19 @@ function Labels() {
                                             </ul>
 
                                             {/* <img src="/barcode.png" alt="" /> */}
-                                            <Barcode value={reportMeta[item._id]?.id} width={1} displayValue={false}
+                                            <Barcode value={`${appointmentData?.customId}?test=${item._id}`} width={1} displayValue={false}
                                                 height={60} />
                                         </div>
                                         <div className="barcode-id-details">
                                             <div>
                                                 <h6>Patient Id </h6>
-                                                <p>PS-{appointmentData?.patientId?.customId}</p>
+                                                <p>PS-{appointmentData?.patientId?.unique_id}</p>
                                             </div>
 
 
                                             <div>
                                                 <h6>Appointment ID </h6>
-                                                <p>OID-{appointmentData?.customId}</p>
+                                                <p>{appointmentData?.customId}</p>
                                             </div>
                                         </div>
                                     </div>

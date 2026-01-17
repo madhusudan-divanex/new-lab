@@ -1,6 +1,6 @@
 import { faEnvelope, faMessage, faPhone } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { NavLink, useNavigate } from "react-router-dom"
+import { NavLink, useNavigate, useParams } from "react-router-dom"
 import { getSecureApiData } from "../../services/api"
 import { useEffect, useState } from "react"
 import base_url from "../../../baseUrl"
@@ -11,10 +11,14 @@ import { fetchUserDetail } from "../../redux/features/userSlice"
 
 function PatientDetails() {
   const navigate = useNavigate()
+  const {id}=useParams()
   const userId = localStorage.getItem('userId')
   const [appointments, setAppointments] = useState([])
   const dispatch=useDispatch()
+  const [patientData, setPatientData] = useState({});
+  const [demoData, setDemoData] = useState({});
   const [isLoading,setIsLoading]=useState(true)
+  const [customId,setCustomId]=useState('')
   const { isOwner, permissions } = useSelector(state => state.user)
   useDispatch(()=>{
     dispatch(fetchUserDetail())
@@ -43,6 +47,55 @@ function PatientDetails() {
       navigate(-1)
     }
   }, [isOwner, permissions])
+  const fetchPtDemoData = async () => {
+    if (!id) {
+      return
+    }
+    try {
+      const response = await getSecureApiData(`patient/demographic/${id}`)
+      if (response.success) {
+        setDemoData(response.data)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (error) {
+
+    }
+  }
+   const fetchPtData = async () => {
+    if (!id) {
+      return
+    }
+    try {
+      const response = await getSecureApiData(`patient/${id}`)
+      if (response.success) {
+        setCustomId(response.customId)
+        setPatientData(response.data)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (error) {
+
+    }
+  }
+  useEffect(() => {
+    fetchPtDemoData()
+    fetchPtData()
+  }, [id])
+  const calculateAge = (dob) => {
+        if (!dob) return "";
+
+        const birthDate = new Date(dob);
+        const today = new Date();
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        const dayDiff = today.getDate() - birthDate.getDate();
+        if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+            age--; // haven't had birthday yet this year
+        }
+        return age;
+    };
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">
@@ -81,17 +134,17 @@ function PatientDetails() {
         <div className="submega-main-bx">
           <div className="row">
             <div className="col-lg-12">
-              {appointments?.length > 0 &&
-                appointments?.map((item, key) =>
-                  <div key={key} className="patient-main-bx">
+              {/* {appointments?.length > 0 &&
+                appointments?.map((item, key) => */}
+                  <div  className="patient-main-bx">
                     <h5>Patient Details</h5>
                     <div className="admin-table-bx">
                       <div className=" patient-details-bx mb-3">
                         <div className="admin-table-sub-bx patient-avartr-bx gap-3">
-                          <img src={item?.profileImage ? `${base_url}/${item?.profileImage}` : "/table-avatar.jpg"} alt="" />
+                          <img src={patientData?.profileImage ? `${base_url}/${patientData?.profileImage}` : "/table-avatar.jpg"} alt="" />
                           <div className="admin-table-sub-details patient-bio-content">
-                            <h6>{item?.patientId?.name}</h6>
-                            <p>ID: {item?.patientId?.customId}</p>
+                            <h6>{patientData?.name}</h6>
+                            <p>ID: {customId}</p>
                           </div>
                         </div>
 
@@ -104,21 +157,21 @@ function PatientDetails() {
 
                       <div className="d-flex align-items-center justify-content-between flex-wrap">
                         <ul className="patient-bio-list">
-                          <li className="patient-bio-item"><img src="/person.png" alt="" /> Age :<span className="patient-bio-title"> 18</span> </li>
-                          <li className="patient-bio-item"><img src="/gender.png" alt="" /> Gender :<span className="patient-bio-title"> {item?.patientId?.gender}</span> </li>
-                          <li className="patient-bio-item"><img src="/height.png" alt="" /> Height :<span className="patient-bio-title"> 6 fit </span> </li>
-                          <li className="patient-bio-item"><img src="/weight.png" alt="" /> Weight :<span className="patient-bio-title"> 50 Kg</span> </li>
-                          <li className="patient-bio-item"><img src="/blood.png" alt="" /> Blood Group :<span className="patient-bio-title"> B+</span> </li>
+                          <li className="patient-bio-item"><img src="/person.png" alt="" /> Age :<span className="patient-bio-title"> {calculateAge(demoData?.dob)}</span> </li>
+                          <li className="patient-bio-item"><img src="/gender.png" alt="" /> Gender :<span className="patient-bio-title"> {patientData?.gender}</span> </li>
+                          <li className="patient-bio-item"><img src="/height.png" alt="" /> Height :<span className="patient-bio-title"> {demoData?.height} </span> </li>
+                          <li className="patient-bio-item"><img src="/weight.png" alt="" /> Weight :<span className="patient-bio-title"> {demoData?.weight}</span> </li>
+                          <li className="patient-bio-item"><img src="/blood.png" alt="" /> Blood Group :<span className="patient-bio-title"> {demoData?.bloodGroup}</span> </li>
                         </ul>
                         <div>
-                          <NavLink to={`/patient-view/${item?.patientId?._id}`} className="option-rep-add-btn">View More</NavLink>
+                          <NavLink to={`/patient-view/${id}`} className="option-rep-add-btn">View More</NavLink>
                         </div>
                       </div>
 
 
 
                     </div>
-                  </div>)}
+                  </div>
             </div>
           </div>
         </div>

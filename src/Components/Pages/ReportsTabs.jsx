@@ -18,6 +18,7 @@ import html2pdf from "html2pdf.js";
 import html2canvas from "html2canvas";
 import Barcode from "react-barcode";
 import { Tab } from "bootstrap/dist/js/bootstrap.bundle.min";
+import Loader from "../Layouts/Loader";
 
 function ReportsTabs() {
     const [hasLRx, setHasLRx] = useState(false);
@@ -25,8 +26,13 @@ function ReportsTabs() {
     const compenentRef = useRef()
     const [appointmentId, setAppointmentId] = useState(null)
     const [inputPtId, setInputPtId] = useState(null)
+    const [inputDoctorId, setInputDoctorId] = useState(null)
     const [patData, setPatData] = useState(null)
+    const [loading, setLoading] = useState(false)
+    const [doctorData, setDoctorData] = useState(null)
     const userId = localStorage.getItem('userId')
+    const [remark, setRemark] = useState('')
+    const [isRemark, setIsRemark] = useState(false)
     const [payData, setPayData] = useState({ appointmentId: null, paymentStatus: 'due' })
     const [actData, setActData] = useState({ appointmentId: null, status: '' })
     const [appointmentData, setAppointmentData] = useState({})
@@ -35,6 +41,8 @@ function ReportsTabs() {
     const [testData, setTestData] = useState([]);
     const [allComponentResults, setAllComponentResults] = useState({});
     const [allComments, setAllComments] = useState({});
+    const [allNames, setAllNames] = useState({});
+    const [allReports, setAllReports] = useState({});
     const [reportMeta, setReportMeta] = useState({});
     const [selectedTest, setSelectedTest] = useState([''])
     const [allTest, setAllTest] = useState([])
@@ -46,10 +54,16 @@ function ReportsTabs() {
         try {
             const response = await getSecureApiData(`lab/appointment-data/${appointmentId}`)
             if (response.success) {
-                toast.success("Appointment Fetched successfully")
-                setTestId(response.data.testId)
-                handleBack(e, "#profile-tab");
-                setAppointmentData(response.data)
+                if (response.data.status === 'deliver-report') {
+                    toast.success("Report already delivered for this appointment")
+                    return
+                } else {
+                    toast.success("Appointment Fetched successfully")
+
+                    setTestId(response.data.testId)
+                    handleBack(e, "#profile-tab");
+                    setAppointmentData(response.data)
+                }
             } else {
                 toast.error(response.message)
             }
@@ -57,7 +71,6 @@ function ReportsTabs() {
 
         }
     }
-    console.log(appointmentData)
     const fetchLabTest = async () => {
         try {
             const response = await getSecureApiData(`lab/test/${userId}`);
@@ -146,12 +159,14 @@ function ReportsTabs() {
                             // Set results and comments keyed by test._id
                             setAllComponentResults(prev => ({ ...prev, [test._id]: mergedResults }));
                             setAllComments(prev => ({ ...prev, [test._id]: report.comment || "" }));
+                            setAllNames(prev => ({ ...prev, [test._id]: report.name || "" }));
 
 
                         } else {
                             // If no report found, initialize empty for this test
                             setAllComponentResults(prev => ({ ...prev, [test._id]: {} }));
                             setAllComments(prev => ({ ...prev, [test._id]: "" }));
+                            setAllNames(prev => ({ ...prev, [test._id]: "" }));
                         }
 
                         allTests.push(test);
@@ -241,10 +256,10 @@ function ReportsTabs() {
                 } else {
                     toast.error(res.message)
                 }
-                if(type==='payment'){
+                if (type === 'payment') {
                     handleBack(e, "#upload-tab");
                 }
-                if(type==='status'){
+                if (type === 'status') {
                     handleBack(e, "#contact-tab");
                 }
             } else {
@@ -278,6 +293,29 @@ function ReportsTabs() {
             fetchInputPtData()
         }
     }, [inputPtId])
+    const fetchInputDoctorData = async () => {
+        if (inputDoctorId?.length < 8) {
+            return
+        }
+        if (patData && inputDoctorId?.length > 8) {
+            return
+        }
+        try {
+            const response = await getSecureApiData(`doctor/${inputDoctorId}`)
+            if (response.success) {
+                setDoctorData(response.data)
+            } else {
+                toast.error(response.message)
+            }
+        } catch (error) {
+
+        }
+    }
+    useEffect(() => {
+        if (inputDoctorId) {
+            fetchInputDoctorData()
+        }
+    }, [inputDoctorId])
     const appointmentSubmit = async (e) => {
         e.preventDefault()
         if (selectedTest[0] === '') {
@@ -313,6 +351,7 @@ function ReportsTabs() {
             toast.error('You do not have permission to add a report ')
             return
         }
+        setLoading(true);
         // Loop through each test (key is testId)
         for (const testId in allComponentResults) {
             // Find the test details (component titles, units, etc.)
@@ -325,16 +364,28 @@ function ReportsTabs() {
                 result: allComponentResults[testId]?.[index]?.result || "",
                 status: allComponentResults[testId]?.[index]?.status || ""
             }));
-            const payload = {
-                labId: userId,
-                patientId: appointmentData.patientId,
-                testId,
-                appointmentId: appointmentData._id,
-                component: components,
-                comment: allComments?.[testId] || ""
-            };
+            // const payload = {
+            //     labId: userId,
+            //     patientId: appointmentData.patientId,
+            //     testId,
+            //     appointmentId: appointmentData._id,
+            //     component: components,manual:{comment:allComments?.[testId],
+            //         name:allNames?.[testId]
+            //     },
+            //     remark
+            // };
+            const formData = new FormData();
+            formData.append('labId', userId)
+            formData.append('patientId', appointmentData.patientId?._id)
+            formData.append('testId', testId)
+            formData.append('appointmentId', appointmentData._id)
+            formData.append('remark', remark)
+            formData.append('manualComment', allComments?.[testId] || "")
+            formData.append('manualName', allNames?.[testId] || "")
+            formData.append('report', allReports?.[testId] || "")
+
             try {
-                const response = await securePostData("lab/test-report", payload);
+                const response = await securePostData("lab/test-report", formData);
 
                 if (response.success) {
 
@@ -345,6 +396,8 @@ function ReportsTabs() {
             } catch (err) {
                 console.error("Error saving report:", err);
                 toast.error("Failed to save report.");
+            } finally{
+                setLoading(false);
             }
         }
         handleBack(e, "#person-tab");
@@ -384,7 +437,8 @@ function ReportsTabs() {
     };
     return (
         <>
-            <div className="main-content flex-grow-1 p-3 overflow-auto">
+            {loading?<Loader/>
+            :<div className="main-content flex-grow-1 p-3 overflow-auto">
                 <div className="row mb-3">
                     <div className="d-flex align-items-center justify-content-between">
                         <div>
@@ -605,9 +659,9 @@ function ReportsTabs() {
                                                                                 value={patData?.gender}
                                                                                 disabled className="form-select">
                                                                                 <option value="">Select Gender</option>
-                                                                                <option value="male">Male</option>
-                                                                                <option value="female">Female</option>
-                                                                                <option value="other">Other</option>
+                                                                                <option value="Male">Male</option>
+                                                                                <option value="Female">Female</option>
+                                                                                <option value="Other">Other</option>
 
                                                                             </select>
                                                                         </div>
@@ -620,6 +674,8 @@ function ReportsTabs() {
                                                                             <label>Doctor Id</label>
                                                                             <input
                                                                                 type="text"
+                                                                                value={inputDoctorId}
+                                                                                onChange={(e) => setInputDoctorId(e.target.value)}
                                                                                 className="form-control"
                                                                                 placeholder="Enter Doctor Id"
                                                                             />
@@ -631,12 +687,12 @@ function ReportsTabs() {
                                                                             <input
                                                                                 type="text"
                                                                                 disabled
+                                                                                value={doctorData?.name}
                                                                                 className="form-control"
                                                                                 placeholder="Enter Doctor Name"
                                                                             />
                                                                         </div>
                                                                     </div>
-
                                                                     <div className="col-lg-12">
                                                                         <h6 className="qrcode-title fw-700 fz-20">Lab Test</h6>
                                                                     </div>
@@ -732,7 +788,7 @@ function ReportsTabs() {
                                                             </div>
                                                             <div className="invoice-details">
                                                                 <p><span className="laboratory-invoice">Invoice :</span> IN{appointmentData?.customId}</p>
-                                                                <p><span className="laboratory-invoice">Date :</span> {new Date().toLocaleDateString()}</p>
+                                                                <p><span className="laboratory-invoice">Date :</span> {new Date().toLocaleDateString(('en-GB'))}</p>
                                                             </div>
                                                         </div>
 
@@ -740,12 +796,12 @@ function ReportsTabs() {
                                                             <div className="laboratory-bill-bx">
                                                                 <h6>Bill To</h6>
                                                                 <h4>{appointmentData?.patientId?.name}</h4>
-                                                                <p><span className="laboratory-phne">Phone :</span> {appointmentData?.patientId?.contactNumber}</p>
+                                                                <p><span className="laboratory-phne">Phone :</span> {appointmentData?.patientId?.patientId?.contactNumber}</p>
                                                             </div>
                                                             <div className="laboratory-bill-bx">
                                                                 <h6>Order</h6>
                                                                 <h4>{appointmentData?.patientId?.name}</h4>
-                                                                <p><span className="laboratory-phne">Phone :</span> {appointmentData?.patientId?.contactNumber}</p>
+                                                                <p><span className="laboratory-phne">Phone :</span> {appointmentData?.patientId?.patientId?.contactNumber}</p>
                                                             </div>
                                                         </div>
                                                         <div className="laboratory-report-bx">
@@ -762,8 +818,8 @@ function ReportsTabs() {
                                                                     <li className="lab-amount-item">Total :  <span className="price-title">{total}</span></li>
                                                                 </ul>
                                                             </div>
-                                                            {appointmentData?.paymentStatus ==='due' &&<div className="text-end mt-5" >
-                                                                <button className="nw-thm-btn rounded-4" onClick={()=>appointmentAction(appointmentData?._id,'paid','payment')}>Collect payment</button>
+                                                            {appointmentData?.paymentStatus === 'due' && <div className="text-end mt-5" >
+                                                                <button className="nw-thm-btn rounded-4" onClick={() => appointmentAction(appointmentData?._id, 'paid', 'payment')}>Collect payment</button>
                                                             </div>}
                                                         </div>
                                                     </div>}
@@ -793,17 +849,17 @@ function ReportsTabs() {
                                                                         <h4 className="my-3">SP-{item?._id?.slice(-5)}</h4>
                                                                         <ul className="qrcode-list">
                                                                             <li className="qrcode-item">Test  <span className="qrcode-title">: {item?.shortName}</span></li>
-                                                                            <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(reportMeta[item._id]?.createdAt)?.toLocaleDateString()}</span> </li>
+                                                                            <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(appointmentData?.createdAt)?.toLocaleDateString(('en-GB'))}</span> </li>
                                                                         </ul>
 
                                                                         {/* <img src="/barcode.png" alt="" /> */}
-                                                                        <Barcode value={reportMeta[item._id]?.id} width={1} displayValue={false}
+                                                                        <Barcode value={`${appointmentData?.customId}?test=${testData?._id}`} width={1} displayValue={false}
                                                                             height={60} />
                                                                     </div>
                                                                     <div className="barcode-id-details">
                                                                         <div>
                                                                             <h6>Patient Id </h6>
-                                                                            <p>PS-{appointmentData?.patientId?.customId}</p>
+                                                                            <p>PS-{appointmentData?.patientId?.unique_id}</p>
                                                                         </div>
 
 
@@ -818,7 +874,7 @@ function ReportsTabs() {
                                                     </div>
                                                 </div>
                                                 <div className="text-end mt-3" >
-                                                    <button className="nw-thm-btn rounded-4" onClick={(e)=>handleBack(e, "#collection-tab")}>Pressed</button>
+                                                    <button className="nw-thm-btn rounded-4" onClick={(e) => handleBack(e, "#collection-tab")}>Pressed</button>
                                                 </div>
                                             </div>}
                                         </div>
@@ -877,7 +933,7 @@ function ReportsTabs() {
                                             </div>
                                         </div>
                                         <div className="text-end mt-3" >
-                                            <button className="nw-thm-btn rounded-4" onClick={(e)=>handleBack(e, "#contact-tab")}>Pressed</button>
+                                            <button className="nw-thm-btn rounded-4" onClick={(e) => handleBack(e, "#contact-tab")}>Pressed</button>
                                         </div>
                                     </div>}
                                     {appointmentData &&
@@ -888,9 +944,10 @@ function ReportsTabs() {
                                                         <div className="new-invoice-card mb-3">
                                                             <div className="">
                                                                 <ul className="appointment-booking-list">
-                                                                    <li className="appoint-item"> Appointment Book Date : <span className="appoint-title">25-11-03</span></li>
-                                                                    <li className="appoint-item"> Visited  date : <span className="appoint-title">25-11-03</span></li>
-                                                                    <li className="appoint-item"> Appointment Completed date : <span className="appoint-title">25-11-03</span></li>
+                                                                    <li className="appoint-item"> Appointment Book Date : <span className="appoint-title">{new Date(appointmentData?.createdAt)?.toLocaleDateString(('en-GB'))}</span></li>
+                                                                    <li className="appoint-item"> Visited  date : <span className="appoint-title">{new Date(appointmentData?.date)?.toLocaleDateString(('en-GB'))}</span></li>
+                                                                    <li className="appoint-item"> Appointment Completed date : <span className="appoint-title">{appointmentData?.status == 'deliver-report' ?
+                                                                        new Date(appointmentData?.updatedAt)?.toLocaleDateString(('en-GB')) : '-'}</span></li>
                                                                 </ul>
                                                             </div>
                                                         </div>
@@ -899,7 +956,14 @@ function ReportsTabs() {
                                                                 <div className="sub-tab-brd mb-3" key={key}>
                                                                     <div className="custom-frm-bx">
                                                                         <label htmlFor="">{item?.shortName}</label>
-                                                                        <input type="text" className="form-control" placeholder={item?.shortName} />
+                                                                        <input type="text" className="form-control" placeholder={item?.shortName}
+                                                                            value={allNames[item?._id]}
+                                                                            onChange={(e) =>
+                                                                                setAllNames(prev => ({
+                                                                                    ...prev,
+                                                                                    [item?._id]: e.target.value
+                                                                                }))
+                                                                            } />
                                                                     </div>
                                                                     <div className="custom-frm-bx">
                                                                         <label htmlFor="">Upload certificate</label>
@@ -909,22 +973,33 @@ function ReportsTabs() {
                                                                             </div>
                                                                             <div>
                                                                                 <p className="fw-semibold mb-1">
-                                                                                    <label htmlFor="fileInput1" className="file-label file-select-label">
+                                                                                    <label htmlFor={`fileInput-${item?._id}`} className="file-label file-select-label">
                                                                                         Choose a file or drag & drop here
                                                                                     </label>
                                                                                 </p>
-                                                                                <small className="format-title">JPEG Format</small>
+                                                                                {/* <small className="format-title">JPEG Format</small> */}
                                                                                 <div className="mt-3">
-                                                                                    <label htmlFor="fileInput1" className="browse-btn">
+                                                                                    <label htmlFor={`fileInput-${item?._id}`} className="browse-btn">
                                                                                         Browse File
                                                                                     </label>
                                                                                 </div>
                                                                                 <input
                                                                                     type="file"
+                                                                                    onChange={(e) =>
+                                                                                        setAllReports(prev => ({
+                                                                                            ...prev,
+                                                                                            [item?._id]: e.target.files[0]
+                                                                                        }))
+                                                                                    }
                                                                                     className="d-none"
-                                                                                    id="fileInput1"
-                                                                                    accept=".png,.jpg,.jpeg"
+                                                                                    id={`fileInput-${item?._id}`}
+                                                                                // accept=".png,.jpg,.jpeg"
                                                                                 />
+                                                                                {allReports[item?._id] && (
+                                                                                    <p className="mt-2 text-success fw-semibold">
+                                                                                        {allReports[item?._id].name}
+                                                                                    </p>
+                                                                                )}
                                                                                 <div id="filePreviewWrapper" className="d-none mt-3">
                                                                                     <img src="" alt="Preview" className="img-thumbnail" />
                                                                                 </div>
@@ -1008,16 +1083,16 @@ function ReportsTabs() {
                                                                 <div className="col-lg-6 mb-3">
                                                                     <div className="laboratory-bill-bx laboratory-nw-box">
                                                                         <h6>Patient </h6>
-                                                                        <h4>Aarav Mehta</h4>
-                                                                        <p><span className="laboratory-phne">ID :</span> PID-7668</p>
-                                                                        <p><span className="laboratory-phne">DOB:</span> 30 june, 2000</p>
-                                                                        <p><span className="laboratory-phne">Gender:</span> Male</p>
+                                                                        <h4>{appointmentData?.patientId?.name}</h4>
+                                                                        <p><span className="laboratory-phne">ID :</span> {appointmentData?.patientId?.unique_id}</p>
+                                                                        <p><span className="laboratory-phne">DOB:</span>{new Date(demoData?.dob)?.toLocaleDateString(('en-GB'))}</p>
+                                                                        <p><span className="laboratory-phne">Gender:</span> {appointmentData?.patientId?.patientId?.gender}</p>
                                                                     </div>
                                                                 </div>
                                                                 <div className="col-lg-6">
                                                                     <div className="laboratory-bill-bx laboratory-sub-bx mb-2">
                                                                         <h6>Order </h6>
-                                                                        <p><span className="laboratory-phne">Appointment ID :</span> OID-7C1B48  </p>
+                                                                        <p><span className="laboratory-phne">Appointment ID :</span> {appointmentData?.customId}  </p>
                                                                     </div>
 
                                                                     {appointmentData?.doctorId && <div className="laboratory-bill-bx laboratory-sub-bx">
@@ -1048,22 +1123,42 @@ function ReportsTabs() {
                                                                                         <td>{c?.referenceRange}</td>
                                                                                         <td >
                                                                                             <div className="custom-frm-bx mb-0">
-                                                                                                <input type="text" name="" id=""
-                                                                                                    className="form-control"
-                                                                                                    value={allComponentResults[item?._id]?.[i]?.result || ""}
-                                                                                                    onChange={(e) =>
-                                                                                                        setAllComponentResults(prev => ({
-                                                                                                            ...prev,
-                                                                                                            [item?._id]: {
-                                                                                                                ...prev[item?._id],
-                                                                                                                [i]: {
-                                                                                                                    ...prev[item?._id]?.[i],
-                                                                                                                    result: e.target.value
+                                                                                                {c?.optionType == 'text' ?
+                                                                                                    <input type="text" name="" id=""
+                                                                                                        className="form-control"
+                                                                                                        value={allComponentResults[item?._id]?.[i]?.result || ""}
+                                                                                                        onChange={(e) =>
+                                                                                                            setAllComponentResults(prev => ({
+                                                                                                                ...prev,
+                                                                                                                [item?._id]: {
+                                                                                                                    ...prev[item?._id],
+                                                                                                                    [i]: {
+                                                                                                                        ...prev[item?._id]?.[i],
+                                                                                                                        result: e.target.value
+                                                                                                                    }
                                                                                                                 }
-                                                                                                            }
-                                                                                                        }))
-                                                                                                    }
-                                                                                                    placeholder="Enter" />
+                                                                                                            }))
+                                                                                                        }
+                                                                                                        placeholder="Enter" /> :
+                                                                                                    <select name="" id="" className="form-select"
+                                                                                                        value={allComponentResults[item?._id]?.[i]?.result || ""}
+                                                                                                        onChange={(e) =>
+                                                                                                            setAllComponentResults(prev => ({
+                                                                                                                ...prev,
+                                                                                                                [item?._id]: {
+                                                                                                                    ...prev[item?._id],
+                                                                                                                    [i]: {
+                                                                                                                        ...prev[item?._id]?.[i],
+                                                                                                                        result: e.target.value
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            }))
+                                                                                                        }>
+                                                                                                        <option value="">Select</option>
+                                                                                                        {c?.result?.map((r) =>
+                                                                                                            <option value={r}>{r}</option>)}
+                                                                                                    </select>
+                                                                                                }
                                                                                             </div>
                                                                                         </td>
                                                                                         <td>
@@ -1083,8 +1178,8 @@ function ReportsTabs() {
                                                                                                         }))
                                                                                                     }>
                                                                                                     <option value="">Select</option>
-                                                                                                    <option value="pass">Pass</option>
-                                                                                                    <option value="fail">Fail</option>
+                                                                                                    <option value="Positive">Positive</option>
+                                                                                                    <option value="Negative">Negative</option>
                                                                                                 </select>
                                                                                             </div>
                                                                                         </td>
@@ -1094,8 +1189,9 @@ function ReportsTabs() {
                                                                 </div>
                                                             </div>
                                                             <div className="report-remark mt-3">
-                                                                <h6>Remark <a href="javascript:void(0)" className="edit-btn text-black"><FontAwesomeIcon icon={faPen} /></a></h6>
-                                                                {/* <textarea rows={5} /> */}
+                                                                <h6>Remark {!isRemark && <button type="button" onClick={() => setIsRemark(true)} className="edit-btn text-black"><FontAwesomeIcon icon={faPen} /></button>}</h6>
+                                                                {isRemark && <textarea rows={5} className="w-100" value={remark}
+                                                                    onChange={(e) => setRemark(e.target.value)} />}
                                                                 <p>-</p>
                                                             </div>
 
@@ -1104,33 +1200,37 @@ function ReportsTabs() {
                                                                 <h4>Dr.{appointmentData?.doctorId?.name}</h4>
                                                                 <p><span className="laboratory-phne">ID :</span>{appointmentData?.doctorId?.unique_id}</p>
                                                             </div>}
+
                                                             <div className="reprt-barcd mt-3">
-                                                                <div className="barcd-scannr">
-                                                                    <div className="barcd-content">
-                                                                        <h4 className="my-3">SP-9879</h4>
-                                                                        <ul className="qrcode-list">
-                                                                            <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
-                                                                            <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
-                                                                        </ul>
-                                                                        <img src="/barcode.png" alt="" />
-                                                                    </div>
-                                                                </div>
-                                                                <div className="barcd-scannr">
-                                                                    <div className="barcd-content">
-                                                                        <h4 className="my-3">SP-9879</h4>
-                                                                        <ul className="qrcode-list">
-                                                                            <li className="qrcode-item">Test  <span className="qrcode-title">: CBC</span></li>
-                                                                            <li className="qrcode-item">Draw  <span className="qrcode-title"> : 25-11-03  08:07</span> </li>
-                                                                        </ul>
-                                                                        <img src="/barcode.png" alt="" />
-                                                                    </div>
-                                                                </div>
+                                                                {testData?.map((item, key) =>
+                                                                    <div className="barcd-scannr" key={key}>
+                                                                        <div className="barcd-content">
+                                                                            <h4 className="my-3">SP-{item?._id?.slice(-5)}</h4>
+                                                                            <ul className="qrcode-list">
+                                                                                <li className="qrcode-item">Test  <span className="qrcode-title">: {item?.shortName}</span></li>
+                                                                                <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(appointmentData?.createdAt)?.toLocaleDateString(('en-GB'))}</span> </li>
+                                                                            </ul>
+
+                                                                            {/* <img src="/barcode.png" alt="" /> */}
+                                                                            <Barcode value={`${appointmentData?.customId}?test=${testData?._id}`} width={1} displayValue={false}
+                                                                                height={60} />
+                                                                        </div>
+                                                                        <div className="barcode-id-details">
+                                                                            <div>
+                                                                                <h6>Patient Id </h6>
+                                                                                <p>PS-{appointmentData?.patientId?.unique_id}</p>
+                                                                            </div>
+                                                                            <div>
+                                                                                <h6>Appointment ID </h6>
+                                                                                <p>OID-{appointmentData?.customId}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>)}
                                                             </div>
                                                             <div className="reprt-signature mt-5">
                                                                 <h6>Signature:</h6>
                                                                 <span className="reprt-mark"></span>
                                                             </div>
-
                                                         </div>
                                                     </div>
 
@@ -1158,9 +1258,10 @@ function ReportsTabs() {
                                                         <div className="new-invoice-card h-100">
                                                             <div className="">
                                                                 <ul className="appointment-booking-list">
-                                                                    <li className="appoint-item"> Appointment Book Date : <span className="appoint-title">{new Date(appointmentData?.date)?.toLocaleDateString()}</span></li>
-                                                                    <li className="appoint-item"> Visited  date : <span className="appoint-title">25-11-03</span></li>
-                                                                    <li className="appoint-item"> Appointment Completed date : <span className="appoint-title">25-11-03</span></li>
+                                                                    <li className="appoint-item"> Appointment Book Date : <span className="appoint-title">{new Date(appointmentData?.date)?.toLocaleDateString(('en-GB'))}</span></li>
+                                                                    <li className="appoint-item"> Visited  date : <span className="appoint-title">{new Date(appointmentData?.date)?.toLocaleDateString(('en-GB'))}</span></li>
+                                                                    <li className="appoint-item"> Appointment Completed date : <span className="appoint-title">{appointmentData?.status === 'deliver-report' ?
+                                                                        new Date(appointmentData?.updatedAt)?.toLocaleDateString(('en-GB')) : '-'}</span></li>
                                                                 </ul>
                                                             </div>
                                                         </div>
@@ -1196,15 +1297,15 @@ function ReportsTabs() {
                                                                                 </a>
                                                                             </li>
                                                                             <li className="report-item">
-                                                                                <button onClick={() => sendReport(appointmentId, appointmentData?.patientId?.email, 'patient')} class="nw-dropdown-item report-nav" href="#">
+                                                                                <button onClick={() => sendReport(appointmentId, appointmentData?.patientId?.email, 'patient')} className="nw-dropdown-item report-nav" >
                                                                                     Send Patient
                                                                                 </button>
                                                                             </li>
-
-                                                                            {appointmentData?.doctorId && <li className="report-item">
-                                                                                <a class="nw-dropdown-item report-nav" href="#">
+                                                                            {appointmentData?.doctorId && 
+                                                                            <li className="report-item">
+                                                                                <button onClick={() => sendReport(appointmentId, appointmentData?.doctorId?.email, 'doctor')} className="nw-dropdown-item report-nav" >
                                                                                     Send Doctor
-                                                                                </a>
+                                                                                </button>
                                                                             </li>}
 
                                                                             <li className="report-item">
@@ -1212,8 +1313,6 @@ function ReportsTabs() {
                                                                                     Send Hospital
                                                                                 </a>
                                                                             </li>
-
-
                                                                         </ul>
                                                                     </div>
                                                                 </div>
@@ -1235,21 +1334,21 @@ function ReportsTabs() {
                                                                     <div className="laboratory-bill-bx laboratory-nw-box">
                                                                         <h6>Patient </h6>
                                                                         <h4>{appointmentData?.patientId?.name}</h4>
-                                                                        <p><span className="laboratory-phne">ID :</span> {appointmentData?.patientId?.customId}</p>
+                                                                        <p><span className="laboratory-phne">ID :</span> {appointmentData?.patientId?.unique_id}</p>
                                                                         <p><span className="laboratory-phne">DOB:</span> {new Date(demoData?.dob)?.toLocaleDateString()}</p>
-                                                                        <p><span className="laboratory-phne">Gender:</span> {appointmentData?.patientId?.gender?.toUpperCase()}</p>
+                                                                        <p><span className="laboratory-phne">Gender:</span> {appointmentData?.patientId?.patientId?.gender?.toUpperCase()}</p>
                                                                     </div>
                                                                 </div>
                                                                 <div className="col-lg-6">
                                                                     <div className="laboratory-bill-bx mb-2 laboratory-sub-bx">
                                                                         <h6>Order </h6>
-                                                                        <p><span className="laboratory-phne">Appointment ID :</span> OID-{appointmentData?.customId}  </p>
+                                                                        <p><span className="laboratory-phne">Appointment ID :</span> {appointmentData?.customId}  </p>
                                                                     </div>
 
                                                                     {appointmentData?.doctorId && <div className="laboratory-bill-bx laboratory-sub-bx">
                                                                         <h6 className="my-0">Doctor </h6>
-                                                                        <h4>Aarav Mehta</h4>
-                                                                        <p><span className="laboratory-phne"> ID :</span> OID-7C1B48  </p>
+                                                                        <h4>{appointmentData?.doctorId?.name}</h4>
+                                                                        <p><span className="laboratory-phne"> ID :</span> {appointmentData?.doctorId?.unique_id}  </p>
                                                                     </div>}
 
                                                                 </div>
@@ -1346,11 +1445,11 @@ function ReportsTabs() {
                                                                                 <h4 className="my-3">SP-{item?._id?.slice(-5)}</h4>
                                                                                 <ul className="qrcode-list">
                                                                                     <li className="qrcode-item">Test  <span className="qrcode-title">: {item?.shortName}</span></li>
-                                                                                    <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(reportMeta[item._id]?.createdAt)?.toLocaleDateString()}</span> </li>
+                                                                                    <li className="qrcode-item">Draw  <span className="qrcode-title"> : {new Date(appointmentData?.createdAt)?.toLocaleDateString()}</span> </li>
                                                                                 </ul>
                                                                                 {/* <img src="/barcode.png" alt="" /> */}
                                                                                 {/* {console.log(reportMeta[item._id]?.id)} */}
-                                                                                <Barcode value={reportMeta[item._id]?.id} width={1} displayValue={false}
+                                                                                <Barcode value={`${appointmentData?.customId}?test=${testData?._id}`} width={1} displayValue={false}
                                                                                     height={60} />
 
                                                                             </div>
@@ -1386,7 +1485,7 @@ function ReportsTabs() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>}
 
             {/*Edit Profile Popup Start  */}
             {/* data-bs-toggle="modal" data-bs-target="#edit-Request" */}

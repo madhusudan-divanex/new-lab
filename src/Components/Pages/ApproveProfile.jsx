@@ -16,7 +16,7 @@ function ApproveProfile() {
   const dispatch = useDispatch()
   const userId=localStorage.getItem('userId')
   const { profiles, labPerson, labAddress, labImg,
-    rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
+    rating, avgRating, labLicense, isRequest ,customId} = useSelector(state => state.user)
   useEffect(() => {
     dispatch(fetchUserDetail())
   }, [dispatch])
@@ -189,7 +189,7 @@ function ApproveProfile() {
 
                               <div>
                                 <h4 className="lg_title ">{profiles?.name}</h4>
-                                <p className="first_para">ID : #{profiles?.customId}</p>
+                                <p className="first_para">ID : #{customId}</p>
                               </div>
 
 

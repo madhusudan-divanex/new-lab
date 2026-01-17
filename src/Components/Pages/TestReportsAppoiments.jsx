@@ -22,6 +22,7 @@ function TestReportsAppoiments() {
   const { isOwner, permissions } = useSelector(state => state.user)
   const [payData, setPayData] = useState({ appointmentId: null, paymentStatus: 'due' })
   const [actData, setActData] = useState({ appointmentId: null, status: '' })
+  const [activeData, setActiveData] = useState({})
   const [filter, setFilter] = useState({
     status: 'approved', paymentStatus: '', dateFrom: null,
     dateTo: null, test: null, patientName: ''
@@ -342,7 +343,7 @@ function TestReportsAppoiments() {
                                   onClick={() => {
 
 
-
+                                    setActiveData(item)
                                     setActData({ appointmentId: item?._id, status: item?.status })
                                   }}
                                   className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
@@ -377,7 +378,7 @@ function TestReportsAppoiments() {
                                 class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu "
                                 aria-labelledby="acticonMenu1"
                               >
-                                <li className="drop-item">
+                                {item?.status=='deliver-report' &&<li className="drop-item">
                                   <Link
                                     class="nw-dropdown-item"
                                     to={`/lab-test-reports/${item._id}`}
@@ -385,7 +386,7 @@ function TestReportsAppoiments() {
                                     <img src="/flask-report.png" alt="" />
                                     Edit Report
                                   </Link>
-                                </li>
+                                </li>}
                                 <li className="drop-item">
                                   <Link class="nw-dropdown-item" to={`/patient-view/${item?.patientId?._id}`}>
                                     <img src="/add-user.png" alt="" />
@@ -413,24 +414,24 @@ function TestReportsAppoiments() {
                                   </NavLink>
                                 </li>
 
-                                <li className="drop-item">
+                                {item?.status=='deliver-report' &&<li className="drop-item">
                                   <NavLink to={`/report-view/${item?._id}`} className="nw-dropdown-item" href="#">
                                     <img src="/file.png" alt="" />
                                     Report  view
                                   </NavLink>
-                                </li>
-                                <li className="drop-item">
+                                </li>}
+                                {item?.status=='deliver-report' &&<li className="drop-item">
                                   <NavLink to={`/new-invoice/${item?._id}`} className="nw-dropdown-item" href="#">
                                     <img src="/invoices.png" alt="" />
                                     Invoice
                                   </NavLink>
-                                </li>
+                                </li>}
                                 {(item?.status==='pending-report' || item?.status==='deliver-report') &&<>
                                 {item?.doctorId &&<li className="drop-item">
-                                  <a className="nw-dropdown-item" href="#">
+                                  <button className="nw-dropdown-item" onClick={() => sendReport(item?._id, item?.doctorId?.email, 'doctor')}>
                                     <img src="/dc-usr.png" alt="" />
                                     Send  Report Doctor
-                                  </a>
+                                  </button>
                                 </li>}
                                 <li className="drop-item">
                                   <button className="nw-dropdown-item" onClick={() => sendReport(item?._id, item?.patientId?.email, 'patient')}>
@@ -530,12 +531,12 @@ function TestReportsAppoiments() {
                 </div>
 
                 <div className="col-lg-12">
-                  <div className="custom-frm-bx">
-                    <label htmlFor="">Select Doctor</label>
-                    <select className="form-select nw-control-frm">
-                      <option>Dr. Ravi Kumar</option>
+                  {activeData?.doctorId && <div className="custom-frm-bx">
+                    <label htmlFor="">Doctor</label>
+                    <select className="form-control nw-control-frm">
+                      <option>{activeData?.doctorId?.name}</option>
                     </select>
-                  </div>
+                  </div>}
 
                   <div>
                     <button type="submit" data-bs-dismiss="modal" className="nw-thm-btn w-100"> Submit</button>

@@ -22,7 +22,6 @@ export const fetchUserDetail = createAsyncThunk(
         try {
             const response = await getSecureApiData(`lab/detail/${localStorage.getItem('userId')}`);
             if (response.success) {
-                console.log(response)
                 return response;
             }
         } catch (error) {
@@ -34,9 +33,7 @@ export const fetchEmpDetail = createAsyncThunk(
     "empDetail/fetch",
     async (id, { rejectWithValue }) => {
         try {
-            console.log(id)
             const response = await getSecureApiData(`lab/staff-data/${id}`);
-            console.log(response)
             if (response.success) {
                 return response.employee;
             }
@@ -91,7 +88,6 @@ const userSlice = createSlice({
             })
             .addCase(fetchUserDetail.fulfilled, (state, action) => {
                 state.loading = false;
-                console.log(action)
                 state.profiles = action.payload.user
                 state.labAddress = action.payload.labAddress;
                 state.labImg = action.payload.labImg;
@@ -111,7 +107,6 @@ const userSlice = createSlice({
             })
             .addCase(fetchEmpDetail.fulfilled, (state, action) => {
                 state.loading = false;
-                console.log(action)
                 state.empData = action.payload;
                 state.isOwner = localStorage.getItem('isOwner') === 'true' ?true:false;
                 state.permissions= JSON.parse(localStorage.getItem('permissions')) || null;

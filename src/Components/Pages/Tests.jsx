@@ -8,12 +8,12 @@ import { useSelector } from "react-redux";
 import Loader from "../Layouts/Loader";
 
 function Tests() {
-    const navigate= useNavigate()
+    const navigate = useNavigate()
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const userId = localStorage.getItem('userId')
     const [name, setName] = useState('')
-    const [loading,setLoading] =useState(false)
+    const [loading, setLoading] = useState(false)
     const { isOwner, permissions } = useSelector(state => state.user)
     const [allTest, setAllTest] = useState([])
     const fetchLabTest = async () => {
@@ -30,7 +30,7 @@ function Tests() {
             }
         } catch (err) {
             console.error("Error creating lab:", err);
-        } finally{
+        } finally {
             setLoading(false)
         }
     }
@@ -72,164 +72,167 @@ function Tests() {
     }, [name])
     return (
         <>
-            {loading?<Loader/>
-            :<div className="main-content flex-grow-1 p-3 overflow-auto">
-                <div className="row">
-                    <div className="d-flex align-items-center justify-content-between">
-                        <div>
-                            <h3 className="innr-title"> Tests</h3>
-                            <div className="admin-breadcrumb">
-                                <nav aria-label="breadcrumb">
-                                    <ol className="breadcrumb custom-breadcrumb">
-                                        <li className="breadcrumb-item">
-                                            <a href="#" className="breadcrumb-link">
-                                                Dashboard
-                                            </a>
-                                        </li>
-                                        <li
-                                            className="breadcrumb-item active"
-                                            aria-current="page"
-                                        >
-                                            Tests
-                                        </li>
-                                    </ol>
-                                </nav>
+            {loading ? <Loader />
+                : <div className="main-content flex-grow-1 p-3 overflow-auto">
+                    <div className="row">
+                        <div className="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h3 className="innr-title"> Tests</h3>
+                                <div className="admin-breadcrumb">
+                                    <nav aria-label="breadcrumb">
+                                        <ol className="breadcrumb custom-breadcrumb">
+                                            <li className="breadcrumb-item">
+                                                <a href="#" className="breadcrumb-link">
+                                                    Dashboard
+                                                </a>
+                                            </li>
+                                            <li
+                                                className="breadcrumb-item active"
+                                                aria-current="page"
+                                            >
+                                                Tests
+                                            </li>
+                                        </ol>
+                                    </nav>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="add-nw-bx">
-                            <NavLink to="/reports" className="add-nw-btn thm-btn">
-                                <img src="/plus-icon.png" alt="" /> Add Tests
-                            </NavLink>
+                            <div className="add-nw-bx">
+                                <NavLink to="/reports" className="add-nw-btn thm-btn">
+                                    <img src="/plus-icon.png" alt="" /> Add Tests
+                                </NavLink>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="row">
-                    <div className="d-flex align-items-center justify-content-between">
-                        <div className="custom-frm-bx">
-                            <input value={name} onChange={(e) => setName(e.target.value)} type="text" className="form-control" placeholder="Search " />
+                    <div className="row">
+                        <div className="d-flex align-items-center justify-content-between">
+                            <div className="custom-frm-bx">
+                                <input value={name} onChange={(e) => setName(e.target.value)} type="text" className="form-control" placeholder="Search " />
 
-                            <div className="search-item-bx">
-                                <button className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
-                            </div>
-
-                        </div>
-
-                        <div>
-                            <div className="page-selector d-flex align-items-center">
-
-                                <div className="custom-frm-bx">
-                                    <select className="form-select custom-page-dropdown nw-custom-page ">
-                                        <option value="1" selected>1</option>
-                                        <option value="2">2</option>
-                                    </select>
+                                <div className="search-item-bx">
+                                    <button className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
                                 </div>
 
                             </div>
+
+                            {totalPages > 1 && <div>
+                                <div className="custom-frm-bx">
+                                    <select
+                                        className="form-select custom-page-dropdown nw-custom-page"
+                                        name="currentPage"
+                                        value={currentPage}
+                                        onChange={(e) => setCurrentPage(e.target.value)}
+                                    >
+                                        {Array.from({ length: totalPages }, (_, i) => (
+                                            <option key={i + 1} value={i + 1}>{i + 1}</option>
+                                        ))}
+                                    </select>
+
+                                </div>
+                            </div>}
                         </div>
+
+
+
                     </div>
 
-
-
-                </div>
-
-                <div className="row">
-                    <div className="col-lg-12 col-md-12 col-sm-12">
-                        <div className="table-section mega-table-section">
-                            <div className="table table-responsive mb-0">
-                                <table className="table mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>S.no.</th>
-                                            <th>Test Categories Name</th>
-                                            <th>Short Name</th>
-                                            <th>Sample Type</th>
-                                            <th>Price</th>
-                                            <th>Status</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {allTest?.length > 0 &&
-                                            allTest?.map((item, key) =>
-                                                <tr key={key}>
-                                                    <td>{key + 1}</td>
-                                                    <td className="text-capitalize">{item?.testCategory}</td>
-                                                    <td>{item?.shortName}</td>
-                                                    <td>{item?.sampleType}</td>
-                                                    <td>${item?.price}</td>
-                                                    <td>
-                                                        <div className="switch">
-                                                            <input type="checkbox"
-                                                                id={`toggle-${item._id}`} // unique id for each item
-                                                                checked={item.status === "active"} // checked if status is active
-                                                                onChange={(e) =>
-                                                                    testAction(e, item._id, e.target.checked ? "active" : "inactive")
-                                                                } />
-                                                            <label for={`toggle-${item._id}`}></label>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <a
-                                                            href="javascript:void(0)"
-                                                            className=" admin-sub-dropdown dropdown-toggle"
-                                                            data-bs-toggle="dropdown"
-                                                            aria-expanded="false"
-                                                        >
-                                                            <FontAwesomeIcon icon={faGear} /> Action
-                                                        </a>
-
-                                                        <div className="dropdown">
+                    <div className="row">
+                        <div className="col-lg-12 col-md-12 col-sm-12">
+                            <div className="table-section mega-table-section">
+                                <div className="table table-responsive mb-0">
+                                    <table className="table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>S.no.</th>
+                                                <th>Test Categories Name</th>
+                                                <th>Short Name</th>
+                                                <th>Sample Type</th>
+                                                <th>Price</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {allTest?.length > 0 &&
+                                                allTest?.map((item, key) =>
+                                                    <tr key={key}>
+                                                        <td>{key + 1}</td>
+                                                        <td className="text-capitalize">{item?.testCategory}</td>
+                                                        <td>{item?.shortName}</td>
+                                                        <td>{item?.sampleType}</td>
+                                                        <td>${item?.price}</td>
+                                                        <td>
+                                                            <div className="switch">
+                                                                <input type="checkbox"
+                                                                    id={`toggle-${item._id}`} // unique id for each item
+                                                                    checked={item.status === "active"} // checked if status is active
+                                                                    onChange={(e) =>
+                                                                        testAction(e, item._id, e.target.checked ? "active" : "inactive")
+                                                                    } />
+                                                                <label for={`toggle-${item._id}`}></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>
                                                             <a
                                                                 href="javascript:void(0)"
-                                                                className="attendence-edit-btn"
-                                                                id="acticonMenu1"
+                                                                className=" admin-sub-dropdown dropdown-toggle"
                                                                 data-bs-toggle="dropdown"
                                                                 aria-expanded="false"
                                                             >
-                                                                <i className="fas fa-pen"></i>
+                                                                <FontAwesomeIcon icon={faGear} /> Action
                                                             </a>
-                                                            <ul
-                                                                className="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
-                                                                aria-labelledby="acticonMenu1"
-                                                            >
-                                                                <li className="drop-item">
-                                                                    <button onClick={() => {
-                                                                        if (!isOwner && !permissions.viewTest) {
-                                                                            toast.error('You do not have permission to view test ')
-                                                                            return
-                                                                        }else{
 
-                                                                            navigate(`/edit-test/${item?._id}`)
-                                                                        }
-                                                                    }} className="nw-dropdown-item" href="#">
-                                                                        <FontAwesomeIcon
-                                                                            icon={faPen}
-                                                                            className=""
-                                                                        />
-                                                                        View / Edit
-                                                                    </button>
-                                                                </li>
+                                                            <div className="dropdown">
+                                                                <a
+                                                                    href="javascript:void(0)"
+                                                                    className="attendence-edit-btn"
+                                                                    id="acticonMenu1"
+                                                                    data-bs-toggle="dropdown"
+                                                                    aria-expanded="false"
+                                                                >
+                                                                    <i className="fas fa-pen"></i>
+                                                                </a>
+                                                                <ul
+                                                                    className="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu"
+                                                                    aria-labelledby="acticonMenu1"
+                                                                >
+                                                                    <li className="drop-item">
+                                                                        <button onClick={() => {
+                                                                            if (!isOwner && !permissions.viewTest) {
+                                                                                toast.error('You do not have permission to view test ')
+                                                                                return
+                                                                            } else {
 
-
-                                                                <li className="drop-item">
-                                                                    <button className="nw-dropdown-item" onClick={() => deleteTest(item._id)}>
-                                                                        <FontAwesomeIcon
-                                                                            icon={faTrash}
-                                                                            className=""
-                                                                        />
-                                                                        Delete
-                                                                    </button>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                    </td>
-                                                </tr>)}
+                                                                                navigate(`/edit-test/${item?._id}`)
+                                                                            }
+                                                                        }} className="nw-dropdown-item" href="#">
+                                                                            <FontAwesomeIcon
+                                                                                icon={faPen}
+                                                                                className=""
+                                                                            />
+                                                                            View / Edit
+                                                                        </button>
+                                                                    </li>
 
 
+                                                                    <li className="drop-item">
+                                                                        <button className="nw-dropdown-item" onClick={() => deleteTest(item._id)}>
+                                                                            <FontAwesomeIcon
+                                                                                icon={faTrash}
+                                                                                className=""
+                                                                            />
+                                                                            Delete
+                                                                        </button>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </td>
+                                                    </tr>)}
 
-                                        {/* <tr>
+
+
+                                            {/* <tr>
                                             <td>04.</td>
                                             <td>COVID-19 ELISA</td>
                                             <td>urn</td>
@@ -290,13 +293,13 @@ function Tests() {
                                             </td>
                                         </tr> */}
 
-                                    </tbody>
-                                </table>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>}
+                </div>}
         </>
     );
 }

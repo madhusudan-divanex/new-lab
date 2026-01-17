@@ -12,13 +12,13 @@ import { toast } from "react-toastify";
 import { getApiData, postApiData } from "../../services/api";
 import { useSelector } from "react-redux";
 import base_url from "../../../baseUrl";
-
+import { Select } from "antd";
 
 function CreateAccount() {
-    const navigate=useNavigate()
-    const [isPass,setIsPass]=useState(false)
-    const [isConf,setIsConf]=useState(false)
-    const {profiles}=useSelector(state=>state.user)
+    const navigate = useNavigate()
+    const [isPass, setIsPass] = useState(false)
+    const [isConf, setIsConf] = useState(false)
+    const { profiles } = useSelector(state => state.user)
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -26,7 +26,7 @@ function CreateAccount() {
         password: "",
         gstNumber: "",
         about: "",
-        logo: ""
+        logo: "",
     });
     const handleChange = (e) => {
         const { type, name, value, files } = e.target;
@@ -42,8 +42,7 @@ function CreateAccount() {
             }));
         }
     };
-
-
+    
     const [logoPreview, setLogoPreview] = useState(null);
     const handleFilePreview = (e) => {
         const file = e.target.files[0];
@@ -57,7 +56,7 @@ function CreateAccount() {
     // Submit form
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if(formData.password !== formData.confirmPassword){
+        if (formData.password !== formData.confirmPassword) {
             toast.error("Password was not matched")
             return
         }
@@ -67,13 +66,13 @@ function CreateAccount() {
         }
 
         try {
-            const response = await postApiData('lab',payload)
-            if(response.success){
+            const response = await postApiData('lab', payload)
+            if (response.success) {
                 toast.success('Signup successfully')
-                localStorage.setItem('token',response.token)
-                localStorage.setItem('userId',response.userId)
+                localStorage.setItem('token', response.token)
+                localStorage.setItem('userId', response.userId)
                 navigate('/create-account-image')
-            }else{
+            } else {
                 toast.error(response.message)
             }
             console.log("Lab created:", response.data);
@@ -82,17 +81,17 @@ function CreateAccount() {
         }
     };
     async function fetchUserProfile() {
-        const result=await getApiData(`lab/${localStorage.getItem('userId')}`)
-        if(result.success){
+        const result = await getApiData(`lab/${localStorage.getItem('userId')}`)
+        if (result.success) {
             setFormData(result.data)
         }
     }
-    useEffect(()=>{
-        console.log(profiles)
-        if(profiles){
+    useEffect(() => {
+        if (profiles) {
             navigate('/create-account-image')
         }
-    },[profiles])
+    }, [profiles])
+    
 
     return (
         <>
@@ -212,6 +211,7 @@ function CreateAccount() {
                                                     onChange={handleChange}
                                                 />
                                             </div>
+                                            
 
                                             <div className="custom-frm-bx admin-frm-bx">
                                                 <label>About</label>
@@ -228,7 +228,7 @@ function CreateAccount() {
                                             <div className="custom-frm-bx admin-frm-bx">
                                                 <label>Password</label>
                                                 <input
-                                                    type={isPass?"text":"password"}
+                                                    type={isPass ? "text" : "password"}
                                                     className="form-control admin-frm-control pe-5"
                                                     placeholder="*******"
                                                     name="password"
@@ -237,8 +237,8 @@ function CreateAccount() {
                                                     onChange={handleChange}
                                                 />
                                                 <div className="pass-eye-bx">
-                                                    <a href="#" onClick={()=>setIsPass(!isPass)} className="pass-eye-slash-btn">
-                                                        <FontAwesomeIcon icon={isPass? faEyeSlash : faEye} />
+                                                    <a href="#" onClick={() => setIsPass(!isPass)} className="pass-eye-slash-btn">
+                                                        <FontAwesomeIcon icon={isPass ? faEyeSlash : faEye} />
                                                     </a>
                                                 </div>
                                             </div>
@@ -246,7 +246,7 @@ function CreateAccount() {
                                             <div className="custom-frm-bx admin-frm-bx">
                                                 <label>Confirm Password</label>
                                                 <input
-                                                    type={isConf?"text":"password"}
+                                                    type={isConf ? "text" : "password"}
                                                     className="form-control admin-frm-control pe-5"
                                                     placeholder="*******"
                                                     name="confirmPassword"
@@ -255,8 +255,8 @@ function CreateAccount() {
                                                     onChange={handleChange}
                                                 />
                                                 <div className="pass-eye-bx">
-                                                    <a href="#" onClick={()=>setIsConf(!isConf)} className="pass-eye-slash-btn">
-                                                        <FontAwesomeIcon icon={isConf? faEyeSlash : faEye} />
+                                                    <a href="#" onClick={() => setIsConf(!isConf)} className="pass-eye-slash-btn">
+                                                        <FontAwesomeIcon icon={isConf ? faEyeSlash : faEye} />
                                                     </a>
                                                 </div>
                                             </div>
@@ -295,12 +295,12 @@ function CreateAccount() {
 
                                                         {logoPreview && (
                                                             <div className="mt-3">
-                                                                <img src={logoPreview} alt="Preview" className="img-thumbnail" style={{maxHeight:'250px'}}/>
+                                                                <img src={logoPreview} alt="Preview" className="img-thumbnail" style={{ maxHeight: '250px' }} />
                                                             </div>
                                                         )}
                                                         {!logoPreview && formData.logo && (
                                                             <div className="mt-3">
-                                                                <img src={`${base_url}/${formData.logo}`} alt="Preview" className="img-thumbnail" style={{maxHeight:'250px'}} />
+                                                                <img src={`${base_url}/${formData.logo}`} alt="Preview" className="img-thumbnail" style={{ maxHeight: '250px' }} />
                                                             </div>
                                                         )}
                                                     </div>

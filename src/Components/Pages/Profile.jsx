@@ -15,7 +15,7 @@ import base_url from "../../../baseUrl";
 import html2canvas from "html2canvas";
 import QRCode from "react-qr-code";
 import Loader from "../Layouts/Loader";
-import { getSecureApiData } from "../../Services/api";
+import { getSecureApiData } from "../../services/api";
 function Profile() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
@@ -24,6 +24,7 @@ function Profile() {
   const { profiles, labPerson, labAddress, labImg,
     rating, avgRating, labLicense, isRequest,loading,customId } = useSelector(state => state.user)
   const [message, setMessage] = useState('')
+  console.log(customId)
   const fetchLabDetail = async (e) => {
     try {
       const response = await getSecureApiData(`lab/detail/${userId}`);
