@@ -90,7 +90,7 @@ function Labels() {
                             });
                             // Set results and comments keyed by test._id
                             setAllComponentResults(prev => ({ ...prev, [test._id]: mergedResults }));
-                            setAllComments(prev => ({ ...prev, [test._id]: report.comment || "" }));
+                            setAllComments(prev => ({ ...prev, [test._id]: report.upload.comment || "" }));
 
 
                         } else {

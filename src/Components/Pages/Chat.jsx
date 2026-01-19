@@ -1,4 +1,4 @@
-import { faPaperclip, faPaperPlane, faPhone, faSearch, faVideo } from "@fortawesome/free-solid-svg-icons"
+import { faMicrophone, faPaperclip, faPaperPlane, faPhone, faSearch, faVideo } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { useRef } from "react";
 import { useState } from "react";
@@ -857,7 +857,7 @@ function Chat() {
                                                 className={`mic-btn ${recording ? "recording" : ""}`}
                                                 onClick={toggleRecording}
                                             >
-                                                {recording ? "⏹️" : "🎤"}
+                                                {recording ? "⏹️" : <FontAwesomeIcon icon={faMicrophone} style={{color:'#00B4B5'}}/>}
                                             </button>
                                         </div>
                                         {previewUrl && (

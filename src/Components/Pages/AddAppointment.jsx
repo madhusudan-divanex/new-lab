@@ -6,9 +6,12 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Select, Spin } from "antd";
 import { FaSquarePlus } from "react-icons/fa6";
+import { useNavigate } from "react-router-dom";
 function AddAppointment() {
+    const navigate=useNavigate()
     const userId = localStorage.getItem('userId')
     const [allTest, setAllTest] = useState([])
+    const [patientId, setPatientId] = useState()
     const [aptDate, setAptDate] = useState({ date: null, time: null })
     const [selectedTest, setSelectedTest] = useState([''])
     const [ptName, setPtName] = useState('')
@@ -26,12 +29,16 @@ function AddAppointment() {
             console.error("Error creating lab:", err);
         }
     }
-    const fetchUserProfile = async (searchText) => {
+    const fetchUserProfile = async () => {
         setLoading(true)
         try {
-            const response = await getSecureApiData(`patient/search/${searchText}`);
+            const response = await getSecureApiData(`patient/all?limit=100000`);
             if (response.success) {
-                setAllPatient(response.data)
+                const formattedOptions = response.data.map(user => ({
+                    value: user._id,   // or user._id depending on your data
+                    label: user.name, // display name
+                }));
+                setAllPatient(formattedOptions)
                 setLoading(false)
             } else {
                 toast.error(response.message)
@@ -44,6 +51,7 @@ function AddAppointment() {
         if (userId) {
             fetchLabTest()
         }
+        fetchUserProfile()
     }, [userId])
     const handleAddTest = () => {
         setSelectedTest([...selectedTest, ""]);
@@ -70,7 +78,7 @@ function AddAppointment() {
             0
         );
         const data = {
-            patientId: ptName, status: 'approved',
+            patientId, status: 'approved',
             testId: selectedTest,
             date: aptDate.date && aptDate.time
                 ? new Date(`${aptDate.date}T${aptDate.time}`)
@@ -82,6 +90,7 @@ function AddAppointment() {
                 setAptDate({ date: null, time: null })
                 setSelectedTest([''])
                 toast.success("Appointment created successfully")
+                navigate('/test-reports-appointment')
             } else {
                 toast.error(response.message)
             }
@@ -154,7 +163,7 @@ function AddAppointment() {
 
 
                     <div className="row">
-                        <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
+                        <div className="col-lg-12 col-md-12 col-sm-12 mb-3">
                             <div className="new-panel-card">
                                 <div className="d-flex align-items-center justify-content-between flex-wrap">
                                     <div>
@@ -177,40 +186,30 @@ function AddAppointment() {
                                             <option>---Select Patient ---</option>
                                         </select> */}
                                         <Select
-                                            showSearch
-                                            allowClear
+                                            options={allPatient}
+                                            name="patientId"
                                             className="w-100 form-control"
-                                            placeholder="Search and select user"
-                                            value={ptName}   // ✅ IDs here
-                                            onChange={(value) => setPtName(value)}
-                                            filterOption={false}
-                                            onSearch={fetchUserProfile}
-                                            notFoundContent={loading ? <Spin size="small" /> : "No patient found"}
-                                            options={allPatient.map((user) => ({
-                                                label: `${user.name}`, // ✅ display name
-                                                value: user._id, // ✅ backend receives ID
-                                            }))}
+                                            placeholder="Select patient"
+                                            isClearable
+                                            onChange={(selectedOption) => {
+                                                setPatientId(selectedOption );
+                                            }}
                                         />
+
+
                                     </div>
 
                                 </div>
                             </div>
                         </div>
 
-                        <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
+                        {/* <div className="col-lg-6 col-md-6 col-sm-12 mb-3">
                             <div className="new-panel-card">
                                 <div className="d-flex align-items-center justify-content-between flex-wrap">
                                     <div>
                                         <h4 className="fz-18 fw-700 text-black">Select Doctor</h4>
                                         <p className="fw-400 fz-16">Choose a doctor for this appointment.</p>
                                     </div>
-
-                                    {/* <div>
-                                        <button className="nw-exprt-btn">
-                                            <FaPlusCircle />  Add Doctor
-                                        </button>
-                                    </div> */}
-
                                 </div>
 
                                 <div className="custom-frm-bx">
@@ -223,7 +222,7 @@ function AddAppointment() {
 
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
 
                         <div className="col-lg-12">
                             <div className="new-panel-card">

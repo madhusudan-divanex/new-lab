@@ -125,7 +125,7 @@ function LeftSidebar() {
 
               <li className="nav-item">
                 <NavLink to="/report-tabs" className={active("/report-tabs")}>
-                  <FontAwesomeIcon icon={faChartColumn} /> Report
+                  <FontAwesomeIcon icon={faChartColumn} /> Report / Billing
                 </NavLink>
               </li>
 

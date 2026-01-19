@@ -94,7 +94,7 @@ function LabTestReports() {
               });
               // Set results and comments keyed by test._id
               setAllComponentResults(prev => ({ ...prev, [test._id]: mergedResults }));
-              setAllComments(prev => ({ ...prev, [test._id]: report.comment || "" }));
+              setAllComments(prev => ({ ...prev, [test._id]: report.upload.comment || "" }));
             } else {
               // If no report found, initialize empty for this test
               setAllComponentResults(prev => ({ ...prev, [test._id]: {} }));
@@ -228,7 +228,7 @@ function LabTestReports() {
               });
               // Set results and comments keyed by test._id
               setAllComponentResults(prev => ({ ...prev, [test._id]: mergedResults }));
-              setAllComments(prev => ({ ...prev, [test._id]: report.comment || "" }));
+              setAllComments(prev => ({ ...prev, [test._id]: report.upload.comment || "" }));
 
 
             } else {

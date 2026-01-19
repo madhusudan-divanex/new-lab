@@ -92,14 +92,7 @@ function TopHeader() {
                   required
                 />
                 <div className="tp-search-bx">
-                  <a href="#" className="tp-search-btn">
-                    <FontAwesomeIcon icon={faSearch} />
-                  </a>
-                </div>
-              </div>
-
-              <div className="add-patient-bx">
-                <button onClick={() => {
+                  <button onClick={() => {
                   if (ptId?.length < 4) {
                     toast.error('Please enter full id ')
                     return
@@ -109,9 +102,16 @@ function TopHeader() {
                   }
                   setPtId(null)
                 }
-                } className="add-patient-btn">
+                } className="tp-search-btn">
+                    <FontAwesomeIcon icon={faSearch} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="add-patient-bx">
+                <Link to="/add-appointment" className="add-patient-btn">
                   <img src="/white-plus.png" alt="" />
-                </button>
+                </Link>
               </div>
             </div>
           </div>
