@@ -16,7 +16,7 @@ function TopHeader() {
   const [ptId, setPtId] = useState(null)
   const [scannerOpen, setScannerOpen] = useState(false)
   const { profiles, labPerson, labAddress, labImg,empData,isOwner,customId,
-    rating, avgRating, labLicense, isRequest } = useSelector(state => state.user)
+    rating, avgRating, labLicense, isRequest,notification } = useSelector(state => state.user)
   useEffect(() => {
     dispatch(fetchUserDetail())
     if(localStorage.getItem('isOwner')==='false'){
@@ -129,7 +129,7 @@ function TopHeader() {
               <NavLink to="/notification" className="tp-bell-icon">
                 <FontAwesomeIcon icon={faBell} className="text-black" />
                 <div className="bell-nw-icon-alrt">
-                  <span className="bell-title">9</span>
+                  <span className="bell-title">{notification}</span>
                 </div>
               </NavLink>
             </div>

@@ -88,7 +88,7 @@ function LabTestReports() {
               test.component.forEach((c, i) => {
                 const comp = report.component.find(rc => rc.cmpId === c._id);
                 mergedResults[i] = {
-                  result: comp?.result || "",
+                  result:comp?.optionType=='select'?comp?.result: comp?.textResult || "",
                   status: comp?.status || ""
                 };
               });
@@ -127,9 +127,10 @@ function LabTestReports() {
     const components = item.component.map((c, i) => ({
       cmpId: c._id,
       result: allComponentResults[selectedTab]?.[i]?.result || "",
+      // textResult: allComponentResults[selectedTab]?.[i]?.textResult || "",
       status: allComponentResults[selectedTab]?.[i]?.status || ""
     }));
-
+    console.log(components)
     const payload = {
       labId: userId,
       patientId: appointmentData.patientId,
@@ -154,7 +155,7 @@ function LabTestReports() {
 
   const fetchTestReport = async (testId) => {
     try {
-      const payload = { testId, appointmentId:appointMentId };
+      const payload = { testId, appointmentId: appointMentId };
       const response = await securePostData('lab/test-report-data', payload);
 
       if (response.success && response.data) {
@@ -222,7 +223,7 @@ function LabTestReports() {
               test.component.forEach((c, i) => {
                 const comp = report.component.find(rc => rc.cmpId === c._id);
                 mergedResults[i] = {
-                  result: comp?.result || "",
+                  result:comp?.result || "",
                   status: comp?.status || "",
                 };
               });
@@ -389,7 +390,8 @@ function LabTestReports() {
                                               }>
                                               <option value="">Select</option>
                                               {c?.result?.map((r) =>
-                                                <option value={r}>{r}</option>)}
+                                                // {console.log(r?.value)}
+                                                <option value={r.value}>{r.value}</option>)}
                                             </select>
                                           }
                                         </td>
@@ -417,6 +419,9 @@ function LabTestReports() {
                                           </select>
                                         </td>
                                       </tr>
+                                      {/* NOTE FULL ROW */}
+                                   
+
                                     </React.Fragment>
                                   ))}
 

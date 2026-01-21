@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { getApiData, getSecureApiData } from "../../services/api";
+import { notification } from "antd";
 
 // Async thunk to fetch user profile
 export const fetchUserProfile = createAsyncThunk(
@@ -59,7 +60,8 @@ const userSlice = createSlice({
         isOwner: localStorage.getItem('isOwner') === 'true' ?true:false, // <-- read from localStorage
         permissions: JSON.parse(localStorage.getItem('permissions')) || null,
         empData:null,
-        customId:null
+        customId:null,
+        notification:0
     },
     reducers: {
         clearProfiles: (state) => {
@@ -98,6 +100,8 @@ const userSlice = createSlice({
                 state.allowEdit = action.payload.allowEdit
                 state.labLicense = action.payload.labLicense;
                 state.customId = action.payload.customId;
+                console.log(action.payload)
+                state.notification = action.payload.notifications
                 state.isOwner = localStorage.getItem('isOwner') === 'true' ?true:false;
                 state.permissions= JSON.parse(localStorage.getItem('permissions')) || null;
             })

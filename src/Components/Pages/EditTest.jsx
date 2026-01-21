@@ -35,7 +35,8 @@ function EditTest() {
       unit: "",
       title: '',
       optionType: "text",
-      result: [''],
+      textResult: '',
+      result: [{ value: '', note: '' }],
       referenceRange: "",
       status: false,
     },
@@ -46,17 +47,15 @@ function EditTest() {
     const { name, value, type, checked } = e.target;
     const updated = [...components];
 
-    // Update normal fields
+    // checkbox handling
     updated[index][name] = type === "checkbox" ? checked : value;
 
-    // When switching optionType, convert result appropriately
+    // optionType switch handling
     if (name === "optionType") {
       if (value === "text") {
-        // convert array → string
-        updated[index].result = "";
+        updated[index].textResult = "";
       } else if (value === "select") {
-        // convert string → array
-        updated[index].result = [""];
+        updated[index].result = [{ value: "", note: "" }];
       }
     }
 
@@ -69,7 +68,7 @@ function EditTest() {
   const addComponent = () => {
     setComponents([
       ...components,
-      { name: "", unit: "", optionType: "text", title:"", result: [""], referenceRange: "", status: false },
+      { name: "", unit: "", optionType: "text", title: "", textResult: [""], result: [{ value: '', note: '' }], referenceRange: "", status: false },
     ]);
   };
 
@@ -86,15 +85,15 @@ function EditTest() {
     }));
   };
 
-  const handleAddOption = (index) => {
+  const handleAddOption = (componentIndex) => {
     const updated = [...components];
-    updated[index].result.push("");
+    updated[componentIndex].result.push({ value: "", note: "" });
     setComponents(updated);
   };
 
-  const handleOptionChange = (componentIndex, optionIndex, value) => {
+  const handleOptionChange = (componentIndex, optionIndex, field, value) => {
     const updated = [...components];
-    updated[componentIndex].result[optionIndex] = value;
+    updated[componentIndex].result[optionIndex][field] = value;
     setComponents(updated);
   };
 
@@ -353,30 +352,44 @@ function EditTest() {
                                             {component.result.map((opt, optIndex) => (
                                               <div className="d-flex align-items-center gap-2 mb-2" key={optIndex}>
 
+                                                {/* OPTION VALUE */}
                                                 <div className="custom-frm-bx mb-0 flex-grow-1">
                                                   <input
                                                     type="text"
                                                     className="form-control"
                                                     placeholder="Option"
-                                                    value={opt}
-                                                    onChange={(e) => handleOptionChange(index, optIndex, e.target.value)}
+                                                    value={opt.value}
+                                                    onChange={(e) =>
+                                                      handleOptionChange(index, optIndex, "value", e.target.value)
+                                                    }
                                                   />
                                                 </div>
 
-                                                {/* REMOVE OPTION BUTTON */}
-                                                <div>
-                                                  <button
-                                                    type="button"
-                                                    className="text-black"
-                                                    disabled={component.result.length == 1}
-                                                    onClick={() => handleRemoveOption(index, optIndex)}
-                                                  >
-                                                    <FaTrash />
-                                                  </button>
+                                                {/* OPTION NOTE */}
+                                                <div className="custom-frm-bx mb-0 flex-grow-1">
+                                                  <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    placeholder="Note"
+                                                    value={opt.note}
+                                                    onChange={(e) =>
+                                                      handleOptionChange(index, optIndex, "note", e.target.value)
+                                                    }
+                                                  />
                                                 </div>
+
+                                                {/* REMOVE */}
+                                                <button
+                                                  type="button"
+                                                  className="text-black"
+                                                  onClick={() => handleRemoveOption(index, optIndex)}
+                                                >
+                                                  <FaTrash />
+                                                </button>
 
                                               </div>
                                             ))}
+
 
                                           </div>
                                         ) : (
@@ -384,8 +397,8 @@ function EditTest() {
                                             <textarea
                                               rows={5}
                                               type="text"
-                                              name="result"
-                                              value={component.result}
+                                              name="textResult"
+                                              value={component.textResult}
                                               onChange={(e) => handleComponentChange(index, e)}
                                               className="form-control"
                                             />
@@ -415,15 +428,13 @@ function EditTest() {
                                         <button
                                           type="button"
                                           className="text-black"
-                                          disabled={components.length == 1}
                                           onClick={() => removeComponent(index)}
                                         >
                                           <FontAwesomeIcon icon={faTrash} />
                                         </button>
                                       </td>
                                     </tr>
-
-                                    <div className="my-3 mx-3 w-100">
+                                    <div className="  my-3 mx-3 w-100">
                                       <input type="text" name="title" value={component.title}
                                         onChange={(e) => handleComponentChange(index, e)} id="" className="form-control nw-control-frm" placeholder="Blood details" />
 
