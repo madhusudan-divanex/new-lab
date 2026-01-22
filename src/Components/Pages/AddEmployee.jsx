@@ -151,10 +151,10 @@ function AddEmployee() {
             labCert: [...prev.labCert, { certName: "", certFile: null }]
         }));
     };
-    const removeEducation =async (index,item) => {
-        if(item && item._id){
-            const data={empId:staffId,id:item._id,type:'education'}
-            await securePostData('lab/sub-professional',data)
+    const removeEducation = async (index, item) => {
+        if (item && item._id) {
+            const data = { empId: staffId, id: item._id, type: 'education' }
+            await securePostData('lab/sub-professional', data)
         }
         setProfessionalInfo(prev => ({
             ...prev,
@@ -162,10 +162,10 @@ function AddEmployee() {
         }));
     };
 
-    const removeCertificate = async(index,item) => {
-        if(item && item._id){
-            const data={empId:staffId,id:item._id,type:'cert'}
-            await securePostData('lab/sub-professional',data)
+    const removeCertificate = async (index, item) => {
+        if (item && item._id) {
+            const data = { empId: staffId, id: item._id, type: 'cert' }
+            await securePostData('lab/sub-professional', data)
         }
         setProfessionalInfo(prev => ({
             ...prev,
@@ -190,7 +190,7 @@ function AddEmployee() {
     };
     const fetchLabPermission = async () => {
         try {
-            const response = await getSecureApiData(`lab/permission/${userId}`);
+            const response = await getSecureApiData(`api/comman/permission/${userId}?type=lab`);
             if (response.success) {
                 setPermissions(response.data)
             } else {
@@ -243,7 +243,7 @@ function AddEmployee() {
 
         // Basic fields
         for (let key in professionalInfo) {
-            if (key === 'labCert' || key === 'education' || key==='empId') continue;
+            if (key === 'labCert' || key === 'education' || key === 'empId') continue;
             data.append(key, professionalInfo[key]);
         }
 
@@ -255,9 +255,9 @@ function AddEmployee() {
             certName: i.certName
         }));
         data.append("labCert", JSON.stringify(certMeta));
-        if(staffId){
+        if (staffId) {
 
-            data.append("empId",staffId);
+            data.append("empId", staffId);
         }
 
         // Certificate files
@@ -266,7 +266,6 @@ function AddEmployee() {
                 data.append("certFile", i.certFile);
             }
         });
-console.log(staffId)
         try {
             const response = await securePostData(`lab/professional`, data);
             if (response.success) {
@@ -854,7 +853,7 @@ console.log(staffId)
                                                                         type="button"
                                                                         disabled={professionalInfo.education.length === 1}
                                                                         className="text-black"
-                                                                        onClick={() => removeEducation(index,item)}
+                                                                        onClick={() => removeEducation(index, item)}
                                                                     >
                                                                         <FontAwesomeIcon icon={faTrash} />
                                                                     </button>
@@ -910,7 +909,7 @@ console.log(staffId)
                                                                 <div>
                                                                     <button className="text-black"
                                                                         disabled={professionalInfo?.labCert?.length === 1}
-                                                                        onClick={() => removeCertificate(index,item)}><FontAwesomeIcon icon={faTrash} /></button>
+                                                                        onClick={() => removeCertificate(index, item)}><FontAwesomeIcon icon={faTrash} /></button>
                                                                 </div>
                                                             </div>
 

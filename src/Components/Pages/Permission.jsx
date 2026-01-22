@@ -23,7 +23,7 @@ function Permission() {
   const [permissions, setPermissions] = useState([])
   const fetchLabPermission = async () => {
     try {
-      const response = await getSecureApiData(`lab/permission/${userId}?page=${currentPage}&name=${search}`);
+      const response = await getSecureApiData(`api/comman/permission/${userId}?page=${currentPage}&name=${search}&type=lab`);
       if (response.success) {
         setCurrentPage(response.pagination.page)
         setTotalPage(response.pagination.totalPages)
@@ -40,7 +40,7 @@ function Permission() {
     if (editId) {
       const data = { labId: userId, name, permissionId: editId }
       try {
-        const response = await updateApiData(`lab/permission`, data);
+        const response = await updateApiData(`api/comman/permission`, data);
         if (response.success) {
           setName('')
           setEditId(null)
@@ -56,7 +56,7 @@ function Permission() {
 
       const data = { labId: userId, name }
       try {
-        const response = await securePostData(`lab/permission`, data);
+        const response = await securePostData(`api/comman/permission`, data);
         if (response.success) {
           setName('')
           fetchLabPermission()
@@ -73,7 +73,7 @@ function Permission() {
     // e.preventDefault()
     const data = { labId: userId, permissionId: id }
     try {
-      const response = await deleteApiData(`lab/permission`, data);
+      const response = await deleteApiData(`api/comman/permission`, data);
       if (response.success) {
         fetchLabPermission()
         toast.success("Permission deleted")
