@@ -1,11 +1,15 @@
 import { Outlet, useLocation } from "react-router-dom"
 import LeftSidebar from "./LeftSidebar"
 import TopHeader from "./TopHeader"
+import { useDispatch } from "react-redux";
+import { fetchEmpDetail, fetchUserDetail } from "../../redux/features/userSlice";
+import { useEffect } from "react";
 
 function AppLayout() {
   const location = useLocation();
+  const dispatch = useDispatch()
   const path = location.pathname;
-  const staticRoute = ['/login','/wating-for-approval', '/forgot-password', '/otp', '/set-password', '/create-account','/create-account-image','/create-account-address', '/create-account-person', '/create-account-upload']
+  const staticRoute = ['/login', '/wating-for-approval', '/forgot-password', '/otp', '/set-password', '/create-account', '/create-account-image', '/create-account-address', '/create-account-person', '/create-account-upload']
 
   return (
     <>

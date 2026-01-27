@@ -110,9 +110,9 @@ function EditTest() {
       const response = await updateApiData(`lab/test`, data)
       if (response.success) {
         toast.success('Test updated successfully')
-        navigate('/tests')
       } else {
-        toast.error(result.message)
+        toast.error(response.message)
+        navigate('/tests')
       }
     } catch (error) {
 
@@ -127,7 +127,8 @@ function EditTest() {
         const data = response.data.component
         setComponents(data)
       } else {
-        toast.error(result.message)
+        toast.error(response.message)
+        navigate(-1)
       }
     } catch (error) {
 

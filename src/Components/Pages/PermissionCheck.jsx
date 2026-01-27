@@ -29,7 +29,6 @@ function PermissionCheck() {
             printReport: false,
             addReport: false,
             patientCall: false,
-            patientMail: false,
             paymentStatus: false,
             appointmentStatus: false,
             chat: false,
@@ -151,7 +150,6 @@ function PermissionCheck() {
                                             "printReport",
                                             "addReport",
                                             "patientCall",
-                                            "patientMail",
                                             "paymentStatus",
                                             "appointmentStatus"
                                         ].map(key => (
@@ -180,8 +178,8 @@ function PermissionCheck() {
                                             className="form-check-input"
                                             type="checkbox"
                                             name="chat"
-                                            checked={formData.chat}
-                                            onChange={handleChange}
+                                            checked={formData.lab.chat}
+                                            onChange={()=>handleChange('chat')}
                                         />
                                         <label className="form-check-label">Chat</label>
                                     </div>

@@ -68,7 +68,6 @@ function Dashboard() {
     }
   }
   useEffect(() => {
-    fetchLabTest()
     labDashboard()
     fetchLabAppointment()
   }, [userId])

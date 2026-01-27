@@ -109,10 +109,10 @@ function Reports() {
 
   const testSubmit = async (e) => {
     e.preventDefault()
-    if (!isOwner && !permissions.addTest) {
-      toast.error('You do not have permission to add test ')
-      return
-    }
+    // if (!isOwner && !permissions.addTest) {
+    //   toast.error('You do not have permission to add test ')
+    //   return
+    // }
     const data = { ...testData, component: components }
     try {
       const response = await securePostData(`lab/test`, data)
@@ -120,10 +120,10 @@ function Reports() {
         toast.success('Test data saved successfully')
         navigate('/tests')
       } else {
-        toast.error(result.message)
+        toast.error(response.message)
       }
     } catch (error) {
-
+      toast.error(error)
     }
   }
 

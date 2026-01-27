@@ -65,11 +65,7 @@ function Tests() {
     useEffect(() => {
         fetchLabTest()
     }, [userId, currentPage])
-    useEffect(() => {
-        setTimeout(() => {
-            fetchLabTest()
-        }, 800)
-    }, [name])
+ 
     return (
         <>
             {loading ? <Loader />
@@ -111,7 +107,7 @@ function Tests() {
                                 <input value={name} onChange={(e) => setName(e.target.value)} type="text" className="form-control" placeholder="Search " />
 
                                 <div className="search-item-bx">
-                                    <button className="search-item-btn"><FontAwesomeIcon icon={faSearch} /></button>
+                                    <button className="search-item-btn" onClick={()=>fetchLabTest()}><FontAwesomeIcon icon={faSearch} /></button>
                                 </div>
 
                             </div>
@@ -199,13 +195,9 @@ function Tests() {
                                                                 >
                                                                     <li className="drop-item">
                                                                         <button onClick={() => {
-                                                                            if (!isOwner && !permissions.viewTest) {
-                                                                                toast.error('You do not have permission to view test ')
-                                                                                return
-                                                                            } else {
 
                                                                                 navigate(`/edit-test/${item?._id}`)
-                                                                            }
+                                                                            
                                                                         }} className="nw-dropdown-item" href="#">
                                                                             <FontAwesomeIcon
                                                                                 icon={faPen}

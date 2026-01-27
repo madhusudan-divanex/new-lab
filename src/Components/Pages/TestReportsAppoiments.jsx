@@ -65,29 +65,34 @@ function TestReportsAppoiments() {
     e.preventDefault()
     let data = {}
     if (type == 'status') {
-      if (!isOwner && !permissions.appointmentStatus) {
-        toast.error('You do not have permission to update appointment status ')
-        return
-      }
+     
       data = { type, labId: userId, appointmentId: actData.appointmentId, status: actData?.status }
+      try {
+        const response = await updateApiData(`appointment/lab-action`, data);
+        if (response.success) {
+          fetchLabAppointment()
+        } else {
+          toast.error(response.message)
+        }
+      } catch (err) {
+        console.error("Error creating lab:", err);
+      }
     }
     else if (type == 'payment') {
-      if (!isOwner && !permissions.paymentStatus) {
-        toast.error('You do not have permission to update payment status ')
-        return
-      }
+      
       data = { type, labId: userId, appointmentId: payData.appointmentId, paymentStatus: payData.paymentStatus }
-    }
-    try {
-      const response = await updateApiData(`appointment/lab-action`, data);
-      if (response.success) {
-        fetchLabAppointment()
-      } else {
-        toast.error(response.message)
+      try {
+        const response = await updateApiData(`appointment/lab/payment-action`, data);
+        if (response.success) {
+          fetchLabAppointment()
+        } else {
+          toast.error(response.message)
+        }
+      } catch (err) {
+        console.error("Error creating lab:", err);
       }
-    } catch (err) {
-      console.error("Error creating lab:", err);
     }
+
   }
   const sendReport = async (appointmentId, email, type) => {
     const data = { appointmentId, email, type }
@@ -378,7 +383,7 @@ function TestReportsAppoiments() {
                                 class="dropdown-menu dropdown-menu-end user-dropdown tble-action-menu "
                                 aria-labelledby="acticonMenu1"
                               >
-                                {item?.status=='deliver-report' &&<li className="drop-item">
+                                {item?.status == 'deliver-report' && <li className="drop-item">
                                   <Link
                                     class="nw-dropdown-item"
                                     to={`/lab-test-reports/${item._id}`}
@@ -414,31 +419,31 @@ function TestReportsAppoiments() {
                                   </NavLink>
                                 </li>
 
-                                {item?.status=='deliver-report' &&<li className="drop-item">
+                                {item?.status == 'deliver-report' && <li className="drop-item">
                                   <NavLink to={`/report-view/${item?._id}`} className="nw-dropdown-item" href="#">
                                     <img src="/file.png" alt="" />
                                     Report  view
                                   </NavLink>
                                 </li>}
-                                {item?.status=='deliver-report' &&<li className="drop-item">
+                                {item?.status == 'deliver-report' && <li className="drop-item">
                                   <NavLink to={`/new-invoice/${item?._id}`} className="nw-dropdown-item" href="#">
                                     <img src="/invoices.png" alt="" />
                                     Invoice
                                   </NavLink>
                                 </li>}
-                                {(item?.status==='pending-report' || item?.status==='deliver-report') &&<>
-                                {item?.doctorId &&<li className="drop-item">
-                                  <button className="nw-dropdown-item" onClick={() => sendReport(item?._id, item?.doctorId?.email, 'doctor')}>
-                                    <img src="/dc-usr.png" alt="" />
-                                    Send  Report Doctor
-                                  </button>
-                                </li>}
-                                <li className="drop-item">
-                                  <button className="nw-dropdown-item" onClick={() => sendReport(item?._id, item?.patientId?.email, 'patient')}>
-                                    <img src="/report-mail.png" alt="" />
-                                    Send  Report Patient
-                                  </button>
-                                </li>
+                                {(item?.status === 'pending-report' || item?.status === 'deliver-report') && <>
+                                  {item?.doctorId && <li className="drop-item">
+                                    <button className="nw-dropdown-item" onClick={() => sendReport(item?._id, item?.doctorId?.email, 'doctor')}>
+                                      <img src="/dc-usr.png" alt="" />
+                                      Send  Report Doctor
+                                    </button>
+                                  </li>}
+                                  <li className="drop-item">
+                                    <button className="nw-dropdown-item" onClick={() => sendReport(item?._id, item?.patientId?.email, 'patient')}>
+                                      <img src="/report-mail.png" alt="" />
+                                      Send  Report Patient
+                                    </button>
+                                  </li>
                                 </>}
                               </ul>
                             </div>

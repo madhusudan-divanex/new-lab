@@ -55,6 +55,7 @@ function PatientsView() {
                 setIsLoading(false)
             } else {
                 toast.error(response.message)
+                navigate('/tests')
             }
         } catch (err) {
             console.error("Error creating lab:", err);
@@ -82,12 +83,7 @@ function PatientsView() {
         }
         return age;
     };
-    useEffect(() => {
-        if (!isOwner && !permissions?.patientDetails) {
-            toast.error('You do not have permission to see patient deatails ')
-            navigate(-1)
-        }
-    }, [isOwner, permissions])
+  
     const fetchPatientReport = async () => {
         try {
             const response = await getSecureApiData(`lab/patient-lab-report/${userId}/${patientId}`);

@@ -24,7 +24,7 @@ function LeftSidebar() {
   const { pathname } = useLocation();
 
   const {
-    profiles,allowEdit,
+    profiles,allowEdit,permissions,
     labPerson, empData, isOwner,customId
   } = useSelector((state) => state.user);
 
@@ -38,7 +38,6 @@ function LeftSidebar() {
   // helper to check active route
   const active = (path) =>
     pathname === path ? "nav-link nav-active" : "nav-link";
-
   return (
     <>
       <div className="dashboard-left-side min-vh-100 flex-shrink-0">
@@ -117,11 +116,11 @@ function LeftSidebar() {
                 </NavLink>
               </li>
 
-              <li className="nav-item">
+              {(isOwner || permissions?.chat) &&<li className="nav-item">
                 <NavLink to="/chat" className={active("/chat")}>
                   <FontAwesomeIcon icon={faMessage} /> Chat
                 </NavLink>
-              </li>
+              </li>}
 
               <li className="nav-item">
                 <NavLink to="/report-tabs" className={active("/report-tabs")}>
