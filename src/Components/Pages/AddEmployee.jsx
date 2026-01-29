@@ -557,9 +557,9 @@ function AddEmployee() {
                                                             onChange={handleUserChange}
                                                             required>
                                                             <option>---Select Gender---</option>
-                                                            <option value="male">Male</option>
-                                                            <option value="female">Female</option>
-                                                            <option value="other">other</option>
+                                                            <option value="Male">Male</option>
+                                                            <option value="Female">Female</option>
+                                                            <option value="Other">other</option>
 
                                                         </select>
                                                     </div>

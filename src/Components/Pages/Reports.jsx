@@ -66,11 +66,12 @@ function Reports() {
 
 
 
+
   // -------------------- Add Component --------------------
   const addComponent = () => {
     setComponents([
       ...components,
-      { name: "", unit: "", optionType: "text", textResult: [""],result:[{value:'',note:''}], referenceRange: "", status: false },
+      { name: "", unit: "", optionType: "text", textResult: "",result:[{value:'',note:''}], referenceRange: "", status: false },
     ]);
   };
 

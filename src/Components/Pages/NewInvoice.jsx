@@ -109,12 +109,12 @@ function NewInvoice() {
                   <div className="laboratory-bill-bx">
                     <h6>Bill To</h6>
                     <h4>{appointmentData?.patientId?.name}</h4>
-                    <p><span className="laboratory-phne">Phone :</span> {appointmentData?.patientId?.contactNumber}</p>
+                    <p><span className="laboratory-phne">Phone :</span> {appointmentData?.patientId?.patientId?.contactNumber}</p>
                   </div>
                   <div className="laboratory-bill-bx">
                     <h6>Order</h6>
                     <h4>{appointmentData?.patientId?.name}</h4>
-                    <p><span className="laboratory-phne">Phone :</span> {appointmentData?.patientId?.contactNumber}</p>
+                    <p><span className="laboratory-phne">Phone :</span> {appointmentData?.patientId?.patientId?.contactNumber}</p>
                   </div>
                 </div>
 

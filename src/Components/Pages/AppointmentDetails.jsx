@@ -52,12 +52,12 @@ function AppointmentDetails() {
       console.error("Error creating lab:", err);
     }
   }
-  useEffect(()=>{
-        if(!isOwner && !permissions?.appointmentDetails){
-      toast.error('You do not have permission to see appointment deatails ')
-      navigate(-1)
-    }
-    },[isOwner,permissions])
+  // useEffect(()=>{
+  //       if(!isOwner && !permissions?.appointmentDetails){
+  //     toast.error('You do not have permission to see appointment deatails ')
+  //     navigate(-1)
+  //   }
+  //   },[isOwner,permissions])
   return (
     <>
       <div className="main-content flex-grow-1 p-3 overflow-auto">

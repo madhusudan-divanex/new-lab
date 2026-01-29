@@ -21,12 +21,26 @@ function TestReportsAppoiments() {
   const [currentPage, setCurrentPage] = useState(1)
   const { isOwner, permissions } = useSelector(state => state.user)
   const [payData, setPayData] = useState({ appointmentId: null, paymentStatus: 'due' })
-  const [actData, setActData] = useState({ appointmentId: null, status: '' })
+  const [actData, setActData] = useState({ appointmentId: null, status: '',labStaff:'' })
   const [activeData, setActiveData] = useState({})
+  const [employees,setEmployees]=useState([])
+  const [labStaff,setLabStaff] = useState([])
   const [filter, setFilter] = useState({
     status: 'approved', paymentStatus: '', dateFrom: null,
     dateTo: null, test: null, patientName: ''
   })
+  const fetchLabStaff = async () => {
+    try {
+      const response = await getSecureApiData(`lab/staff/${userId}?limit=100`);    
+      if (response.success) {
+        setEmployees(response.data)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (err) {
+      console.error("Error creating lab:", err);
+    }
+  }
   const fetchLabTest = async () => {
     try {
       const response = await getSecureApiData(`lab/test/${userId}`);
@@ -42,6 +56,7 @@ function TestReportsAppoiments() {
     }
   }
   useEffect(() => {
+    fetchLabStaff()
     fetchLabTest()
     fetchLabAppointment()
   }, [userId])
@@ -66,10 +81,11 @@ function TestReportsAppoiments() {
     let data = {}
     if (type == 'status') {
      
-      data = { type, labId: userId, appointmentId: actData.appointmentId, status: actData?.status }
+      data = { type, labId: userId, appointmentId: actData.appointmentId, status: actData?.status,labStaff:actData.labStaff}
       try {
         const response = await updateApiData(`appointment/lab-action`, data);
         if (response.success) {
+          setLabStaff()
           fetchLabAppointment()
         } else {
           toast.error(response.message)
@@ -346,10 +362,8 @@ function TestReportsAppoiments() {
                                 <a
                                   href="javascript:void(0)"
                                   onClick={() => {
-
-
                                     setActiveData(item)
-                                    setActData({ appointmentId: item?._id, status: item?.status })
+                                    setActData({ appointmentId: item?._id, status: item?.status ,labStaff:item?.labStaff?._id || ''})
                                   }}
                                   className="edit-btn" data-bs-toggle="modal" data-bs-target="#appointment-Status"
                                 >
@@ -536,12 +550,14 @@ function TestReportsAppoiments() {
                 </div>
 
                 <div className="col-lg-12">
-                  {activeData?.doctorId && <div className="custom-frm-bx">
+                   <div className="custom-frm-bx">
                     <label htmlFor="">Doctor</label>
-                    <select className="form-control nw-control-frm">
-                      <option>{activeData?.doctorId?.name}</option>
+                    <select className="form-control nw-control-frm" value={actData.labStaff} onChange={(e)=>setActData({...actData,labStaff:e.target.value})}>
+                      <option>----Select Doctor----</option>
+                      {employees?.map((item,key)=>
+                      <option value={item?._id}>{item?.name}</option>)}
                     </select>
-                  </div>}
+                  </div>
 
                   <div>
                     <button type="submit" data-bs-dismiss="modal" className="nw-thm-btn w-100"> Submit</button>

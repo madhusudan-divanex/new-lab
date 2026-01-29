@@ -232,6 +232,7 @@ function ReportView() {
                     <div className="laboratory-name">
                       <h5>{profiles?.name || 'Advance Lab Tech'}</h5>
                       <p><span className="laboratory-title">GSTIN :</span> {profiles?.gstNumber || '09897886454'}</p>
+                      {appointmentData?.labStaff &&<p><span className="laboratory-title text-capitalize">Lab Doctor :</span> {appointmentData?.labStaff?.name}</p>}
                     </div>
                     <div className="invoice-details">
                       <p><span className="laboratory-invoice">Invoice :</span> {appointmentData?.customId}</p>
@@ -251,12 +252,12 @@ function ReportView() {
                     </div>
                     <div className="col-lg-6">
                       <div className="laboratory-bill-bx laboratory-sub-bx mb-2">
-                        <h6>Order </h6>
+                        <h6 className="no-print">Order </h6>
                         <p><span className="laboratory-phne">Appointment ID :</span> {appointmentData?.customId}  </p>
                       </div>
 
                       {appointmentData?.doctorId && <div className="laboratory-bill-bx laboratory-sub-bx">
-                        <h6 className="my-0">Doctor</h6>
+                        <h6 className="my-0">Lab tests prescribed by the doctor</h6>
                         <h4 >{appointmentData?.doctorId?.name}</h4>
                         <p><span className="laboratory-phne">ID :</span> {appointmentData?.doctorId?.unique_id}  </p>
                       </div>}
@@ -318,6 +319,7 @@ function ReportView() {
 
                     </div>
                   </div>
+                 
 
                   <div className="report-remark mt-3">
                     <h6>Remark</h6>

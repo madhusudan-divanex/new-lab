@@ -88,7 +88,7 @@ function LabTestReports() {
               test.component.forEach((c, i) => {
                 const comp = report.component.find(rc => rc.cmpId === c._id);
                 mergedResults[i] = {
-                  result:comp?.optionType=='select'?comp?.result: comp?.textResult || "",
+                  result: comp?.optionType == 'select' ? comp?.result : comp?.textResult || "",
                   status: comp?.status || ""
                 };
               });
@@ -223,7 +223,7 @@ function LabTestReports() {
               test.component.forEach((c, i) => {
                 const comp = report.component.find(rc => rc.cmpId === c._id);
                 mergedResults[i] = {
-                  result:comp?.result || "",
+                  result: comp?.result || "",
                   status: comp?.status || "",
                 };
               });
@@ -420,7 +420,7 @@ function LabTestReports() {
                                         </td>
                                       </tr>
                                       {/* NOTE FULL ROW */}
-                                   
+
 
                                     </React.Fragment>
                                   ))}
@@ -575,7 +575,7 @@ function LabTestReports() {
 
       {/*Print Popup Start  */}
       {/* data-bs-toggle="modal" data-bs-target="#edit-Request" */}
-      <div className="modal step-modal" id="edit-Request" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1"
+      <div className="modal fade step-modal" id="edit-Request" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1"
         aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered modal-md">
           <div className="modal-content rounded-5 ">
@@ -603,7 +603,7 @@ function LabTestReports() {
                       <li key={key}>
                         <div className="custom-frm-bx">
                           <div className="form-check custom-check form-control tests-reprt-frm">
-                            <input className="form-check-input" type="checkbox" value={item?._id}
+                            <input className="form-check-input ms-0" type="checkbox" value={item?._id}
                               checked={toPrint.includes(item?._id)}
                               onChange={(e) => {
                                 if (e.target.checked) {
@@ -622,7 +622,7 @@ function LabTestReports() {
 
                   </ul>
                   <div>
-                    <button type="submit" onClick={(e) => setPrintReport(true)} data-bs-dismiss="modal" className="nw-thm-btn w-100"> Print now</button>
+                    <button type="submit" onClick={() => setPrintReport(true)} data-bs-dismiss="modal" className="nw-thm-btn w-100"> Print now</button>
                   </div>
 
                 </div>

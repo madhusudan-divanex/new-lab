@@ -68,7 +68,7 @@ function EditTest() {
   const addComponent = () => {
     setComponents([
       ...components,
-      { name: "", unit: "", optionType: "text", title: "", textResult: [""], result: [{ value: '', note: '' }], referenceRange: "", status: false },
+      { name: "", unit: "", optionType: "text", title: "", textResult: "", result: [{ value: '', note: '' }], referenceRange: "", status: false },
     ]);
   };
 
