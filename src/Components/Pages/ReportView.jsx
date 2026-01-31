@@ -159,12 +159,6 @@ function ReportView() {
         document.body.classList.remove("hide-buttons");
       });
   };
-  useEffect(() => {
-    if (!isOwner && !permissions?.viewReport) {
-      toast.error('You do not have permission to view report')
-      navigate(-1)
-    }
-  }, [isOwner, permissions])
   return (
 
     <>
@@ -318,9 +312,7 @@ function ReportView() {
                       </table>
 
                     </div>
-                  </div>
-                 
-
+                  </div>               
                   <div className="report-remark mt-3">
                     <h6>Remark</h6>
                     {fullReportData?.remark}
