@@ -48,7 +48,7 @@ function PermissionCheck() {
 
     /* ✅ load existing permission safely */
     useEffect(() => {
-        if (storedPermission?.lab) {
+        if (storedPermission?.permissions) {
             setFormData(prev => ({
                 ...prev,
                 permissionId,
@@ -56,7 +56,7 @@ function PermissionCheck() {
                 name,
                 lab: {
                     ...prev.lab,
-                    ...storedPermission.lab
+                    ...storedPermission.permissions
                 }
             }));
         }

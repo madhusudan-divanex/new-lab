@@ -12,7 +12,6 @@ function SetPassword() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isConf, setIsConf] = useState(false)
   const [isPass, setIsPass] = useState(false)
-  const userId = localStorage.getItem('userId')
   const token = localStorage.getItem('otoken')
 
   const handleSubmit = async (e) => {
@@ -21,7 +20,7 @@ function SetPassword() {
       toast.error("Password and confirm password was not match")
       return
     }
-    const data = { userId, password }
+    const data = {  password }
     try {
       const response = await axios.post(`${base_url}/lab/reset-password`, data, {
         headers: {

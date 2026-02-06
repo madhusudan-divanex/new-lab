@@ -5,15 +5,15 @@ import { postApiData } from "../../services/api";
 
 function ForgotPassword() {
   const navigate=useNavigate()
-  const [email,setEmail]=useState('')
+  const [contactNumber,setContactNumber]=useState('')
    const handleSubmit = async (e) => {
       e.preventDefault();
       try {
-        const response = await postApiData('lab/forgot-email', {email})
+        const response = await postApiData('lab/forgot-otp', {contactNumber})
         if (response.success) {
-          sessionStorage.setItem('email',email)
-          localStorage.setItem('userId',response.userId)
-          toast.success('Email sent successfully')
+          sessionStorage.setItem('contactNumber',contactNumber)
+          sessionStorage.setItem('forgotId',response.pharId)
+          toast.success('Otp sent successfully')
           navigate('/otp')
         } else {
           toast.error(response.message)
@@ -45,18 +45,18 @@ function ForgotPassword() {
               <div className="admin-vendor-login">
                 <div className="admin-vndr-login">
                   <h3>Forgot Password</h3>
-                  <p>Please enter email address below</p>
+                  <p>Please enter mobile number below</p>
                 </div>
                 <form onSubmit={handleSubmit}>
                   <div className="custom-frm-bx admin-frm-bx">
-                    <label htmlFor="">Email Address</label>
+                    <label htmlFor="">Mobile Number</label>
                     <input
-                      type="email"
-                      value={email}
-                      onChange={(e)=>setEmail(e.target.value)}
+                      type="number"
+                      value={contactNumber}
+                      onChange={(e)=>setContactNumber(e.target.value)}
                       required
                       className="form-control admin-frm-control"
-                      placeholder="Enter Email Address"
+                      // placeholder="Enter Email Address"
                     />
                   </div>
 

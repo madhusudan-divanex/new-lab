@@ -1,7 +1,7 @@
-const base_url='https://apiphaneo.divanex.in'
+const base_url='https://api.neohealthcard.com:9100'
 
 
-//  https://apiphaneo.divanex.in 
+//  https://api.neohealthcard.com:9100 
 
 //  http://localhost:9155
 export default base_url

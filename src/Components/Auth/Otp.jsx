@@ -7,8 +7,7 @@ import { toast } from "react-toastify";
 function Otp() {
   const navigate = useNavigate()
   const [timer, setTimer] = useState(30);
-  const email = sessionStorage.getItem('email')
-  const userId = localStorage.getItem('userId')
+  const contactNumber = sessionStorage.getItem('contactNumber')
   const OTP_LENGTH = 6;
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(""));
   const inputsRef = useRef([]);
@@ -61,10 +60,9 @@ function Otp() {
   const handleResendCode = async (e) => {
     e.preventDefault();
     try {
-      const response = await postApiData('lab/forgot-email', { email })
+      const response = await postApiData('lab/resend-otp', { contactNumber })
       if (response.success) {
-        localStorage.setItem('userId', response.userId)
-        toast.success('Email sent successfully')
+        toast.success('Otp sent successfully')
       } else {
         toast.error(response.message)
       }
@@ -75,13 +73,39 @@ function Otp() {
   }
   const handleVerify = async (e) => {
     e.preventDefault();
-    const data = { userId, code: otp?.join('') }
+    const data = { contactNumber, code: otp?.join('') ,type:sessionStorage.getItem('forgotId')?'forgot':'login'}
     try {
       const response = await securePostData('lab/verify-otp', data)
       if (response.success) {
-        sessionStorage.clear()
-        localStorage.setItem('otoken', response.token)
-        navigate('/set-password')
+        if(sessionStorage.getItem('forgotId')){          
+          localStorage.setItem('otoken', response.token)
+          return navigate('/set-password')
+        }
+        localStorage.setItem('token', response.token)
+        localStorage.setItem('userId', response.userId)
+        localStorage.setItem('isOwner', response.isOwner);
+        if (!response.isOwner) {
+          localStorage.setItem('staffId', response.staffId)
+
+          localStorage.setItem('permissions', JSON.stringify(response.user.permissionId))
+          dispatch(fetchEmpDetail(response.staffId))
+        }
+
+
+        toast.success('Login successfully')
+        if (response.nextStep) {
+          navigate(response.nextStep)
+          return
+        }
+        if (response.user.status == 'pending') {
+          navigate('/wating-for-approval')
+          return
+        } else {
+          navigate('/')
+        }
+        // sessionStorage.clear()
+        // localStorage.setItem('otoken', response.token)
+        // navigate('/set-password')
       } else {
         toast.error(response.message)
       }
@@ -111,7 +135,7 @@ function Otp() {
                   <div className="admin-vendor-login">
                     <div className="admin-vndr-login">
                       <h3>Verify OTP</h3>
-                      <p>We’ve sent a 6-digit code to your email. Please enter it below to reset your password.</p>
+                      <p>We’ve sent a 6-digit code to your mobile number. Please enter it below to reset your password.</p>
                     </div>
                     <form onSubmit={handleVerify}>
                       <div className="custom-frm-bx admin-frm-bx lab-login-frm-bx" onPaste={handlePaste}>
