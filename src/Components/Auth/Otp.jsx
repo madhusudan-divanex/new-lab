@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom"
+import { NavLink, useNavigate, useSearchParams } from "react-router-dom"
 import { postApiData, securePostData } from "../../services/api";
 import { toast } from "react-toastify";
+import { messaging } from "../../firebase";
 
 
 function Otp() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [timer, setTimer] = useState(30);
-  const contactNumber = sessionStorage.getItem('contactNumber')
+  const contact = searchParams.get('contact')
+  const isEmail = contact?.includes('@');
   const OTP_LENGTH = 6;
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(""));
   const inputsRef = useRef([]);
@@ -59,8 +62,15 @@ function Otp() {
 
   const handleResendCode = async (e) => {
     e.preventDefault();
+    let data;
+    if (isEmail) {
+      data.email = contact
+    } else {
+      data.contactNumber = contact
+    }
+
     try {
-      const response = await postApiData('lab/resend-otp', { contactNumber })
+      const response = await postApiData('lab/resend-otp', data)
       if (response.success) {
         toast.success('Otp sent successfully')
       } else {
@@ -73,11 +83,16 @@ function Otp() {
   }
   const handleVerify = async (e) => {
     e.preventDefault();
-    const data = { contactNumber, code: otp?.join('') ,type:sessionStorage.getItem('forgotId')?'forgot':'login'}
+    const data = { code: otp?.join(''), type: sessionStorage.getItem('forgotId') ? 'forgot' : 'login' }
+    if (isEmail) {
+      data.email = contact
+    } else {
+      data.contactNumber = contact
+    }
     try {
       const response = await securePostData('lab/verify-otp', data)
       if (response.success) {
-        if(sessionStorage.getItem('forgotId')){          
+        if (sessionStorage.getItem('forgotId')) {
           localStorage.setItem('otoken', response.token)
           return navigate('/set-password')
         }
@@ -102,6 +117,7 @@ function Otp() {
           return
         } else {
           navigate('/')
+          await saveFcmToken();
         }
         // sessionStorage.clear()
         // localStorage.setItem('otoken', response.token)
@@ -114,6 +130,22 @@ function Otp() {
     }
     setTimer(30); // reset timer after resend
   }
+  const saveFcmToken = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") return;
+      const token = await getToken(messaging, {
+        vapidKey: "BE3q7ncn4UgC6EPT2Ehc8ozFDuu7tjRPV35MgbwCRV_QizDXeAH7nGtVxcStGmloWt0HQ9NfGIToPZ9EalL4Qe0"
+      });
+
+      if (token) {
+        await securePostData("api/comman/save-fcm-token", { fcmToken: token });
+        console.log("✅ FCM Token Saved");
+      }
+    } catch (err) {
+      console.error("FCM error", err);
+    }
+  };
   return (
     <>
       <section className="admin-login-section ">
